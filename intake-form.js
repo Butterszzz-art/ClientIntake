@@ -23,11 +23,12 @@ export function maakLeegClient() {
     createdAt: new Date().toISOString(),
     intake: {
       persoonsgegevens: {
-        naam: '', leeftijd: null, lengte: null, gewicht: null, vetpercentage: null,
+        naam: '', email: '', leeftijd: null, lengte: null, gewicht: null, vetpercentage: null,
         geslacht: 'man', trainingservaring: null,
       },
       huidigeKracht: STANDAARD_KRACHT_RIJEN.map((oefening) => ({ oefening, kg: 0, herhalingen: 0, sets: 0 })),
       doel: { tekst: '', categorie: 'onderhoud' },
+      motivatieMindset: { motivatie: '', mentaleInstelling: '' },
       trainingsfrequentie: { huidig: 3, trainingsmomenten: [], baan: { type: '', urenZittend: null, urenStaand: null } },
       blessures: { tekst: '', vermijdenOefeningen: [] },
       dieet: { huidig: '', voorkeuren: [], afkeuren: [] },
@@ -140,6 +141,7 @@ export function leesApparatuurChecklist() {
 export function vulIntakeFormIn(client) {
   const i = client.intake;
   document.getElementById('f-naam').value = i.persoonsgegevens.naam;
+  document.getElementById('f-email').value = i.persoonsgegevens.email ?? '';
   document.getElementById('f-leeftijd').value = i.persoonsgegevens.leeftijd ?? '';
   document.getElementById('f-lengte').value = i.persoonsgegevens.lengte ?? '';
   document.getElementById('f-gewicht').value = i.persoonsgegevens.gewicht ?? '';
@@ -152,6 +154,9 @@ export function vulIntakeFormIn(client) {
 
   document.getElementById('f-doel-categorie').value = i.doel.categorie;
   document.getElementById('f-doel-tekst').value = i.doel.tekst;
+
+  document.getElementById('f-motivatie').value = i.motivatieMindset?.motivatie ?? '';
+  document.getElementById('f-mentale-instelling').value = i.motivatieMindset?.mentaleInstelling ?? '';
 
   document.getElementById('f-trainingsfrequentie').value = i.trainingsfrequentie.huidig ?? 3;
   document.getElementById('f-baan-type').value = i.trainingsfrequentie.baan.type;
@@ -191,6 +196,7 @@ export function leesIntakeForm() {
   return {
     persoonsgegevens: {
       naam: document.getElementById('f-naam').value.trim(),
+      email: document.getElementById('f-email').value.trim(),
       leeftijd: num(document.getElementById('f-leeftijd').value),
       lengte: num(document.getElementById('f-lengte').value),
       gewicht: num(document.getElementById('f-gewicht').value),
@@ -202,6 +208,10 @@ export function leesIntakeForm() {
     doel: {
       tekst: document.getElementById('f-doel-tekst').value.trim(),
       categorie: document.getElementById('f-doel-categorie').value,
+    },
+    motivatieMindset: {
+      motivatie: document.getElementById('f-motivatie').value.trim(),
+      mentaleInstelling: document.getElementById('f-mentale-instelling').value.trim(),
     },
     trainingsfrequentie: {
       huidig: num(document.getElementById('f-trainingsfrequentie').value, 3),

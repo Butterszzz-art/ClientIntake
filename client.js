@@ -6,6 +6,11 @@ import { maakLeegClient, initTagInputs, vulIntakeFormIn, leesIntakeForm, maakKra
 // this one draft key, so nothing here can expose another client's data.
 const DRAFT_KEY = 'pt-intake:client-draft:v1';
 
+// Public Web3Forms access key, tied to Arman's inbox — safe to expose in
+// client-side code (Web3Forms rate-limits by key, no secret is involved).
+const WEB3FORMS_ACCESS_KEY = '4e27ae27-18e9-4a54-bdc7-bd8c4e316a48';
+const WEB3FORMS_ENDPOINT = 'https://api.web3forms.com/submit';
+
 let huidigClient = null;
 let laatsteBestandsnaam = '';
 let conceptTimer = null;
@@ -29,14 +34,132 @@ function slaConceptOp() {
   }
 }
 
-function verstuur() {
+// Plain-text summary for the email body, so Arman can read the intake
+// straight in his inbox without opening the JSON attachment.
+function bouwSamenvatting(client) {
+  const i = client.intake;
+  const regels = [];
+  const sectie = (titel) => regels.push(`\n== ${titel} ==`);
+  const veld = (label, waarde) => regels.push(`${label}: ${waarde === '' || waarde == null ? '-' : waarde}`);
+
+  sectie('Persoonsgegevens');
+  veld('Naam', i.persoonsgegevens.naam);
+  veld('E-mail', i.persoonsgegevens.email);
+  veld('Leeftijd', i.persoonsgegevens.leeftijd);
+  veld('Lengte (cm)', i.persoonsgegevens.lengte);
+  veld('Gewicht (kg)', i.persoonsgegevens.gewicht);
+  veld('Vetpercentage (%)', i.persoonsgegevens.vetpercentage);
+  veld('Geslacht', i.persoonsgegevens.geslacht);
+  veld('Trainingservaring (jaar)', i.persoonsgegevens.trainingservaring);
+
+  sectie('Doel');
+  veld('Categorie', i.doel.categorie);
+  veld('Toelichting', i.doel.tekst);
+
+  sectie('Motivatie & mindset');
+  veld('Motivatie', i.motivatieMindset.motivatie);
+  veld('Mentale instelling', i.motivatieMindset.mentaleInstelling);
+
+  sectie('Huidige kracht');
+  if (i.huidigeKracht.length) {
+    for (const r of i.huidigeKracht) regels.push(`- ${r.oefening}: ${r.kg}kg x ${r.herhalingen} (${r.sets} sets)`);
+  } else {
+    regels.push('- Geen data');
+  }
+
+  sectie('Trainingsfrequentie & baan');
+  veld('Frequentie (dagen/week)', i.trainingsfrequentie.huidig);
+  veld('Trainingsmomenten', i.trainingsfrequentie.trainingsmomenten.join(', '));
+  veld('Baan type', i.trainingsfrequentie.baan.type);
+  veld('Uren zittend / staand', `${i.trainingsfrequentie.baan.urenZittend ?? '-'} / ${i.trainingsfrequentie.baan.urenStaand ?? '-'}`);
+
+  sectie('Blessures');
+  veld('Toelichting', i.blessures.tekst);
+  veld('Te vermijden oefeningen', i.blessures.vermijdenOefeningen.join(', '));
+
+  sectie('Dieet');
+  veld('Huidig', i.dieet.huidig);
+  veld('Voorkeuren', i.dieet.voorkeuren.join(', '));
+  veld('Afkeuren', i.dieet.afkeuren.join(', '));
+
+  sectie('PEDs');
+  veld('Gebruikt', i.peds.gebruikt ? 'Ja' : 'Nee');
+  veld('Toelichting', i.peds.toelichting);
+
+  sectie('Lifestyle');
+  veld('Activiteitsniveau', i.lifestyle.activityLevel);
+  veld('Stressniveau', i.lifestyle.stressLevel);
+  veld('Slaap', `${i.lifestyle.slaap.uren ?? '-'} uur, kwaliteit: ${i.lifestyle.slaap.kwaliteit}`);
+  veld('Cafeïne (mg/dag)', i.lifestyle.cafeine);
+
+  sectie('Meetmethode vetpercentage');
+  veld('Huidplooimeter gebruikt', i.vetpercentageMeting.huidplooimeter ? 'Ja' : 'Nee');
+
+  sectie('Materiaal & toegang');
+  veld('Laagste plaat (kg)', i.materiaal.laagstePlaat);
+  veld('Dumbbell-stapgrootte (kg)', i.materiaal.dumbbellStapgrootte);
+  veld('Apparatuur', i.materiaal.apparatuur.join(', '));
+
+  sectie('Supplementen');
+  veld('Vrije tekst', i.supplementen);
+
+  sectie('Genen');
+  veld('Polsomtrek (cm)', i.genen.polsomtrek);
+  veld('Enkelomtrek (cm)', i.genen.enkelomtrek);
+  veld('Gewicht voorheen', i.genen.gewichtVoorheen);
+  veld('Zware baby', i.genen.zwareBaby ? 'Ja' : 'Nee');
+
+  return regels.join('\n');
+}
+
+async function verstuurNaarArman(client) {
+  const naam = client.naam || 'Naamloos';
+  const email = client.intake.persoonsgegevens.email;
+
+  const formData = new FormData();
+  formData.append('access_key', WEB3FORMS_ACCESS_KEY);
+  formData.append('subject', `Nieuwe trainingsintake — ${naam}`);
+  formData.append('from_name', naam);
+  if (email) {
+    formData.append('email', email);
+    formData.append('replyto', email);
+  }
+  // Note: Web3Forms rejects the whole submission on the free tier if a file
+  // is attached ("Pro feature required"), so the JSON travels only via the
+  // local download below — the email carries the readable summary only.
+  formData.append('message', bouwSamenvatting(client));
+
+  const response = await fetch(WEB3FORMS_ENDPOINT, { method: 'POST', body: formData });
+  const result = await response.json().catch(() => ({ success: false }));
+  return result.success === true;
+}
+
+function zetVerzendStatus(tekst, variant) {
+  const el = document.getElementById('verzend-status');
+  el.textContent = tekst;
+  el.className = `verzend-status verzend-status--${variant}`;
+}
+
+async function verstuur() {
   huidigClient.intake = leesIntakeForm();
   huidigClient.naam = huidigClient.intake.persoonsgegevens.naam;
   laatsteBestandsnaam = bestandsnaamVoor(huidigClient);
+
   downloadJson(laatsteBestandsnaam, { client: huidigClient });
+  localStorage.removeItem(DRAFT_KEY);
+
   document.getElementById('bedankt-naam').textContent = huidigClient.naam || 'daar';
   document.getElementById('bedankt-bestandsnaam').textContent = laatsteBestandsnaam;
+  zetVerzendStatus('Bezig met versturen naar Arman...', 'bezig');
   toonView('bedankt');
+
+  try {
+    const gelukt = await verstuurNaarArman(huidigClient);
+    if (!gelukt) throw new Error('Web3Forms meldde geen succes');
+    zetVerzendStatus('Verstuurd naar Arman — je intake is aangekomen.', 'ok');
+  } catch {
+    zetVerzendStatus('Automatisch versturen is niet gelukt. Stuur het gedownloade bestand hieronder even zelf naar mij door.', 'fout');
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -12,31 +12,67 @@ delen behalve de rekenlogica en het JSON-schema:
 
 - **`index.html` (root) — het cliëntformulier.** Dit is de link die je naar
   cliënten stuurt. Hij bevat alléén de intake: geen cliëntenlijst, geen
-  berekeningen, geen overzicht, geen data van andere cliënten. Na het
-  versturen downloadt de cliënt een `.json`-bestand en stuurt dat zelf naar
-  jou (WhatsApp, e-mail, AirDrop, ...).
-- **`coach.html` — jouw dashboard.** Cliëntenlijst, "Importeer JSON" (voor de
-  bestanden die cliënten terugsturen), de berekeningen-stap en het overzicht.
-  Bookmark deze URL voor jezelf; deel hem niet met cliënten.
+  berekeningen, geen overzicht, geen data van andere cliënten. Het formulier
+  spreekt de cliënt aan als **Arman Bahali persoonlijk** (ik-vorm), niet als
+  een team of bedrijf. Na het versturen wordt de intake automatisch naar
+  Arman gemaild (zie hieronder) én gedownload als `.json`-bestand voor de
+  cliënt zelf.
+- **`coach.html` — jouw dashboard.** Cliëntenlijst, "Importeer JSON" (voor
+  bestanden die je los binnenkrijgt, bv. als de automatische mail een keer
+  mislukt), de berekeningen-stap en het overzicht. Bookmark deze URL voor
+  jezelf; deel hem niet met cliënten.
 
 Omdat dit een statische site zonder server/login is, is er geen "echte"
 toegangscontrole mogelijk — zie de sectie **Pincode-gate** hieronder voor wat
 dat in de praktijk betekent en waarom dat voor dit gebruik voldoende is.
 
-### Handoff-workflow (geen backend nodig)
+### Handoff-workflow: automatische e-mail via Web3Forms
+
+Cliëntdata verlaat de browser van de cliënt op twee manieren tegelijk:
 
 1. Coach deelt de link naar `index.html` met een (nieuwe) cliënt.
 2. Cliënt vult het formulier in op zijn/haar eigen apparaat. Tussentijds wordt
-   een concept lokaal in de browser van de cliënt bewaard (`pt-intake:client-draft:v1`),
+   een concept lokaal in die browser bewaard (`pt-intake:client-draft:v1`),
    zodat een per ongeluk gesloten tabblad niets kost.
-3. Cliënt klikt **Versturen** → browser downloadt `<naam>-intake.json` → cliënt
-   stuurt dat bestand naar de coach.
-4. Coach opent `coach.html`, klikt **Importeer JSON**, selecteert het bestand.
-   De cliënt verschijnt in de lijst; berekeningen worden bij het openen
+3. Cliënt klikt **Versturen**. Er gebeurt dan meteen twee dingen:
+   - De browser **downloadt** `<naam>-intake.json` (altijd, ongeacht of de
+     e-mail lukt) — de cliënt heeft dus zelf ook een kopie.
+   - `client.js` **post** de intake naar [Web3Forms](https://web3forms.com),
+     die het doorstuurt naar `armanbahali@pocketcoachcoms.org`. De e-mail
+     bevat een leesbare samenvatting van alle velden in de body — **geen
+     JSON-bijlage**, want Web3Forms' gratis tier weigert de hele inzending
+     zodra er een bestand wordt meegestuurd ("Pro feature required"). Het
+     JSON-bestand blijft dus alléén beschikbaar via de download in stap 3.
+   - Het bedankt-scherm toont live of het versturen gelukt is. Lukt het niet
+     (geen internet, Web3Forms plat, etc.), dan staat er expliciet dat de
+     cliënt het gedownloade bestand zelf moet doorsturen.
+4. Coach leest de mail voor een snel overzicht, en importeert — als hij de
+   berekeningen/het overzicht in het dashboard wil — het door de cliënt
+   toegestuurde `.json`-bestand via **Importeer JSON** op `coach.html`. De
+   cliënt verschijnt in de lijst; berekeningen worden bij het openen
    automatisch gegenereerd.
 
-Er wordt nergens automatisch iets verstuurd of naar een server geüpload — het
-bestand gaat letterlijk alleen via het kanaal dat de cliënt zelf kiest.
+**Beperking om te weten:** omdat het gratis Web3Forms-plan geen bijlagen
+ondersteunt, komt het JSON-bestand nooit automatisch bij de coach terecht —
+alleen de leesbare samenvatting doet dat. Wil je dat de cliënt niets meer
+handmatig hoeft door te sturen, dan is de enige optie een betaald Web3Forms-
+plan (zie hieronder).
+
+**Over de Web3Forms-koppeling:** `client.js` bevat een public **access key**
+(`4e27ae27-18e9-4a54-bdc7-bd8c4e316a48`), aangemaakt op web3forms.com en
+gekoppeld aan `armanbahali@pocketcoachcoms.org`. Dit is bewust een publieke
+sleutel — Web3Forms is zo ontworpen dat deze sleutel zichtbaar in
+client-side code mag staan; misbruik is alleen mogelijk als vervelende mail
+náár dat ene adres, niet als toegang tot data. Wil je het versturen naar een
+ander e-mailadres laten gaan, maak dan een nieuwe access key aan op
+web3forms.com voor dat adres en vervang de waarde van `WEB3FORMS_ACCESS_KEY`
+bovenaan `client.js`.
+
+Wil je later JSON-bijlagen wél automatisch laten meesturen (zodat importeren
+niet meer nodig is), dan moet het Web3Forms-account naar een betaald plan
+(vanaf hun "Pro" tier); in `verstuurNaarArman()` in `client.js` voeg je dan
+weer een `formData.append('attachment', blob, bestandsnaam)`-regel toe met
+het JSON-bestand als `Blob` (zoals ook bij de lokale download gebeurt).
 
 ## Pincode-gate op het coach-dashboard
 
@@ -63,7 +99,7 @@ waarschuwt dat dit *alle* lokale cliëntgegevens op dat apparaat wist.
 | Bestand | Rol |
 |---|---|
 | `index.html` | Cliëntformulier — het enige wat cliënten te zien krijgen |
-| `client.js` | Logica voor `index.html`: concept-autosave, versturen (JSON-download), bedankt-scherm |
+| `client.js` | Logica voor `index.html`: concept-autosave, versturen (Web3Forms-mail + JSON-download), bedankt-scherm |
 | `coach.html` | Coach-dashboard — cliëntenlijst, intake (handmatige invoer), berekeningen, overzicht |
 | `app.js` | Logica voor `coach.html`: rendering, `localStorage`, export/import, pincode-gate |
 | `coach-auth.js` | Lokale pincode-gate voor `coach.html` (zie hierboven) |
@@ -105,7 +141,7 @@ objecten in `localStorage`, en als `{ "client": {...} }` bij export):
     "createdAt": "ISO date",
     "intake": {
       "persoonsgegevens": {
-        "naam": "string", "leeftijd": 0, "lengte": 0, "gewicht": 0,
+        "naam": "string", "email": "string", "leeftijd": 0, "lengte": 0, "gewicht": 0,
         "vetpercentage": 0, "geslacht": "man|vrouw|anders", "trainingservaring": 0
       },
       "huidigeKracht": [
@@ -115,6 +151,7 @@ objecten in `localStorage`, en als `{ "client": {...} }` bij export):
         "tekst": "string",
         "categorie": "vetverlies|spieropbouw|onderhoud|krachttoename"
       },
+      "motivatieMindset": { "motivatie": "string", "mentaleInstelling": "string" },
       "trainingsfrequentie": {
         "huidig": 0,
         "trainingsmomenten": ["string"],
@@ -225,11 +262,15 @@ gekozen en overal in de UI aanpasbaar (stap 2, "Berekeningen controleren"):
 
 ### Als cliënt (`index.html`)
 
-1. Open de link die je van je coach hebt gekregen.
-2. Vul het formulier in het Nederlands in. Tussentijds opslaan gebeurt
-   automatisch (lokaal, alleen op dit apparaat).
-3. **Versturen** → er downloadt een `<naam>-intake.json` bestand.
-4. Stuur dat bestand naar je coach (WhatsApp, e-mail, AirDrop, ...). Klaar.
+1. Open de link die je van Arman hebt gekregen.
+2. Vul het formulier in het Nederlands in — inclusief wat je motiveert en hoe
+   je mentaal in elkaar zit, zodat hij je als persoon leert kennen, niet
+   alleen als cijfers. Tussentijds opslaan gebeurt automatisch (lokaal,
+   alleen op dit apparaat).
+3. **Versturen** → je intake wordt automatisch naar Arman gemaild, én
+   gedownload als `<naam>-intake.json` voor jezelf.
+4. Het bedankt-scherm laat zien of het versturen gelukt is. Zo niet: stuur het
+   gedownloade bestand alsnog even zelf door (WhatsApp, e-mail, AirDrop, ...).
 
 ### Als coach (`coach.html`)
 

@@ -142,6 +142,19 @@ a { color: var(--accent); }
   flex-wrap: wrap;
 }
 
+.verzend-status {
+  border-radius: var(--radius);
+  padding: 0.6em 0.9em;
+  font-size: 0.9rem;
+  border-left: 4px solid var(--text-dim);
+  background: var(--bg);
+  text-align: left;
+}
+
+.verzend-status--bezig { border-left-color: var(--text-dim); color: var(--text-dim); }
+.verzend-status--ok { border-left-color: var(--groen); color: var(--groen); }
+.verzend-status--fout { border-left-color: var(--oranje); color: var(--oranje); }
+
 /* ---------- Layout ---------- */
 main#app {
   max-width: 1100px;

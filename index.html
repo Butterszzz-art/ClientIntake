@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trainingsintake</title>
+<title>Trainingsintake — Arman Bahali</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,7 +13,7 @@
 
 <header class="app-header">
   <div class="app-header__brand">
-    <span class="app-header__mark">PT</span>
+    <span class="app-header__mark">AB</span>
     <h1>Trainingsintake</h1>
   </div>
 </header>
@@ -23,13 +23,14 @@
   <!-- ============ VIEW: INTAKE FORMULIER ============ -->
   <section id="view-form" class="view active">
     <div class="view-header">
-      <h2>Vertel ons over jezelf</h2>
+      <h2>Vertel me over jezelf</h2>
       <div class="view-header__actions">
         <button type="submit" form="intake-form" class="btn btn--accent">Versturen &rarr;</button>
       </div>
     </div>
-    <p class="hint">Vul dit formulier volledig in. Na het versturen krijg je een bestand om naar je coach te sturen
-      (WhatsApp, e-mail of AirDrop) — daarmee is je intake compleet. Er wordt niets automatisch verstuurd of online opgeslagen.</p>
+    <p class="hint">Hoi, ik ben <strong>Arman Bahali</strong> — dit formulier komt rechtstreeks bij mij persoonlijk binnen,
+      niet bij een team. Vul het zo volledig en eerlijk mogelijk in zodat ik je goed kan leren kennen voordat we beginnen.
+      Na het versturen wordt je intake automatisch naar mij gemaild; je krijgt daarnaast ook een bestand als eigen back-up.</p>
 
     <form id="intake-form">
 
@@ -38,6 +39,9 @@
         <div class="form-grid">
           <label>Naam
             <input type="text" id="f-naam" required>
+          </label>
+          <label>E-mailadres (optioneel, zodat ik kan reageren)
+            <input type="email" id="f-email" placeholder="jij@voorbeeld.nl">
           </label>
           <label>Leeftijd (jaar)
             <input type="number" id="f-leeftijd" min="10" max="100" required>
@@ -93,6 +97,17 @@
         </div>
         <label>Toelichting
           <textarea id="f-doel-tekst" rows="2" placeholder="Vrije tekst, bv. specifieke wedstrijd, deadline, motivatie..."></textarea>
+        </label>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend>Motivatie &amp; mindset</legend>
+        <p class="hint">Dit helpt me om je beter te begrijpen als persoon, niet alleen als cijfers op een formulier.</p>
+        <label>Wat motiveert je om dit doel te bereiken?
+          <textarea id="f-motivatie" rows="3" placeholder="Waarom wil je dit? Wat maakt dit belangrijk voor je?"></textarea>
+        </label>
+        <label>Hoe zou je jezelf mentaal omschrijven?
+          <textarea id="f-mentale-instelling" rows="3" placeholder="Bv. doorzettingsvermogen, hoe je omgaat met tegenslag of mindere dagen, stressbestendigheid, wat je in het verleden heeft geholpen (of juist niet) om een doel vol te houden..."></textarea>
         </label>
       </fieldset>
 
@@ -232,9 +247,10 @@
   <section id="view-bedankt" class="view">
     <div class="card bedankt-card">
       <h2>Bedankt, <span id="bedankt-naam"></span>!</h2>
-      <p>Je intake is gedownload als <code id="bedankt-bestandsnaam"></code>.</p>
-      <p class="hint">Stuur dit bestand naar je coach via WhatsApp, e-mail of AirDrop om je intake af te ronden. Het
-        bevat persoonlijke gegevens (o.a. gewicht en blessures) — stuur het daarom alleen rechtstreeks naar je coach.</p>
+      <p id="verzend-status" class="verzend-status">Bezig met versturen naar Arman...</p>
+      <p>Er is ook een kopie gedownload als <code id="bedankt-bestandsnaam"></code> — bewaar die zelf als back-up.</p>
+      <p class="hint">Lukt het versturen onverhoopt niet? Stuur dat bestand dan even naar mij (Arman) via WhatsApp of
+        e-mail. Het bevat persoonlijke gegevens (o.a. gewicht en blessures) — stuur het daarom alleen rechtstreeks naar mij.</p>
       <div class="bedankt-acties">
         <button type="button" class="btn btn--ghost" id="btn-opnieuw-downloaden">Bestand opnieuw downloaden</button>
         <button type="button" class="btn btn--accent" id="btn-nieuw-formulier">Nieuw formulier</button>

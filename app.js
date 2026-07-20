@@ -161,8 +161,20 @@ function renderOverzicht(client) {
   const { intake, calculations: c } = client;
 
   document.getElementById('ov-naam').textContent = intake.persoonsgegevens.naam || client.naam || 'Naamloos';
-  document.getElementById('ov-meta').textContent =
-    `${intake.persoonsgegevens.leeftijd ?? '–'} jaar · ${intake.persoonsgegevens.gewicht ?? '–'} kg · ${intake.persoonsgegevens.vetpercentage ?? '–'}% vet · Doel: ${intake.doel.categorie}`;
+  const metaDelen = [
+    `${intake.persoonsgegevens.leeftijd ?? '–'} jaar`,
+    `${intake.persoonsgegevens.gewicht ?? '–'} kg`,
+    `${intake.persoonsgegevens.vetpercentage ?? '–'}% vet`,
+    `Doel: ${intake.doel.categorie}`,
+  ];
+  if (intake.persoonsgegevens.email) metaDelen.push(intake.persoonsgegevens.email);
+  document.getElementById('ov-meta').textContent = metaDelen.join(' · ');
+
+  const { motivatie, mentaleInstelling } = intake.motivatieMindset ?? {};
+  document.getElementById('ov-motivatie').innerHTML = (motivatie || mentaleInstelling) ? `
+    ${motivatie ? `<p><strong>Motivatie:</strong> ${escapeHtml(motivatie)}</p>` : ''}
+    ${mentaleInstelling ? `<p><strong>Mentale instelling:</strong> ${escapeHtml(mentaleInstelling)}</p>` : ''}
+  ` : '<p class="hint">Niets ingevuld.</p>';
 
   document.getElementById('ov-kerncijfers').innerHTML = [
     kerncijferHtml('BMR', fmt(c.bmr), 'kcal'),

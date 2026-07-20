@@ -75,6 +75,9 @@
           <label>Naam
             <input type="text" id="f-naam" required>
           </label>
+          <label>E-mailadres
+            <input type="email" id="f-email" placeholder="client@voorbeeld.nl">
+          </label>
           <label>Leeftijd (jaar)
             <input type="number" id="f-leeftijd" min="10" max="100" required>
           </label>
@@ -129,6 +132,16 @@
         </div>
         <label>Toelichting
           <textarea id="f-doel-tekst" rows="2" placeholder="Vrije tekst, bv. specifieke wedstrijd, deadline, motivatie..."></textarea>
+        </label>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend>Motivatie &amp; mindset</legend>
+        <label>Wat motiveert de cliënt om dit doel te bereiken?
+          <textarea id="f-motivatie" rows="3"></textarea>
+        </label>
+        <label>Mentale instelling
+          <textarea id="f-mentale-instelling" rows="3" placeholder="Bv. doorzettingsvermogen, omgaan met tegenslag, stressbestendigheid, wat in het verleden heeft geholpen om een doel vol te houden..."></textarea>
         </label>
       </fieldset>
 
@@ -345,6 +358,11 @@
       <section class="card">
         <h3>Kerncijfers</h3>
         <div class="kerncijfers" id="ov-kerncijfers"></div>
+      </section>
+
+      <section class="card">
+        <h3>Motivatie &amp; mindset</h3>
+        <div id="ov-motivatie"></div>
       </section>
 
       <section class="card" id="ov-rode-vlaggen-sectie">
