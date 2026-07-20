@@ -5,15 +5,79 @@ zet een cliënt-intake automatisch om in een trainings- en voedingsoverzicht.
 Draait volledig client-side — data wordt opgeslagen in `localStorage` van de
 browser, met JSON-export/import als portable back-up- en koppelformaat.
 
+## Twee aparte pagina's — cliënt ziet nooit het coach-dashboard
+
+Dit project bestaat uit **twee losstaande HTML-pagina's** die niets met elkaar
+delen behalve de rekenlogica en het JSON-schema:
+
+- **`index.html` (root) — het cliëntformulier.** Dit is de link die je naar
+  cliënten stuurt. Hij bevat alléén de intake: geen cliëntenlijst, geen
+  berekeningen, geen overzicht, geen data van andere cliënten. Na het
+  versturen downloadt de cliënt een `.json`-bestand en stuurt dat zelf naar
+  jou (WhatsApp, e-mail, AirDrop, ...).
+- **`coach.html` — jouw dashboard.** Cliëntenlijst, "Importeer JSON" (voor de
+  bestanden die cliënten terugsturen), de berekeningen-stap en het overzicht.
+  Bookmark deze URL voor jezelf; deel hem niet met cliënten.
+
+Omdat dit een statische site zonder server/login is, is er geen "echte"
+toegangscontrole mogelijk — zie de sectie **Pincode-gate** hieronder voor wat
+dat in de praktijk betekent en waarom dat voor dit gebruik voldoende is.
+
+### Handoff-workflow (geen backend nodig)
+
+1. Coach deelt de link naar `index.html` met een (nieuwe) cliënt.
+2. Cliënt vult het formulier in op zijn/haar eigen apparaat. Tussentijds wordt
+   een concept lokaal in de browser van de cliënt bewaard (`pt-intake:client-draft:v1`),
+   zodat een per ongeluk gesloten tabblad niets kost.
+3. Cliënt klikt **Versturen** → browser downloadt `<naam>-intake.json` → cliënt
+   stuurt dat bestand naar de coach.
+4. Coach opent `coach.html`, klikt **Importeer JSON**, selecteert het bestand.
+   De cliënt verschijnt in de lijst; berekeningen worden bij het openen
+   automatisch gegenereerd.
+
+Er wordt nergens automatisch iets verstuurd of naar een server geüpload — het
+bestand gaat letterlijk alleen via het kanaal dat de cliënt zelf kiest.
+
+## Pincode-gate op het coach-dashboard
+
+`coach.html` vraagt bij het eerste gebruik om een pincode in te stellen, en
+daarna bij elk bezoek (per browsersessie) om die pincode in te voeren voordat
+er iets van het dashboard zichtbaar wordt.
+
+**Belangrijk om te beseffen: dit is geen echte beveiliging.** Er is geen
+server, dus er is geen manier om een wachtwoord écht af te dwingen — iemand
+met devtools-toegang tot deze browser kan de gate omzeilen of de opgeslagen
+pincode-hash wissen. Het doel is puur om te voorkomen dat een cliënt die
+toevallig de dashboard-link tegenkomt (of een voorbijganger op een gedeeld
+apparaat) zomaar cliëntgegevens ziet. Zolang je de `coach.html`-link niet deelt
+met cliënten, is de pincode een extra vangnet, geen vervanging daarvoor.
+
+De pincode-hash (SHA-256, geen plaintext) staat lokaal in `localStorage`
+(`pt-intake:coach-pin-hash:v1`); de ontgrendeling geldt per browsersessie
+(`sessionStorage`). Er is geen "wachtwoord vergeten"-flow met herstel — de
+enige uitweg is de knop **"Pincode vergeten? Reset alles"**, die expliciet
+waarschuwt dat dit *alle* lokale cliëntgegevens op dat apparaat wist.
+
 ## Bestandsstructuur
 
 | Bestand | Rol |
 |---|---|
-| `index.html` | Structuur van de vier schermen (cliëntenlijst, intake, berekeningen, overzicht) |
+| `index.html` | Cliëntformulier — het enige wat cliënten te zien krijgen |
+| `client.js` | Logica voor `index.html`: concept-autosave, versturen (JSON-download), bedankt-scherm |
+| `coach.html` | Coach-dashboard — cliëntenlijst, intake (handmatige invoer), berekeningen, overzicht |
+| `app.js` | Logica voor `coach.html`: rendering, `localStorage`, export/import, pincode-gate |
+| `coach-auth.js` | Lokale pincode-gate voor `coach.html` (zie hierboven) |
+| `intake-form.js` | Gedeeld tussen `client.js` en `app.js`: schema-factory, formulier lezen/invullen, tag-input/kracht-tabel/apparatuur-widgets |
+| `utils.js` | Kleine gedeelde helpers: `escapeHtml`, `fmt`, `num`, `downloadJson` |
+| `calculations.js` | Pure rekenfuncties (geen DOM, geen side-effects) — het herbruikbare contract, alleen gebruikt door `app.js` |
 | `styles.css` | Donker/industrieel thema, responsive, print-stylesheet |
-| `calculations.js` | Pure rekenfuncties (geen DOM, geen side-effects) — het herbruikbare contract |
-| `app.js` | UI-logica: rendering, formulieren, `localStorage`, export/import |
 | `README.md` | Dit bestand |
+
+`index.html` en `coach.html` renderen dezelfde `<form id="intake-form">`
+fieldsets (zelfde element-`id`'s), zodat `intake-form.js` één keer geschreven
+kan worden en door beide pagina's hergebruikt wordt. Dat is bewust HTML-duplicatie
+in ruil voor JS-hergebruik — een normale afweging bij een statische multi-page
+site zonder build-stap/templating.
 
 ## Waarom dit zo is opgezet (toekomstige integratie)
 
@@ -159,28 +223,43 @@ gekozen en overal in de UI aanpasbaar (stap 2, "Berekeningen controleren"):
 
 ## Gebruik
 
-1. Open de app (cliëntenlijst is het startscherm).
-2. **+ Nieuwe cliënt** → vul het intakeformulier in het Nederlands in.
-3. **Opslaan & berekenen** → controleer de berekeningen op stap 2; pas
-   instellingen aan indien nodig (herrekent live) en check de tooltip-teksten
-   onder elk kerncijfer.
-4. **Naar overzicht** → het cliënt-dashboard: kerncijfers, voedingstabellen
-   per maaltijd, trainingsadvies, blessure-aandachtspunten, rode vlaggen.
-5. **Print / PDF** gebruikt de browser-printfunctie met een print-specifieke
-   stylesheet (navigatie verborgen, licht thema voor papier).
-6. **Export JSON** downloadt het volledige cliëntprofiel + berekeningen.
-   **Importeer JSON** op het startscherm leest zo'n bestand weer in (of vult
-   een bestaande cliënt met hetzelfde `id` aan).
+### Als cliënt (`index.html`)
 
-Alle cliënten staan in `localStorage` onder de sleutel `pt-intake:clients:v1`.
-Wissen van browserdata verwijdert ze — exporteer dus regelmatig als back-up.
+1. Open de link die je van je coach hebt gekregen.
+2. Vul het formulier in het Nederlands in. Tussentijds opslaan gebeurt
+   automatisch (lokaal, alleen op dit apparaat).
+3. **Versturen** → er downloadt een `<naam>-intake.json` bestand.
+4. Stuur dat bestand naar je coach (WhatsApp, e-mail, AirDrop, ...). Klaar.
+
+### Als coach (`coach.html`)
+
+1. Eerste keer: stel een pincode in voor het dashboard.
+2. **Importeer JSON** → selecteer een bestand dat een cliënt heeft teruggestuurd.
+   De cliënt verschijnt in de lijst.
+3. Wil je zelf een intake invoeren (bv. tijdens een intakegesprek)? **+ Nieuwe
+   cliënt** → vul het formulier zelf in.
+4. Klik een cliënt aan → **Berekeningen controleren**: pas instellingen aan
+   indien nodig (herrekent live) en check de tooltip-teksten onder elk
+   kerncijfer.
+5. **Naar overzicht** → het cliënt-dashboard: kerncijfers, voedingstabellen
+   per maaltijd, trainingsadvies, blessure-aandachtspunten, rode vlaggen.
+6. **Print / PDF** gebruikt de browser-printfunctie met een print-specifieke
+   stylesheet (navigatie verborgen, licht thema voor papier).
+7. **Export JSON** downloadt het volledige cliëntprofiel + berekeningen (bv.
+   als back-up, of om over te zetten naar een ander apparaat).
+8. **Vergrendel** (knop in de header) sluit het dashboard direct af zonder
+   data te wissen — handig als je even wegloopt bij een gedeeld apparaat.
+
+Alle cliënten staan in `localStorage` onder de sleutel `pt-intake:clients:v1`,
+alléén in de browser waarin je `coach.html` gebruikt. Wissen van browserdata
+verwijdert ze — exporteer dus regelmatig als back-up.
 
 ## Deployen naar GitHub Pages
 
 1. Maak een nieuwe (of gebruik deze) GitHub-repository en push de bestanden:
    ```bash
    git init
-   git add index.html styles.css app.js calculations.js README.md
+   git add index.html client.js coach.html app.js coach-auth.js intake-form.js utils.js calculations.js styles.css README.md
    git commit -m "Initial commit: PT intake app"
    git branch -M main
    git remote add origin <jouw-repo-url>
@@ -188,7 +267,10 @@ Wissen van browserdata verwijdert ze — exporteer dus regelmatig als back-up.
    ```
 2. Ga naar **Settings → Pages** in de GitHub-repo.
 3. Kies bij **Source**: branch `main`, map `/ (root)`.
-4. Na een minuut is de app live op `https://<gebruikersnaam>.github.io/<repo-naam>/`.
+4. Na een minuut is de app live:
+   - Cliëntformulier: `https://<gebruikersnaam>.github.io/<repo-naam>/`
+   - Coach-dashboard: `https://<gebruikersnaam>.github.io/<repo-naam>/coach.html`
+     (bookmark deze zelf — deel hem niet met cliënten)
 
 Voor lokaal testen: gebruik een lokale server (bv. `npx serve .` of
 `python -m http.server`) in plaats van het bestand direct te openen — sommige

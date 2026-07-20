@@ -1,33 +1,11 @@
 import * as calc from './calculations.js';
+import { escapeHtml, fmt, num, downloadJson } from './utils.js';
+import {
+  maakLeegClient, initTagInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij,
+} from './intake-form.js';
+import { initCoachGate, lockNow } from './coach-auth.js';
 
 const STORAGE_KEY = 'pt-intake:clients:v1';
-
-const APPARATUUR_OPTIES = [
-  'Squat rek', 'Hyperextension bench', 'Chin-up belt (assist)', 'Leg curl machine',
-  'Leg extension machine', 'TRX', 'Powerlifting bands', 'Powerlifting chains',
-  'Verstelbare bank', 'Kabel machine', 'Smith machine', 'Dumbbells tot 50kg+',
-];
-
-const STANDAARD_KRACHT_RIJEN = ['Bench press', 'Squat', 'Chin-up', 'Overhead press'];
-
-// ---------- Utilities ----------
-
-function escapeHtml(str) {
-  return String(str ?? '').replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[c]));
-}
-
-function fmt(n, decimals = 0) {
-  if (n == null || Number.isNaN(n)) return '–';
-  return Number(n).toLocaleString('nl-NL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-}
-
-function num(value, fallback = null) {
-  if (value === '' || value == null) return fallback;
-  const n = Number(value);
-  return Number.isNaN(n) ? fallback : n;
-}
 
 // ---------- Storage ----------
 
@@ -58,241 +36,9 @@ function vindClient(id) {
   return laadClients().find((c) => c.id === id) ?? null;
 }
 
-// ---------- Schema factory ----------
-
-function maakLeegClient() {
-  return {
-    id: crypto.randomUUID(),
-    naam: '',
-    createdAt: new Date().toISOString(),
-    intake: {
-      persoonsgegevens: {
-        naam: '', leeftijd: null, lengte: null, gewicht: null, vetpercentage: null,
-        geslacht: 'man', trainingservaring: null,
-      },
-      huidigeKracht: STANDAARD_KRACHT_RIJEN.map((oefening) => ({ oefening, kg: 0, herhalingen: 0, sets: 0 })),
-      doel: { tekst: '', categorie: 'onderhoud' },
-      trainingsfrequentie: { huidig: 3, trainingsmomenten: [], baan: { type: '', urenZittend: null, urenStaand: null } },
-      blessures: { tekst: '', vermijdenOefeningen: [] },
-      dieet: { huidig: '', voorkeuren: [], afkeuren: [] },
-      peds: { gebruikt: false, toelichting: '' },
-      lifestyle: { activityLevel: 'sedentair', stressLevel: 'gemiddeld', slaap: { uren: null, kwaliteit: 'matig' }, cafeine: null },
-      vetpercentageMeting: { huidplooimeter: false },
-      materiaal: { laagstePlaat: null, dumbbellStapgrootte: null, apparatuur: [] },
-      supplementen: '',
-      genen: { polsomtrek: null, enkelomtrek: null, gewichtVoorheen: '', zwareBaby: false },
-    },
-    instellingen: {},
-    calculations: null,
-  };
-}
-
 // ---------- App state ----------
 
 let huidigeClient = null;
-
-// ---------- Tag input component ----------
-
-function initTagInput(container) {
-  container.tags = [];
-
-  function render() {
-    container.innerHTML = '';
-    for (const tag of container.tags) {
-      const el = document.createElement('span');
-      el.className = 'tag';
-      el.innerHTML = `${escapeHtml(tag)} <button type="button" aria-label="Verwijder">&times;</button>`;
-      el.querySelector('button').addEventListener('click', () => {
-        container.tags = container.tags.filter((t) => t !== tag);
-        render();
-      });
-      container.appendChild(el);
-    }
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = container.dataset.placeholder || '';
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ',') {
-        e.preventDefault();
-        const waarde = input.value.trim().replace(/,$/, '');
-        if (waarde && !container.tags.includes(waarde)) {
-          container.tags.push(waarde);
-          render();
-        }
-      } else if (e.key === 'Backspace' && !input.value && container.tags.length) {
-        container.tags.pop();
-        render();
-      }
-    });
-    container.appendChild(input);
-  }
-
-  container.setTags = (tags) => { container.tags = [...(tags ?? [])]; render(); };
-  container.getTags = () => [...container.tags];
-  render();
-  return container;
-}
-
-// ---------- Kracht tabel ----------
-
-function renderKrachtTabel(rijen) {
-  const tbody = document.getElementById('kracht-tbody');
-  tbody.innerHTML = '';
-  for (const rij of rijen) tbody.appendChild(maakKrachtRij(rij));
-}
-
-function maakKrachtRij(rij) {
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td><input type="text" class="k-oefening" value="${escapeHtml(rij.oefening)}"></td>
-    <td><input type="number" step="0.5" class="k-kg" value="${rij.kg ?? 0}"></td>
-    <td><input type="number" class="k-reps" value="${rij.herhalingen ?? 0}"></td>
-    <td><input type="number" class="k-sets" value="${rij.sets ?? 0}"></td>
-    <td><button type="button" class="btn btn--danger btn--small" data-remove-rij>&times;</button></td>
-  `;
-  tr.querySelector('[data-remove-rij]').addEventListener('click', () => tr.remove());
-  return tr;
-}
-
-function leesKrachtTabel() {
-  return [...document.getElementById('kracht-tbody').querySelectorAll('tr')].map((tr) => ({
-    oefening: tr.querySelector('.k-oefening').value.trim(),
-    kg: num(tr.querySelector('.k-kg').value, 0),
-    herhalingen: num(tr.querySelector('.k-reps').value, 0),
-    sets: num(tr.querySelector('.k-sets').value, 0),
-  })).filter((r) => r.oefening);
-}
-
-// ---------- Apparatuur checklist ----------
-
-function renderApparatuurChecklist(geselecteerd) {
-  const el = document.getElementById('apparatuur-checklist');
-  el.innerHTML = APPARATUUR_OPTIES.map((optie) => `
-    <label>
-      <input type="checkbox" value="${escapeHtml(optie)}" ${geselecteerd.includes(optie) ? 'checked' : ''}>
-      ${escapeHtml(optie)}
-    </label>
-  `).join('');
-}
-
-function leesApparatuurChecklist() {
-  return [...document.querySelectorAll('#apparatuur-checklist input:checked')].map((i) => i.value);
-}
-
-// ---------- Intake form <-> data ----------
-
-function vulIntakeFormIn(client) {
-  const i = client.intake;
-  document.getElementById('f-naam').value = i.persoonsgegevens.naam;
-  document.getElementById('f-leeftijd').value = i.persoonsgegevens.leeftijd ?? '';
-  document.getElementById('f-lengte').value = i.persoonsgegevens.lengte ?? '';
-  document.getElementById('f-gewicht').value = i.persoonsgegevens.gewicht ?? '';
-  document.getElementById('f-vetpercentage').value = i.persoonsgegevens.vetpercentage ?? '';
-  document.getElementById('f-geslacht').value = i.persoonsgegevens.geslacht;
-  document.getElementById('f-trainingservaring').value = i.persoonsgegevens.trainingservaring ?? '';
-  document.getElementById('f-huidplooimeter').checked = !!i.vetpercentageMeting.huidplooimeter;
-
-  renderKrachtTabel(i.huidigeKracht);
-
-  document.getElementById('f-doel-categorie').value = i.doel.categorie;
-  document.getElementById('f-doel-tekst').value = i.doel.tekst;
-
-  document.getElementById('f-trainingsfrequentie').value = i.trainingsfrequentie.huidig ?? 3;
-  document.getElementById('f-baan-type').value = i.trainingsfrequentie.baan.type;
-  document.getElementById('f-baan-uren-zittend').value = i.trainingsfrequentie.baan.urenZittend ?? '';
-  document.getElementById('f-baan-uren-staand').value = i.trainingsfrequentie.baan.urenStaand ?? '';
-  document.getElementById('tags-trainingsmomenten').setTags(i.trainingsfrequentie.trainingsmomenten);
-
-  document.getElementById('f-blessures-tekst').value = i.blessures.tekst;
-  document.getElementById('tags-vermijden-oefeningen').setTags(i.blessures.vermijdenOefeningen);
-
-  document.getElementById('f-dieet-huidig').value = i.dieet.huidig;
-  document.getElementById('tags-voorkeuren').setTags(i.dieet.voorkeuren);
-  document.getElementById('tags-afkeuren').setTags(i.dieet.afkeuren);
-
-  document.getElementById('f-peds-gebruikt').checked = !!i.peds.gebruikt;
-  document.getElementById('f-peds-toelichting').value = i.peds.toelichting;
-
-  document.getElementById('f-activity-level').value = i.lifestyle.activityLevel;
-  document.getElementById('f-stress-level').value = i.lifestyle.stressLevel;
-  document.getElementById('f-slaap-uren').value = i.lifestyle.slaap.uren ?? '';
-  document.getElementById('f-slaap-kwaliteit').value = i.lifestyle.slaap.kwaliteit;
-  document.getElementById('f-cafeine').value = i.lifestyle.cafeine ?? '';
-
-  document.getElementById('f-laagste-plaat').value = i.materiaal.laagstePlaat ?? '';
-  document.getElementById('f-dumbbell-stap').value = i.materiaal.dumbbellStapgrootte ?? '';
-  renderApparatuurChecklist(i.materiaal.apparatuur);
-
-  document.getElementById('f-supplementen').value = i.supplementen;
-
-  document.getElementById('f-polsomtrek').value = i.genen.polsomtrek ?? '';
-  document.getElementById('f-enkelomtrek').value = i.genen.enkelomtrek ?? '';
-  document.getElementById('f-gewicht-voorheen').value = i.genen.gewichtVoorheen;
-  document.getElementById('f-zware-baby').checked = !!i.genen.zwareBaby;
-}
-
-function leesIntakeForm() {
-  return {
-    persoonsgegevens: {
-      naam: document.getElementById('f-naam').value.trim(),
-      leeftijd: num(document.getElementById('f-leeftijd').value),
-      lengte: num(document.getElementById('f-lengte').value),
-      gewicht: num(document.getElementById('f-gewicht').value),
-      vetpercentage: num(document.getElementById('f-vetpercentage').value),
-      geslacht: document.getElementById('f-geslacht').value,
-      trainingservaring: num(document.getElementById('f-trainingservaring').value),
-    },
-    huidigeKracht: leesKrachtTabel(),
-    doel: {
-      tekst: document.getElementById('f-doel-tekst').value.trim(),
-      categorie: document.getElementById('f-doel-categorie').value,
-    },
-    trainingsfrequentie: {
-      huidig: num(document.getElementById('f-trainingsfrequentie').value, 3),
-      trainingsmomenten: document.getElementById('tags-trainingsmomenten').getTags(),
-      baan: {
-        type: document.getElementById('f-baan-type').value.trim(),
-        urenZittend: num(document.getElementById('f-baan-uren-zittend').value),
-        urenStaand: num(document.getElementById('f-baan-uren-staand').value),
-      },
-    },
-    blessures: {
-      tekst: document.getElementById('f-blessures-tekst').value.trim(),
-      vermijdenOefeningen: document.getElementById('tags-vermijden-oefeningen').getTags(),
-    },
-    dieet: {
-      huidig: document.getElementById('f-dieet-huidig').value.trim(),
-      voorkeuren: document.getElementById('tags-voorkeuren').getTags(),
-      afkeuren: document.getElementById('tags-afkeuren').getTags(),
-    },
-    peds: {
-      gebruikt: document.getElementById('f-peds-gebruikt').checked,
-      toelichting: document.getElementById('f-peds-toelichting').value.trim(),
-    },
-    lifestyle: {
-      activityLevel: document.getElementById('f-activity-level').value,
-      stressLevel: document.getElementById('f-stress-level').value,
-      slaap: {
-        uren: num(document.getElementById('f-slaap-uren').value),
-        kwaliteit: document.getElementById('f-slaap-kwaliteit').value,
-      },
-      cafeine: num(document.getElementById('f-cafeine').value),
-    },
-    vetpercentageMeting: { huidplooimeter: document.getElementById('f-huidplooimeter').checked },
-    materiaal: {
-      laagstePlaat: num(document.getElementById('f-laagste-plaat').value),
-      dumbbellStapgrootte: num(document.getElementById('f-dumbbell-stap').value),
-      apparatuur: leesApparatuurChecklist(),
-    },
-    supplementen: document.getElementById('f-supplementen').value.trim(),
-    genen: {
-      polsomtrek: num(document.getElementById('f-polsomtrek').value),
-      enkelomtrek: num(document.getElementById('f-enkelomtrek').value),
-      gewichtVoorheen: document.getElementById('f-gewicht-voorheen').value.trim(),
-      zwareBaby: document.getElementById('f-zware-baby').checked,
-    },
-  };
-}
 
 // ---------- Berekening view ----------
 
@@ -477,7 +223,7 @@ function renderClientLijst() {
 
   container.innerHTML = '';
   if (!clients.length) {
-    container.innerHTML = '<div class="empty-state">Nog geen cliënten. Klik op "+ Nieuwe cliënt" om te starten.</div>';
+    container.innerHTML = '<div class="empty-state">Nog geen cliënten. Klik op "+ Nieuwe cliënt" of importeer een ingevulde intake.</div>';
     return;
   }
 
@@ -517,16 +263,6 @@ function openClient(id) {
 }
 
 // ---------- Export / import ----------
-
-function downloadJson(bestandsnaam, data) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = bestandsnaam;
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 function exporteerClient(client) {
   const naam = (client.intake.persoonsgegevens.naam || client.naam || 'client').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
@@ -568,10 +304,6 @@ function toonView(naam) {
 }
 
 // ---------- Event wiring ----------
-
-function initTagInputs() {
-  for (const el of document.querySelectorAll('.tag-input')) initTagInput(el);
-}
 
 function wireEvents() {
   document.querySelectorAll('[data-nav]').forEach((btn) => {
@@ -625,9 +357,13 @@ function wireEvents() {
 
 // ---------- Init ----------
 
+document.getElementById('btn-vergrendel').addEventListener('click', lockNow);
+
 document.addEventListener('DOMContentLoaded', () => {
-  initTagInputs();
-  wireEvents();
-  renderClientLijst();
-  toonView('lijst');
+  initCoachGate(() => {
+    initTagInputs();
+    wireEvents();
+    renderClientLijst();
+    toonView('lijst');
+  });
 });

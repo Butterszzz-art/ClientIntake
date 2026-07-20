@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trainingsintake</title>
+<title>Coach dashboard — PT Intake</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -11,25 +11,61 @@
 </head>
 <body>
 
-<header class="app-header">
+<div id="lock-overlay" class="lock-overlay"></div>
+
+<header class="app-header" hidden>
   <div class="app-header__brand">
     <span class="app-header__mark">PT</span>
-    <h1>Trainingsintake</h1>
+    <h1>Coach dashboard</h1>
+  </div>
+  <div class="app-header__acties">
+    <button type="button" class="btn btn--ghost btn--small" id="btn-vergrendel">Vergrendel</button>
+  </div>
+  <div class="app-header__client" id="header-client-info" hidden>
+    <span id="header-client-naam"></span>
+    <button type="button" class="btn btn--ghost" data-nav="lijst">&larr; Cliëntenlijst</button>
   </div>
 </header>
 
-<main id="app">
+<main id="app" hidden>
 
-  <!-- ============ VIEW: INTAKE FORMULIER ============ -->
-  <section id="view-form" class="view active">
+  <!-- ============ VIEW: CLIENTENLIJST ============ -->
+  <section id="view-lijst" class="view">
     <div class="view-header">
-      <h2>Vertel ons over jezelf</h2>
+      <h2>Cliënten</h2>
       <div class="view-header__actions">
-        <button type="submit" form="intake-form" class="btn btn--accent">Versturen &rarr;</button>
+        <label class="btn btn--ghost" for="import-json-input">Importeer JSON</label>
+        <input type="file" id="import-json-input" accept="application/json" hidden>
+        <button type="button" class="btn btn--accent" id="btn-nieuwe-client">+ Nieuwe cliënt</button>
       </div>
     </div>
-    <p class="hint">Vul dit formulier volledig in. Na het versturen krijg je een bestand om naar je coach te sturen
-      (WhatsApp, e-mail of AirDrop) — daarmee is je intake compleet. Er wordt niets automatisch verstuurd of online opgeslagen.</p>
+    <p class="hint">Alle data wordt lokaal in je browser opgeslagen (localStorage). Exporteer regelmatig als back-up.</p>
+    <p class="hint">Stuur cliënten naar de <strong>intake-link</strong> (het losse cliëntformulier) — niet naar dit dashboard.
+      Zij sturen je na het invullen een JSON-bestand terug dat je hier importeert.</p>
+    <div id="client-lijst" class="client-lijst"></div>
+    <template id="tpl-client-kaart">
+      <article class="client-kaart">
+        <div class="client-kaart__main" data-action="open">
+          <h3 class="client-kaart__naam"></h3>
+          <p class="client-kaart__meta"></p>
+        </div>
+        <div class="client-kaart__acties">
+          <button type="button" class="btn btn--ghost btn--small" data-action="export">Export</button>
+          <button type="button" class="btn btn--danger btn--small" data-action="verwijder">Verwijder</button>
+        </div>
+      </article>
+    </template>
+  </section>
+
+  <!-- ============ VIEW: INTAKE FORMULIER (handmatige invoer door coach) ============ -->
+  <section id="view-intake" class="view">
+    <div class="view-header">
+      <h2>Intake formulier</h2>
+      <div class="view-header__actions">
+        <button type="button" class="btn btn--ghost" data-nav="lijst">Annuleren</button>
+        <button type="submit" form="intake-form" class="btn btn--accent">Opslaan &amp; berekenen &rarr;</button>
+      </div>
+    </div>
 
     <form id="intake-form">
 
@@ -140,7 +176,7 @@
         <legend>PEDs</legend>
         <label class="checkbox-label">
           <input type="checkbox" id="f-peds-gebruikt">
-          Ik gebruik PEDs
+          Cliënt gebruikt PEDs
         </label>
         <label>Toelichting
           <textarea id="f-peds-toelichting" rows="2"></textarea>
@@ -182,7 +218,6 @@
 
       <fieldset class="card">
         <legend>Materiaal &amp; toegang</legend>
-        <p class="hint">Waar ga je trainen? Vink aan wat beschikbaar is (bv. thuis-gym of je sportschool).</p>
         <div class="form-grid">
           <label>Gewicht laagste plaat (kg)
             <input type="number" step="0.25" id="f-laagste-plaat" min="0" max="20">
@@ -221,29 +256,135 @@
         </div>
       </fieldset>
 
-      <div class="view-header__actions" style="justify-content: flex-end; margin-bottom: 2rem;">
-        <button type="submit" class="btn btn--accent">Versturen &rarr;</button>
-      </div>
-
     </form>
   </section>
 
-  <!-- ============ VIEW: BEDANKT ============ -->
-  <section id="view-bedankt" class="view">
-    <div class="card bedankt-card">
-      <h2>Bedankt, <span id="bedankt-naam"></span>!</h2>
-      <p>Je intake is gedownload als <code id="bedankt-bestandsnaam"></code>.</p>
-      <p class="hint">Stuur dit bestand naar je coach via WhatsApp, e-mail of AirDrop om je intake af te ronden. Het
-        bevat persoonlijke gegevens (o.a. gewicht en blessures) — stuur het daarom alleen rechtstreeks naar je coach.</p>
-      <div class="bedankt-acties">
-        <button type="button" class="btn btn--ghost" id="btn-opnieuw-downloaden">Bestand opnieuw downloaden</button>
-        <button type="button" class="btn btn--accent" id="btn-nieuw-formulier">Nieuw formulier</button>
+  <!-- ============ VIEW: BEREKENINGEN (STAP 2) ============ -->
+  <section id="view-berekening" class="view">
+    <div class="view-header">
+      <h2>Berekeningen controleren</h2>
+      <div class="view-header__actions">
+        <button type="button" class="btn btn--ghost" data-nav="intake-terug">&larr; Intake aanpassen</button>
+        <button type="button" class="btn btn--accent" id="btn-naar-overzicht">Naar overzicht &rarr;</button>
       </div>
+    </div>
+    <p class="hint">Pas de instellingen aan om te controleren of de uitkomst logisch is. De berekening herrekent live.</p>
+
+    <div class="berekening-layout">
+      <div class="card">
+        <h3>Instellingen</h3>
+        <div class="form-grid">
+          <label>Energiebalans-factor (rustdag)
+            <input type="number" step="0.01" id="i-energiebalans-factor">
+            <small class="toelichting">Onderhoud × deze factor = beoogde inname rustdag. &lt;1 = tekort, &gt;1 = overschot.</small>
+          </label>
+          <label>Eiwit (g/kg lichaamsgewicht)
+            <input type="number" step="0.05" id="i-eiwit-factor" min="1.6" max="2.2">
+            <small class="toelichting">Richtlijn: 1.6–1.8 g/kg.</small>
+          </label>
+          <label>Vet (% van REE)
+            <input type="number" step="0.01" id="i-vet-percentage" min="0.2" max="0.6">
+            <small class="toelichting">Standaard 40% van rustdag-energieverbruik.</small>
+          </label>
+          <label>Trainingsdagen/week
+            <input type="number" id="i-trainingsdagen" min="1" max="7">
+          </label>
+          <label>Trainingsduur (minuten)
+            <input type="number" id="i-trainingsduur" min="10" max="240">
+          </label>
+          <label>MET-waarde training
+            <input type="number" step="0.1" id="i-met">
+          </label>
+          <label>PAL (activiteitsfactor)
+            <input type="number" step="0.01" id="i-pal">
+            <small class="toelichting">Automatisch uit lifestyle, hier overschrijfbaar.</small>
+          </label>
+          <label>TEF (voedsel-thermogenese)
+            <input type="number" step="0.01" id="i-tef">
+          </label>
+          <label>Aantal maaltijden
+            <input type="number" id="i-aantal-maaltijden" min="2" max="6">
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Kerncijfers</h3>
+        <div class="kerncijfers" id="berekening-kerncijfers"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Macro's per dag</h3>
+      <div id="berekening-macros" class="kerncijfers"></div>
+    </div>
+
+    <div class="card">
+      <h3>Frame size &amp; 1RM schattingen</h3>
+      <div id="berekening-frame-rm"></div>
+    </div>
+  </section>
+
+  <!-- ============ VIEW: OVERZICHT (STAP 3) ============ -->
+  <section id="view-overzicht" class="view">
+    <div class="view-header no-print">
+      <h2>Overzicht</h2>
+      <div class="view-header__actions">
+        <button type="button" class="btn btn--ghost" data-nav="berekening-terug">&larr; Berekeningen</button>
+        <button type="button" class="btn btn--ghost" id="btn-export-json">Export JSON</button>
+        <button type="button" class="btn btn--accent" id="btn-print">Print / PDF</button>
+      </div>
+    </div>
+
+    <div id="overzicht-print-area" class="overzicht">
+      <header class="overzicht__header">
+        <h2 id="ov-naam"></h2>
+        <p id="ov-meta" class="hint"></p>
+      </header>
+
+      <section class="card">
+        <h3>Kerncijfers</h3>
+        <div class="kerncijfers" id="ov-kerncijfers"></div>
+      </section>
+
+      <section class="card" id="ov-rode-vlaggen-sectie">
+        <h3>Rode vlaggen</h3>
+        <div id="ov-rode-vlaggen"></div>
+      </section>
+
+      <section class="card">
+        <h3>Trainingsadvies</h3>
+        <div id="ov-trainingsadvies"></div>
+      </section>
+
+      <section class="card">
+        <h3>Voeding — rustdag vs. trainingsdag</h3>
+        <div class="voedingstabellen">
+          <div>
+            <h4>Rustdag</h4>
+            <table class="data-tabel" id="ov-voeding-rustdag"></table>
+          </div>
+          <div>
+            <h4>Trainingsdag</h4>
+            <table class="data-tabel" id="ov-voeding-trainingsdag"></table>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Blessures &amp; aandachtspunten</h3>
+        <div id="ov-blessures"></div>
+      </section>
+
+      <section class="card">
+        <h3>Krachtniveau</h3>
+        <table class="data-tabel" id="ov-kracht"></table>
+      </section>
     </div>
   </section>
 
 </main>
 
-<script type="module" src="client.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
