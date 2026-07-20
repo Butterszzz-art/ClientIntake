@@ -6,11 +6,30 @@
 
 import { escapeHtml, num } from './utils.js';
 
+// Stable canonical keys (not translated) — these are the values actually
+// stored in intake.materiaal.apparatuur, so the schema stays consistent no
+// matter which language a client filled the form in. Display labels are
+// looked up via `labelFn`, which defaults to Dutch (used by coach.html).
 export const APPARATUUR_OPTIES = [
-  'Squat rek', 'Hyperextension bench', 'Chin-up belt (assist)', 'Leg curl machine',
-  'Leg extension machine', 'TRX', 'Powerlifting bands', 'Powerlifting chains',
-  'Verstelbare bank', 'Kabel machine', 'Smith machine', 'Dumbbells tot 50kg+',
+  'squat_rack', 'hyperextension_bench', 'chinup_belt', 'leg_curl_machine',
+  'leg_extension_machine', 'trx', 'powerlifting_bands', 'powerlifting_chains',
+  'adjustable_bench', 'cable_machine', 'smith_machine', 'dumbbells_50kg',
 ];
+
+const STANDAARD_APPARATUUR_LABELS = {
+  squat_rack: 'Squat rek',
+  hyperextension_bench: 'Hyperextension bench',
+  chinup_belt: 'Chin-up belt (assist)',
+  leg_curl_machine: 'Leg curl machine',
+  leg_extension_machine: 'Leg extension machine',
+  trx: 'TRX',
+  powerlifting_bands: 'Powerlifting bands',
+  powerlifting_chains: 'Powerlifting chains',
+  adjustable_bench: 'Verstelbare bank',
+  cable_machine: 'Kabel machine',
+  smith_machine: 'Smith machine',
+  dumbbells_50kg: 'Dumbbells tot 50kg+',
+};
 
 export const STANDAARD_KRACHT_RIJEN = ['Bench press', 'Squat', 'Chin-up', 'Overhead press'];
 
@@ -122,12 +141,12 @@ export function leesKrachtTabel() {
 
 // ---------- Apparatuur checklist ----------
 
-export function renderApparatuurChecklist(geselecteerd) {
+export function renderApparatuurChecklist(geselecteerd, labelFn = (key) => STANDAARD_APPARATUUR_LABELS[key] ?? key) {
   const el = document.getElementById('apparatuur-checklist');
-  el.innerHTML = APPARATUUR_OPTIES.map((optie) => `
+  el.innerHTML = APPARATUUR_OPTIES.map((key) => `
     <label>
-      <input type="checkbox" value="${escapeHtml(optie)}" ${geselecteerd.includes(optie) ? 'checked' : ''}>
-      ${escapeHtml(optie)}
+      <input type="checkbox" value="${escapeHtml(key)}" ${geselecteerd.includes(key) ? 'checked' : ''}>
+      ${escapeHtml(labelFn(key))}
     </label>
   `).join('');
 }
@@ -138,7 +157,7 @@ export function leesApparatuurChecklist() {
 
 // ---------- Intake form <-> data ----------
 
-export function vulIntakeFormIn(client) {
+export function vulIntakeFormIn(client, apparatuurLabelFn) {
   const i = client.intake;
   document.getElementById('f-naam').value = i.persoonsgegevens.naam;
   document.getElementById('f-email').value = i.persoonsgegevens.email ?? '';
@@ -182,7 +201,7 @@ export function vulIntakeFormIn(client) {
 
   document.getElementById('f-laagste-plaat').value = i.materiaal.laagstePlaat ?? '';
   document.getElementById('f-dumbbell-stap').value = i.materiaal.dumbbellStapgrootte ?? '';
-  renderApparatuurChecklist(i.materiaal.apparatuur);
+  renderApparatuurChecklist(i.materiaal.apparatuur, apparatuurLabelFn);
 
   document.getElementById('f-supplementen').value = i.supplementen;
 

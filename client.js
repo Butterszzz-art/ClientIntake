@@ -1,10 +1,14 @@
 import { downloadJson } from './utils.js';
-import { maakLeegClient, initTagInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij } from './intake-form.js';
+import {
+  maakLeegClient, initTagInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij, renderApparatuurChecklist,
+} from './intake-form.js';
+import { TALEN, vertaal, apparatuurLabel } from './i18n.js';
 
 // This page never talks to the coach dashboard: no client list, no
 // calculations, no localStorage key shared with app.js. It only ever reads
 // this one draft key, so nothing here can expose another client's data.
 const DRAFT_KEY = 'pt-intake:client-draft:v1';
+const TAAL_KEY = 'pt-intake:client-taal:v1';
 
 // Public Web3Forms access key, tied to Arman's inbox — safe to expose in
 // client-side code (Web3Forms rate-limits by key, no secret is involved).
@@ -12,6 +16,8 @@ const WEB3FORMS_ACCESS_KEY = '4e27ae27-18e9-4a54-bdc7-bd8c4e316a48';
 const WEB3FORMS_ENDPOINT = 'https://api.web3forms.com/submit';
 
 let huidigClient = null;
+let huidigeTaal = 'nl';
+let huidigeStatusSleutel = 'status.bezig';
 let laatsteBestandsnaam = '';
 let conceptTimer = null;
 
@@ -34,8 +40,52 @@ function slaConceptOp() {
   }
 }
 
+// ---------- Taal (i18n) ----------
+
+function bepaalStartTaal() {
+  const opgeslagen = localStorage.getItem(TAAL_KEY);
+  if (opgeslagen && TALEN.includes(opgeslagen)) return opgeslagen;
+  const browserTaal = (navigator.language || 'nl').slice(0, 2).toLowerCase();
+  return TALEN.includes(browserTaal) ? browserTaal : 'nl';
+}
+
+function herrenderApparatuur() {
+  const geselecteerd = [...document.querySelectorAll('#apparatuur-checklist input:checked')].map((i) => i.value);
+  renderApparatuurChecklist(geselecteerd, (key) => apparatuurLabel(huidigeTaal, key));
+}
+
+function pasVertalingToe(taal) {
+  huidigeTaal = taal;
+  document.documentElement.lang = taal;
+  document.title = vertaal(taal, 'meta.title');
+
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    el.textContent = vertaal(taal, el.dataset.i18n);
+  });
+
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    const tekst = vertaal(taal, el.dataset.i18nPlaceholder);
+    if (el.classList.contains('tag-input')) {
+      el.dataset.placeholder = tekst;
+      el.setTags?.(el.getTags?.() ?? []);
+    } else {
+      el.placeholder = tekst;
+    }
+  });
+
+  herrenderApparatuur();
+
+  // The generic loop above just reset the status line to its default
+  // ("sending...") text — restore whatever it actually says right now.
+  document.getElementById('verzend-status').textContent = vertaal(taal, huidigeStatusSleutel);
+
+  document.getElementById('taal-keuze').value = taal;
+  localStorage.setItem(TAAL_KEY, taal);
+}
+
 // Plain-text summary for the email body, so Arman can read the intake
-// straight in his inbox without opening the JSON attachment.
+// straight in his inbox. Kept in Dutch regardless of the client's chosen
+// UI language, since Arman is the only reader.
 function bouwSamenvatting(client) {
   const i = client.intake;
   const regels = [];
@@ -134,9 +184,10 @@ async function verstuurNaarArman(client) {
   return result.success === true;
 }
 
-function zetVerzendStatus(tekst, variant) {
+function zetVerzendStatus(sleutel, variant) {
+  huidigeStatusSleutel = sleutel;
   const el = document.getElementById('verzend-status');
-  el.textContent = tekst;
+  el.textContent = vertaal(huidigeTaal, sleutel);
   el.className = `verzend-status verzend-status--${variant}`;
 }
 
@@ -150,26 +201,27 @@ async function verstuur() {
 
   document.getElementById('bedankt-naam').textContent = huidigClient.naam || 'daar';
   document.getElementById('bedankt-bestandsnaam').textContent = laatsteBestandsnaam;
-  zetVerzendStatus('Bezig met versturen naar Arman...', 'bezig');
+  zetVerzendStatus('status.bezig', 'bezig');
   toonView('bedankt');
 
   try {
     const gelukt = await verstuurNaarArman(huidigClient);
     if (!gelukt) throw new Error('Web3Forms meldde geen succes');
-    zetVerzendStatus('Verstuurd naar Arman — je intake is aangekomen.', 'ok');
+    zetVerzendStatus('status.ok', 'ok');
   } catch {
-    zetVerzendStatus('Automatisch versturen is niet gelukt. Stuur het gedownloade bestand hieronder even zelf naar mij door.', 'fout');
+    zetVerzendStatus('status.fout', 'fout');
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  pasVertalingToe(bepaalStartTaal());
   initTagInputs();
 
   const opgeslagenConcept = localStorage.getItem(DRAFT_KEY);
   if (opgeslagenConcept) {
     try {
       const concept = JSON.parse(opgeslagenConcept);
-      if (concept?.intake && confirm('We vonden een eerder gestart formulier op dit apparaat. Wil je daarmee verdergaan?\n\nAnnuleren = opnieuw beginnen.')) {
+      if (concept?.intake && confirm(vertaal(huidigeTaal, 'confirm.eerderFormulier'))) {
         huidigClient = concept;
       }
     } catch {
@@ -177,7 +229,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
   if (!huidigClient) huidigClient = maakLeegClient();
-  vulIntakeFormIn(huidigClient);
+  vulIntakeFormIn(huidigClient, (key) => apparatuurLabel(huidigeTaal, key));
+
+  document.getElementById('taal-keuze').addEventListener('change', (e) => {
+    pasVertalingToe(e.target.value);
+  });
 
   document.getElementById('intake-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -200,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-nieuw-formulier').addEventListener('click', () => {
     localStorage.removeItem(DRAFT_KEY);
     huidigClient = maakLeegClient();
-    vulIntakeFormIn(huidigClient);
+    vulIntakeFormIn(huidigClient, (key) => apparatuurLabel(huidigeTaal, key));
     toonView('form');
   });
 });

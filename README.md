@@ -94,6 +94,34 @@ De pincode-hash (SHA-256, geen plaintext) staat lokaal in `localStorage`
 enige uitweg is de knop **"Pincode vergeten? Reset alles"**, die expliciet
 waarschuwt dat dit *alle* lokale cliëntgegevens op dat apparaat wist.
 
+## Taal — nl / en / es / pt (alleen op het cliëntformulier)
+
+`index.html` heeft een taalkeuze rechtsboven (Nederlands/English/Español/Português).
+Bij het eerste bezoek wordt de browsertaal gebruikt als die een van de vier is,
+anders Nederlands; de keuze van de cliënt wordt daarna onthouden
+(`pt-intake:client-taal:v1` in `localStorage`) voor een volgend bezoek.
+
+Alle labels, knoppen, hints en het bedankt-scherm vertalen mee. Twee dingen
+vertalen bewust **niet**:
+- **De e-mail naar Arman** (`bouwSamenvatting()` in `client.js`) staat altijd
+  in het Nederlands, ongeacht de taal van de cliënt — Arman is de enige lezer.
+- **Waardes die deel zijn van het schema** (`doel.categorie`, `geslacht`,
+  `activityLevel`, `stressLevel`, `slaap.kwaliteit`) blijven de vaste
+  Nederlandse enum-strings uit het schema (bv. `"vetverlies"`); alleen de
+  zichtbare tekst in de `<option>` verandert mee met de taal.
+
+`coach.html` is en blijft volledig Nederlandstalig — het is Armans eigen tool,
+geen cliëntgerichte pagina.
+
+**Schema-wijziging om te weten:** `intake.materiaal.apparatuur` bevatte
+voorheen Nederlandse labels (bv. `"Squat rek"`) als waarde. Om dezelfde data
+consistent te houden ongeacht de taal waarin een cliënt het formulier invult,
+zijn dit nu vaste, onvertaalde sleutels (bv. `"squat_rack"`) — zie
+`APPARATUUR_OPTIES` in `intake-form.js` voor de volledige lijst en
+`i18n.js` voor de vertaalde labels per taal. Oudere geëxporteerde JSON-bestanden
+met de vorige (Nederlandse) waarden blijven gewoon importeren, maar tonen dan
+de rauwe oude labels in plaats van vertaalde labels.
+
 ## Bestandsstructuur
 
 | Bestand | Rol |
@@ -104,9 +132,10 @@ waarschuwt dat dit *alle* lokale cliëntgegevens op dat apparaat wist.
 | `app.js` | Logica voor `coach.html`: rendering, `localStorage`, export/import, pincode-gate |
 | `coach-auth.js` | Lokale pincode-gate voor `coach.html` (zie hierboven) |
 | `intake-form.js` | Gedeeld tussen `client.js` en `app.js`: schema-factory, formulier lezen/invullen, tag-input/kracht-tabel/apparatuur-widgets |
+| `i18n.js` | Vertaalwoordenboek (nl/en/es/pt) en helpers, alleen gebruikt door `client.js` — `coach.html` blijft Nederlandstalig |
 | `utils.js` | Kleine gedeelde helpers: `escapeHtml`, `fmt`, `num`, `downloadJson` |
 | `calculations.js` | Pure rekenfuncties (geen DOM, geen side-effects) — het herbruikbare contract, alleen gebruikt door `app.js` |
-| `styles.css` | Donker/industrieel thema, responsive, print-stylesheet |
+| `styles.css` | Donker thema (zwart/donkergroen/lichtgroen), responsive, print-stylesheet |
 | `README.md` | Dit bestand |
 
 `index.html` en `coach.html` renderen dezelfde `<form id="intake-form">`
@@ -167,7 +196,7 @@ objecten in `localStorage`, en als `{ "client": {...} }` bij export):
         "cafeine": 0
       },
       "vetpercentageMeting": { "huidplooimeter": false },
-      "materiaal": { "laagstePlaat": 0, "dumbbellStapgrootte": 0, "apparatuur": ["string"] },
+      "materiaal": { "laagstePlaat": 0, "dumbbellStapgrootte": 0, "apparatuur": ["squat_rack", "..."] },
       "supplementen": "string",
       "genen": { "polsomtrek": 0, "enkelomtrek": 0, "gewichtVoorheen": "string", "zwareBaby": false }
     },
