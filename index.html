@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PT Intake &amp; Overzicht</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="app-header__brand">
+    <span class="app-header__mark">PT</span>
+    <h1>Intake &amp; Overzicht</h1>
+  </div>
+  <div class="app-header__client" id="header-client-info" hidden>
+    <span id="header-client-naam"></span>
+    <button type="button" class="btn btn--ghost" data-nav="lijst">&larr; Cliëntenlijst</button>
+  </div>
+</header>
+
+<main id="app">
+
+  <!-- ============ VIEW: CLIENTENLIJST ============ -->
+  <section id="view-lijst" class="view">
+    <div class="view-header">
+      <h2>Cliënten</h2>
+      <div class="view-header__actions">
+        <label class="btn btn--ghost" for="import-json-input">Importeer JSON</label>
+        <input type="file" id="import-json-input" accept="application/json" hidden>
+        <button type="button" class="btn btn--accent" id="btn-nieuwe-client">+ Nieuwe cliënt</button>
+      </div>
+    </div>
+    <p class="hint">Alle data wordt lokaal in je browser opgeslagen (localStorage). Exporteer regelmatig als back-up.</p>
+    <div id="client-lijst" class="client-lijst"></div>
+    <template id="tpl-client-kaart">
+      <article class="client-kaart">
+        <div class="client-kaart__main" data-action="open">
+          <h3 class="client-kaart__naam"></h3>
+          <p class="client-kaart__meta"></p>
+        </div>
+        <div class="client-kaart__acties">
+          <button type="button" class="btn btn--ghost btn--small" data-action="export">Export</button>
+          <button type="button" class="btn btn--danger btn--small" data-action="verwijder">Verwijder</button>
+        </div>
+      </article>
+    </template>
+  </section>
+
+  <!-- ============ VIEW: INTAKE FORMULIER ============ -->
+  <section id="view-intake" class="view">
+    <div class="view-header">
+      <h2>Intake formulier</h2>
+      <div class="view-header__actions">
+        <button type="button" class="btn btn--ghost" data-nav="lijst">Annuleren</button>
+        <button type="submit" form="intake-form" class="btn btn--accent">Opslaan &amp; berekenen &rarr;</button>
+      </div>
+    </div>
+
+    <form id="intake-form">
+
+      <fieldset class="card">
+        <legend>Persoonsgegevens</legend>
+        <div class="form-grid">
+          <label>Naam
+            <input type="text" id="f-naam" required>
+          </label>
+          <label>Leeftijd (jaar)
+            <input type="number" id="f-leeftijd" min="10" max="100" required>
+          </label>
+          <label>Lengte (cm)
+            <input type="number" id="f-lengte" min="100" max="250" required>
+          </label>
+          <label>Gewicht (kg)
+            <input type="number" step="0.1" id="f-gewicht" min="30" max="250" required>
+          </label>
+          <label>Vetpercentage (%)
+            <input type="number" step="0.1" id="f-vetpercentage" min="3" max="60" required>
+          </label>
+          <label>Geslacht
+            <select id="f-geslacht">
+              <option value="man">Man</option>
+              <option value="vrouw">Vrouw</option>
+              <option value="anders">Anders</option>
+            </select>
+          </label>
+          <label>Trainingservaring (jaar)
+            <input type="number" step="0.5" id="f-trainingservaring" min="0" max="60">
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="f-huidplooimeter">
+            Vetpercentage gemeten met huidplooimeter
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend>Huidige kracht</legend>
+        <table class="kracht-tabel">
+          <thead>
+            <tr><th>Oefening</th><th>Kg</th><th>Herhalingen</th><th>Sets</th><th></th></tr>
+          </thead>
+          <tbody id="kracht-tbody"></tbody>
+        </table>
+        <button type="button" class="btn btn--ghost btn--small" id="btn-kracht-rij-toevoegen">+ Rij toevoegen</button>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend>Doel</legend>
+        <div class="form-grid">
+          <label>Categorie
+            <select id="f-doel-categorie">
+              <option value="vetverlies">Vetverlies</option>
+              <option value="spieropbouw">Spieropbouw</option>
+              <option value="onderhoud">Onderhoud</option>
+              <option value="krachttoename">Krachttoename</option>
+            </select>
+          </label>
+        </div>
+        <label>Toelichting
+          <textarea id="f-doel-tekst" rows="2" placeholder="Vrije tekst, bv. specifieke wedstrijd, deadline, motivatie..."></textarea>
+        </label>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend>Trainingsfrequentie &amp; baan</legend>
+        <div class="form-grid">
+          <label>Trainingsfrequentie huidig (dagen/week)
+            <input type="number" id="f-trainingsfrequentie" min="1" max="7" value="3">
+          </label>
+          <label>Type baan
+            <input type="text" id="f-baan-type" placeholder="bv. kantoorbaan">
+          </label>
+          <label>Uren zittend per dag
+            <input type="number" step="0.5" id="f-baan-uren-zittend" min="0" max="24">
+          </label>
+          <label>Uren staand per dag
+            <input type="number" step="0.5" id="f-baan-uren-staand" min="0" max="24">
+          </label>
+        </div>
+        <label>Trainingsmomenten (tijdvakken)</label>
+        <div class="tag-input" id="tags-trainingsmomenten" data-placeholder="bv. ma/wo/vr 18:00-19:00, Enter om toe te voegen"></div>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend>Blessures</legend>
+        <label>Toelichting
+          <textarea id="f-blessures-tekst" rows="2" placeholder="Vrije tekst over blessures/klachten"></textarea>
+        </label>
+        <label>Oefeningen die vermeden moeten worden</label>
+        <div class="tag-input" id="tags-vermijden-oefeningen" data-placeholder="Naam oefening, Enter om toe te voegen"></div>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend>Dieet</legend>
+        <label>Huidig dieet
+          <textarea id="f-dieet-huidig" rows="2" placeholder="Vrije tekst"></textarea>
+        </label>
+        <label>Voorkeuren</label>
+        <div class="tag-input" id="tags-voorkeuren" data-placeholder="bv. veel eiwit, Enter om toe te voegen"></div>
+        <label>Afkeuren</label>
+        <div class="tag-input" id="tags-afkeuren" data-placeholder="bv. geen groente, glutenvrij, Enter om toe te voegen"></div>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend>PEDs</legend>
+        <label class="checkbox-label">
+          <input type="checkbox" id="f-peds-gebruikt">
+          Cliënt gebruikt PEDs
+        </label>
+        <label>Toelichting
+          <textarea id="f-peds-toelichting" rows="2"></textarea>
+        </label>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend>Lifestyle</legend>
+        <div class="form-grid">
+          <label>Activiteitsniveau (buiten training)
+            <select id="f-activity-level">
+              <option value="sedentair">Sedentair</option>
+              <option value="licht actief">Licht actief</option>
+              <option value="actief">Actief</option>
+            </select>
+          </label>
+          <label>Stressniveau
+            <select id="f-stress-level">
+              <option value="laag">Laag</option>
+              <option value="gemiddeld">Gemiddeld</option>
+              <option value="hoog">Hoog</option>
+            </select>
+          </label>
+          <label>Slaap (uren/nacht)
+            <input type="number" step="0.5" id="f-slaap-uren" min="0" max="14">
+          </label>
+          <label>Slaapkwaliteit
+            <select id="f-slaap-kwaliteit">
+              <option value="slecht">Slecht</option>
+              <option value="matig">Matig</option>
+              <option value="goed">Goed</option>
+            </select>
+          </label>
+          <label>Cafeïne-inname (mg/dag)
+            <input type="number" id="f-cafeine" min="0" max="2000">
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend>Materiaal &amp; toegang</legend>
+        <div class="form-grid">
+          <label>Gewicht laagste plaat (kg)
+            <input type="number" step="0.25" id="f-laagste-plaat" min="0" max="20">
+          </label>
+          <label>Dumbbell-stapgrootte (kg)
+            <input type="number" step="0.5" id="f-dumbbell-stap" min="0" max="10">
+          </label>
+        </div>
+        <label>Beschikbare apparatuur</label>
+        <div class="checklist" id="apparatuur-checklist"></div>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend>Supplementen</legend>
+        <label>Vrije tekst
+          <textarea id="f-supplementen" rows="2"></textarea>
+        </label>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend>Genen</legend>
+        <div class="form-grid">
+          <label>Polsomtrek (cm)
+            <input type="number" step="0.1" id="f-polsomtrek" min="10" max="30">
+          </label>
+          <label>Enkelomtrek (cm)
+            <input type="number" step="0.1" id="f-enkelomtrek" min="12" max="35">
+          </label>
+          <label>Gewicht voorheen (context)
+            <input type="text" id="f-gewicht-voorheen" placeholder="bv. was 65kg 2 jaar geleden">
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="f-zware-baby">
+            Was een zware baby (&gt;4kg bij geboorte)
+          </label>
+        </div>
+      </fieldset>
+
+    </form>
+  </section>
+
+  <!-- ============ VIEW: BEREKENINGEN (STAP 2) ============ -->
+  <section id="view-berekening" class="view">
+    <div class="view-header">
+      <h2>Berekeningen controleren</h2>
+      <div class="view-header__actions">
+        <button type="button" class="btn btn--ghost" data-nav="intake-terug">&larr; Intake aanpassen</button>
+        <button type="button" class="btn btn--accent" id="btn-naar-overzicht">Naar overzicht &rarr;</button>
+      </div>
+    </div>
+    <p class="hint">Pas de instellingen aan om te controleren of de uitkomst logisch is. De berekening herrekent live.</p>
+
+    <div class="berekening-layout">
+      <div class="card">
+        <h3>Instellingen</h3>
+        <div class="form-grid">
+          <label>Energiebalans-factor (rustdag)
+            <input type="number" step="0.01" id="i-energiebalans-factor">
+            <small class="toelichting">Onderhoud × deze factor = beoogde inname rustdag. &lt;1 = tekort, &gt;1 = overschot.</small>
+          </label>
+          <label>Eiwit (g/kg lichaamsgewicht)
+            <input type="number" step="0.05" id="i-eiwit-factor" min="1.6" max="2.2">
+            <small class="toelichting">Richtlijn: 1.6–1.8 g/kg.</small>
+          </label>
+          <label>Vet (% van REE)
+            <input type="number" step="0.01" id="i-vet-percentage" min="0.2" max="0.6">
+            <small class="toelichting">Standaard 40% van rustdag-energieverbruik.</small>
+          </label>
+          <label>Trainingsdagen/week
+            <input type="number" id="i-trainingsdagen" min="1" max="7">
+          </label>
+          <label>Trainingsduur (minuten)
+            <input type="number" id="i-trainingsduur" min="10" max="240">
+          </label>
+          <label>MET-waarde training
+            <input type="number" step="0.1" id="i-met">
+          </label>
+          <label>PAL (activiteitsfactor)
+            <input type="number" step="0.01" id="i-pal">
+            <small class="toelichting">Automatisch uit lifestyle, hier overschrijfbaar.</small>
+          </label>
+          <label>TEF (voedsel-thermogenese)
+            <input type="number" step="0.01" id="i-tef">
+          </label>
+          <label>Aantal maaltijden
+            <input type="number" id="i-aantal-maaltijden" min="2" max="6">
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Kerncijfers</h3>
+        <div class="kerncijfers" id="berekening-kerncijfers"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Macro's per dag</h3>
+      <div id="berekening-macros" class="kerncijfers"></div>
+    </div>
+
+    <div class="card">
+      <h3>Frame size &amp; 1RM schattingen</h3>
+      <div id="berekening-frame-rm"></div>
+    </div>
+  </section>
+
+  <!-- ============ VIEW: OVERZICHT (STAP 3) ============ -->
+  <section id="view-overzicht" class="view">
+    <div class="view-header no-print">
+      <h2>Overzicht</h2>
+      <div class="view-header__actions">
+        <button type="button" class="btn btn--ghost" data-nav="berekening-terug">&larr; Berekeningen</button>
+        <button type="button" class="btn btn--ghost" id="btn-export-json">Export JSON</button>
+        <button type="button" class="btn btn--accent" id="btn-print">Print / PDF</button>
+      </div>
+    </div>
+
+    <div id="overzicht-print-area" class="overzicht">
+      <header class="overzicht__header">
+        <h2 id="ov-naam"></h2>
+        <p id="ov-meta" class="hint"></p>
+      </header>
+
+      <section class="card">
+        <h3>Kerncijfers</h3>
+        <div class="kerncijfers" id="ov-kerncijfers"></div>
+      </section>
+
+      <section class="card" id="ov-rode-vlaggen-sectie">
+        <h3>Rode vlaggen</h3>
+        <div id="ov-rode-vlaggen"></div>
+      </section>
+
+      <section class="card">
+        <h3>Trainingsadvies</h3>
+        <div id="ov-trainingsadvies"></div>
+      </section>
+
+      <section class="card">
+        <h3>Voeding — rustdag vs. trainingsdag</h3>
+        <div class="voedingstabellen">
+          <div>
+            <h4>Rustdag</h4>
+            <table class="data-tabel" id="ov-voeding-rustdag"></table>
+          </div>
+          <div>
+            <h4>Trainingsdag</h4>
+            <table class="data-tabel" id="ov-voeding-trainingsdag"></table>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Blessures &amp; aandachtspunten</h3>
+        <div id="ov-blessures"></div>
+      </section>
+
+      <section class="card">
+        <h3>Krachtniveau</h3>
+        <table class="data-tabel" id="ov-kracht"></table>
+      </section>
+    </div>
+  </section>
+
+</main>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
