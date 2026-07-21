@@ -1,10 +1,10 @@
-import * as calc from './calculations.js?v=2';
-import { escapeHtml, fmt, num, downloadJson } from './utils.js?v=2';
+import * as calc from './calculations.js?v=3';
+import { escapeHtml, fmt, num, downloadJson } from './utils.js?v=3';
 import {
   maakLeegClient, initTagInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij,
-} from './intake-form.js?v=2';
-import { initCoachGate, lockNow } from './coach-auth.js?v=2';
-import { db } from './firebase.js?v=2';
+} from './intake-form.js?v=3';
+import { initCoachGate, lockNow } from './coach-auth.js?v=3';
+import { db } from './firebase.js?v=3';
 import {
   collection, doc, setDoc, getDoc, deleteDoc, query, orderBy, onSnapshot,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
@@ -46,6 +46,7 @@ function vulInstellingenFormIn(client) {
     pal: calc.palVoorActiviteitsniveau(intake.lifestyle.activityLevel),
     tef: calc.STANDAARD_TEF,
     aantalMaaltijden: 4,
+    postTrainingBoost: calc.POST_TRAINING_BOOST_STANDAARD,
   };
   const overrides = Object.fromEntries(
     Object.entries(client.instellingen ?? {}).filter(([, v]) => v != null),
@@ -60,6 +61,7 @@ function vulInstellingenFormIn(client) {
   document.getElementById('i-pal').value = s.pal;
   document.getElementById('i-tef').value = s.tef;
   document.getElementById('i-aantal-maaltijden').value = s.aantalMaaltijden;
+  document.getElementById('i-post-training-boost').value = s.postTrainingBoost;
 }
 
 function leesInstellingenForm() {
@@ -73,6 +75,7 @@ function leesInstellingenForm() {
     pal: num(document.getElementById('i-pal').value),
     tef: num(document.getElementById('i-tef').value),
     aantalMaaltijden: num(document.getElementById('i-aantal-maaltijden').value),
+    postTrainingBoost: num(document.getElementById('i-post-training-boost').value),
   };
 }
 
@@ -109,13 +112,16 @@ function renderBerekeningResultaten(c) {
     kerncijferHtml('Rustdag verbruik (REE)', fmt(c.ree), 'kcal', 'BMR × PAL × TEF'),
     kerncijferHtml('Totaal trainingsdag', fmt(c.totaalTrainingsdag), 'kcal', 'REE + (EE × TEF)'),
     kerncijferHtml('Onderhoud/dag', fmt(c.onderhoudPerDag), 'kcal', 'gewogen gemiddelde over de week'),
-    kerncijferHtml('Beoogd — rustdag', fmt(c.beoogdeInnameRustdag), 'kcal', 'onderhoud × energiebalans-factor'),
+    kerncijferHtml('Beoogd — rustdag', fmt(c.beoogdeInnameRustdag), 'kcal',
+      `richtbereik ${fmt(c.bereiken.beoogdeInname.min)}–${fmt(c.bereiken.beoogdeInname.max)} kcal — kies in overleg met cliënt`),
     kerncijferHtml('Beoogd — trainingsdag', fmt(c.beoogdeInnameTrainingsdag), 'kcal', 'beoogd rustdag + EE'),
   ].join('');
 
   document.getElementById('berekening-macros').innerHTML = [
-    kerncijferHtml('Eiwit', fmt(c.macros.eiwit, 1), 'g/dag', 'factor × lichaamsgewicht'),
-    kerncijferHtml('Vet', fmt(c.macros.vet, 1), 'g/dag', '% van REE / 9'),
+    kerncijferHtml('Eiwit', fmt(c.macros.eiwit, 1), 'g/dag',
+      `richtbereik ${fmt(c.bereiken.eiwit.min, 0)}–${fmt(c.bereiken.eiwit.maxSlank, 0)} g (1.6–2.4 g/kg, hoger bij veganisme/PEDs)`),
+    kerncijferHtml('Vet', fmt(c.macros.vet, 1), 'g/dag',
+      `richtbereik ${fmt(c.bereiken.vet.min, 0)}–${fmt(c.bereiken.vet.max, 0)} g (20–40% van REE)`),
     kerncijferHtml('Koolhydraten — rustdag', fmt(c.macros.koolhydratenRustdag, 1), 'g', 'restant van beoogde kcal'),
     kerncijferHtml('Koolhydraten — trainingsdag', fmt(c.macros.koolhydratenTrainingsdag, 1), 'g', 'restant van beoogde kcal'),
   ].join('');
@@ -178,10 +184,13 @@ function renderOverzicht(client) {
   document.getElementById('ov-kerncijfers').innerHTML = [
     kerncijferHtml('BMR', fmt(c.bmr), 'kcal'),
     kerncijferHtml('Onderhoud/dag', fmt(c.onderhoudPerDag), 'kcal'),
-    kerncijferHtml('Beoogd — rustdag', fmt(c.beoogdeInnameRustdag), 'kcal'),
+    kerncijferHtml('Beoogd — rustdag', fmt(c.beoogdeInnameRustdag), 'kcal',
+      `richtbereik ${fmt(c.bereiken.beoogdeInname.min)}–${fmt(c.bereiken.beoogdeInname.max)} kcal`),
     kerncijferHtml('Beoogd — trainingsdag', fmt(c.beoogdeInnameTrainingsdag), 'kcal'),
-    kerncijferHtml('Eiwit', fmt(c.macros.eiwit, 1), 'g'),
-    kerncijferHtml('Vet', fmt(c.macros.vet, 1), 'g'),
+    kerncijferHtml('Eiwit', fmt(c.macros.eiwit, 1), 'g',
+      `richtbereik ${fmt(c.bereiken.eiwit.min, 0)}–${fmt(c.bereiken.eiwit.maxSlank, 0)} g`),
+    kerncijferHtml('Vet', fmt(c.macros.vet, 1), 'g',
+      `richtbereik ${fmt(c.bereiken.vet.min, 0)}–${fmt(c.bereiken.vet.max, 0)} g`),
     kerncijferHtml('Koolhydraten rustdag', fmt(c.macros.koolhydratenRustdag, 1), 'g'),
     kerncijferHtml('Koolhydraten trainingsdag', fmt(c.macros.koolhydratenTrainingsdag, 1), 'g'),
   ].join('');
@@ -281,8 +290,10 @@ function berekenVoedingRekentool() {
   const koolRust = calc.koolhydratenGrammen(beoogdRustdag, eiwit, vet);
   const koolTraining = calc.koolhydratenGrammen(beoogdTrainingsdag, eiwit, vet);
 
-  const rustRijen = calc.verdeelMaaltijden({ eiwit, vet, koolhydraten: koolRust }, maaltijden);
-  const trainRijen = calc.verdeelMaaltijden({ eiwit, vet, koolhydraten: koolTraining }, maaltijden);
+  // Fixed at 2x (not the app-wide default) to stay identical to the
+  // original eigen-casus-calculator.html, which hardcodes doubling.
+  const rustRijen = calc.verdeelMaaltijden({ eiwit, vet, koolhydraten: koolRust }, maaltijden, 2);
+  const trainRijen = calc.verdeelMaaltijden({ eiwit, vet, koolhydraten: koolTraining }, maaltijden, 2);
 
   document.getElementById('rekentool-voeding-resultaat').innerHTML = `
     <div class="kerncijfers">
@@ -488,8 +499,8 @@ function wireEvents() {
     toonView('berekening');
   });
 
-  document.querySelectorAll('#view-berekening input').forEach((input) => {
-    input.addEventListener('input', herberekenEnRender);
+  document.querySelectorAll('#view-berekening input, #view-berekening select').forEach((veld) => {
+    veld.addEventListener('input', herberekenEnRender);
   });
 
   document.getElementById('btn-naar-overzicht').addEventListener('click', () => {

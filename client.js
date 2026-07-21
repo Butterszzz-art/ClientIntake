@@ -1,9 +1,9 @@
-import { downloadJson } from './utils.js?v=2';
+import { downloadJson } from './utils.js?v=3';
 import {
   maakLeegClient, initTagInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij, renderApparatuurChecklist,
-} from './intake-form.js?v=2';
-import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=2';
-import { db } from './firebase.js?v=2';
+} from './intake-form.js?v=3';
+import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=3';
+import { db } from './firebase.js?v=3';
 import { doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // This page never talks to the coach dashboard: no client list, no

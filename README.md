@@ -305,7 +305,10 @@ entrypoint dat de app zelf aanroept; de rest zijn de bouwstenen daaronder
 | `repTargetGewicht(rm, gewenstPercentage1RM)` | kg, % | kg | Werkgewicht bij een gewenst %1RM |
 | `werkcapaciteit(oudeSet, nieuweSet)` | getal, getal | % | Procentuele progressie tussen twee metingen (bv. volume) |
 | `frameSizeCheck(enkelomtrek)` | cm | `{enkelomtrek, afwijking, binnenNorm}` | Frame-size check (Karakas & Bozkir, 2007; norm 21.9 cm ±1.3 cm) |
-| `verdeelMaaltijden(totalen, aantalMaaltijden)` | `{eiwit,vet,koolhydraten}`, 2–6 | array van maaltijden | Verdeelt macro's over maaltijden; eiwit dubbel na training |
+| `verdeelMaaltijden(totalen, aantalMaaltijden, postTrainingMultiplier=1.5)` | `{eiwit,vet,koolhydraten}`, 2–6, factor | array van maaltijden | Verdeelt macro's over maaltijden; eiwit ×multiplier na training (1.5 standaard, 2 als er maar 1 maaltijd na training zit) |
+| `eiwitBereik(gewicht)` | kg | `{min, praktisch, maxSlank}` (g) | Persoonlijk eiwit-richtbereik: 1.6–1.8–2.4 g/kg |
+| `vetBereik(ree)` | kcal | `{min, max}` (g) | Persoonlijk vet-richtbereik: 20–40% van REE |
+| `beoogdeInnameBereik(onderhoudPerDag, doelCategorie)` | kcal, string | `{min, max}` (kcal) | Richtbereik voor de streefinname, per doel (zie hieronder) |
 | `palVoorActiviteitsniveau(activityLevel)` | string | getal | Standaard PAL-waarde per activiteitsniveau |
 | `energiebalansFactorVoorDoel(doelCategorie)` | string | getal | Standaard energiebalans-factor per doel |
 | `bepaalSplitsdagen(trainingsdagenPerWeek)` | dagen/week | `{naam, dagen}` | Voorgestelde trainingssplit |
@@ -323,9 +326,48 @@ gekozen en overal in de UI aanpasbaar (stap 2, "Berekeningen controleren"):
 - **TEF** (voedsel-thermogenese): `1.1` (10%).
 - **Energiebalans-factor** per doel: vetverlies `0.8`, onderhoud `1.0`,
   spieropbouw `1.1`, krachttoename `1.05`.
-- **Eiwit**: `1.8` g/kg (instelbaar 1.6–1.8 g/kg, zoals gevraagd).
-- **Vet**: `40%` van de REE.
+- **Eiwit**: `1.8` g/kg (instelbaar 1.6–3.7 g/kg).
+- **Vet**: `40%` van de REE (instelbaar 20–40%+).
 - **Aantal maaltijden**: `4` (instelbaar 2–6).
+- **Post-training eiwitboost**: `1.5×` (instelbaar naar `2×`).
+
+### Richtbereiken in plaats van één vast getal
+
+De kerncijfers en macro's tonen naast het huidige gekozen getal ook een
+**persoonlijk richtbereik** (bv. "Eiwit: 153 g — richtbereik 112–168 g").
+Reden: de brontabellen (Menno PT Course, modules 11/13/14) geven zelf al
+ranges, geen vaste getallen — en de juiste plek binnen die range hangt af van
+een gesprek met de cliënt (adherentie, voorkeuren, hoe agressief ze willen
+zijn), niet van een formule alleen. De instellingen blijven daarom altijd
+gewoon aanpasbaar; het bereik is context, geen harde grens.
+
+Herkomst van elk bereik:
+- **Eiwit** (`eiwitBereik`): 1.6 g/kg (RCT-afkappunt) tot 1.8 g/kg (praktisch
+  optimum) tot 2.2–2.4 g/kg (slanke lifters, hoog volume) — Module 11. Nog
+  hoger bij veganisme (≥2.3 g/kg) of PED-gebruik (2.1–3.7 g/kg); dat wordt
+  niet automatisch toegepast, maar als hint getoond zodat je het bewust kunt
+  overschrijven.
+- **Vet** (`vetBereik`): 20% (absoluut minimum, hormonale gezondheid) tot 40%
+  (optimum voor anabole hormonen) van de REE — Module 13. Let op: Module 13's
+  geschreven tekst framet dit percentage als aandeel van de *totale
+  energie-inname*, terwijl de rekenformule (en de originele
+  `eigen-casus-calculator.html`) het als aandeel van de REE berekent. Dat is
+  een spanning die al in het brondocument zelf zit — de app volgt hier
+  bewust de rekentool, niet de tekst, voor consistentie met je eigen
+  cursusmateriaal.
+- **Beoogde inname** (`beoogdeInnameBereik`): voor vetverlies 10–30% tekort
+  op onderhoud (Module 14, letterlijk overgenomen). Voor spieropbouw/bulken
+  een vast surplus van 200–500 kcal boven onderhoud (ook Module 14 — dit is
+  een vast aantal kcal, geen percentage). Voor "onderhoud" en
+  "krachttoename" geeft de cursus geen expliciet cijfer — de gebruikte
+  bandbreedtes (±3% resp. +100 tot +300 kcal) zijn een redelijke inschatting,
+  geen geciteerd getal.
+- **Post-training eiwitboost**: Module 11 noemt "50% meer eiwit" als de
+  normale regel voor maaltijden na training, en "100% meer" specifiek als er
+  maar één maaltijd tussen training en bedtijd zit. De app paste voorheen
+  altijd de 100%-regel (dubbele portie) toe op élke maaltijd na training —
+  dat is nu een expliciete keuze in de instellingen (1.5× standaard, 2× voor
+  de één-maaltijd-situatie) in plaats van een vaste aanname.
 - **Trainingsduur**: `60` minuten, **MET**: `5.7`.
 
 ## Gebruik
@@ -404,7 +446,7 @@ browsers blokkeren ES-module `import`/`export` op het `file://`-protocol.
 
 Elk lokaal bestand (`.js`, `.css`) wordt zowel in de `<script>`/`<link>`-tags
 als in elke interne `import`-statement gevolgd door een versie-query,
-bv. `client.js?v=2`. Zonder build-stap is dit de eenvoudigste manier om te
+bv. `client.js?v=3`. Zonder build-stap is dit de eenvoudigste manier om te
 voorkomen dat een browser na een update stilletjes een oude, gecachete versie
 van een bestand blijft gebruiken (dit gebeurde echt: een knop werkte niet meer
 na een wijziging, puur omdat de browser nog de oude `client.js` in cache had).

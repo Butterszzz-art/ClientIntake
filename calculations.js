@@ -18,6 +18,27 @@ export const STANDAARD_ENERGIEBALANS_FACTOR = {
   krachttoename: 1.05,
 };
 
+// Ranges from the course material (Modules 11/13/14) — these are deliberately
+// wide, since the actual number within the range should follow from a
+// conversation with the client (adherence history, preferences, how
+// aggressive they want to be), not be picked automatically.
+export const EIWIT_BEREIK_G_PER_KG = { min: 1.6, praktisch: 1.8, maxSlank: 2.4 };
+export const VET_BEREIK_PERCENTAGE_REE = { min: 0.2, max: 0.4 };
+
+// Cutting/bulking ranges as given in Module 14. "Onderhoud" and
+// "krachttoename" aren't defined numerically in that module (only vetverlies
+// and spieropbouw are) — those two are a reasonable judgment call, not a
+// cited figure; see README.
+export const ENERGIEBALANS_BEREIK = {
+  vetverlies: { type: 'factor', min: 0.70, max: 0.90 }, // Module 14: 10-30% tekort
+  onderhoud: { type: 'factor', min: 0.97, max: 1.03 },
+  spieropbouw: { type: 'surplusKcal', min: 200, max: 500 }, // Module 14: ~200-500 kcal surplus
+  krachttoename: { type: 'surplusKcal', min: 100, max: 300 },
+};
+
+export const POST_TRAINING_BOOST_STANDAARD = 1.5; // Module 11: "50% meer" normaal
+export const POST_TRAINING_BOOST_ENKELE_MAALTIJD = 2.0; // Module 11: "100% meer" bij 1 maaltijd na training
+
 const STANDAARD_OEFENINGEN_GEVOELIGHEID = {
   knie: ['squat', 'front squat', 'lunges', 'leg press', 'leg extension', 'bulgarian split squat'],
   'onderrug': ['deadlift', 'good morning', 'bent-over row', 'romanian deadlift'],
@@ -101,14 +122,16 @@ export function frameSizeCheck(enkelomtrek) {
 }
 
 // Splits macro totals over `aantalMaaltijden` meals. Meals in the second
-// half of the day (post-training) get double the protein weight of meals
-// in the first half — e.g. at 4 meals: 1-1-2-2. Fat and carbs are spread
-// evenly across all meals.
-export function verdeelMaaltijden(totalen, aantalMaaltijden) {
+// half of the day (post-training) get `postTrainingMultiplier`× the protein
+// weight of meals in the first half. Module 11 gives 1.5x ("50% meer") as
+// the normal case, and 2.0x ("100% meer") specifically when there's only
+// one meal between training and bed — this is a coach choice, not fixed.
+// Fat and carbs are spread evenly across all meals either way.
+export function verdeelMaaltijden(totalen, aantalMaaltijden, postTrainingMultiplier = POST_TRAINING_BOOST_STANDAARD) {
   const n = Math.max(2, Math.min(6, aantalMaaltijden));
   const preCount = Math.floor(n / 2);
   const postCount = n - preCount;
-  const gewichten = [...Array(preCount).fill(1), ...Array(postCount).fill(2)];
+  const gewichten = [...Array(preCount).fill(1), ...Array(postCount).fill(postTrainingMultiplier)];
   const totaalGewicht = gewichten.reduce((a, b) => a + b, 0);
 
   return gewichten.map((gewicht, i) => {
@@ -118,13 +141,43 @@ export function verdeelMaaltijden(totalen, aantalMaaltijden) {
     const kcal = eiwit * 4 + vet * 9 + koolhydraten * 4;
     return {
       maaltijd: i + 1,
-      postTraining: gewicht === 2,
+      postTraining: gewicht > 1,
       eiwit: round(eiwit),
       vet: round(vet),
       koolhydraten: round(koolhydraten),
       kcal: round(kcal, 0),
     };
   });
+}
+
+// Personalized protein range (grams) for this client's bodyweight — for
+// display alongside the coach's chosen point value, not as an enforced limit.
+export function eiwitBereik(gewicht) {
+  return {
+    min: round(EIWIT_BEREIK_G_PER_KG.min * gewicht),
+    praktisch: round(EIWIT_BEREIK_G_PER_KG.praktisch * gewicht),
+    maxSlank: round(EIWIT_BEREIK_G_PER_KG.maxSlank * gewicht),
+  };
+}
+
+// Personalized fat range (grams) for this client's REE.
+export function vetBereik(ree) {
+  return {
+    min: round((VET_BEREIK_PERCENTAGE_REE.min * ree) / 9),
+    max: round((VET_BEREIK_PERCENTAGE_REE.max * ree) / 9),
+  };
+}
+
+// Personalized calorie-target range for the given goal category. Cutting is
+// expressed as a factor of maintenance (Module 14's 10-30% tekort); the bulk
+// goals are expressed as a flat kcal surplus on top of maintenance, since
+// that's how Module 14 frames them (not a percentage).
+export function beoogdeInnameBereik(onderhoudPerDag, doelCategorie) {
+  const bereik = ENERGIEBALANS_BEREIK[doelCategorie] ?? ENERGIEBALANS_BEREIK.onderhoud;
+  if (bereik.type === 'surplusKcal') {
+    return { min: round(onderhoudPerDag + bereik.min, 0), max: round(onderhoudPerDag + bereik.max, 0) };
+  }
+  return { min: round(onderhoudPerDag * bereik.min, 0), max: round(onderhoudPerDag * bereik.max, 0) };
 }
 
 export function palVoorActiviteitsniveau(activityLevel) {
@@ -240,6 +293,7 @@ export function berekenClient(intake, instellingen = {}) {
   const eiwitFactor = instellingen.eiwitFactor ?? 1.8;
   const percentageVetVanREE = instellingen.percentageVetVanREE ?? 0.4;
   const aantalMaaltijden = instellingen.aantalMaaltijden ?? 4;
+  const postTrainingBoost = instellingen.postTrainingBoost ?? POST_TRAINING_BOOST_STANDAARD;
 
   const vvm = vetvrijeMassa(gewicht, vetpercentage);
   const bmr = katchMcArdleBMR(vvm);
@@ -263,8 +317,8 @@ export function berekenClient(intake, instellingen = {}) {
   };
 
   const maaltijdVerdeling = {
-    rustdag: verdeelMaaltijden({ eiwit, vet, koolhydraten: koolhydratenRustdag }, aantalMaaltijden),
-    trainingsdag: verdeelMaaltijden({ eiwit, vet, koolhydraten: koolhydratenTrainingsdag }, aantalMaaltijden),
+    rustdag: verdeelMaaltijden({ eiwit, vet, koolhydraten: koolhydratenRustdag }, aantalMaaltijden, postTrainingBoost),
+    trainingsdag: verdeelMaaltijden({ eiwit, vet, koolhydraten: koolhydratenTrainingsdag }, aantalMaaltijden, postTrainingBoost),
   };
 
   const rm = (intake.huidigeKracht ?? [])
@@ -289,6 +343,11 @@ export function berekenClient(intake, instellingen = {}) {
     beoogdeInnameRustdag: round(beoogdeRustdag, 0),
     beoogdeInnameTrainingsdag: round(beoogdeTrainingsdag, 0),
     macros,
+    bereiken: {
+      eiwit: eiwitBereik(gewicht),
+      vet: vetBereik(ree),
+      beoogdeInname: beoogdeInnameBereik(onderhoudPerDag, intake.doel?.categorie),
+    },
     maaltijdVerdeling,
     frameSize,
     rm,
@@ -302,6 +361,7 @@ export function berekenClient(intake, instellingen = {}) {
       eiwitFactor,
       percentageVetVanREE,
       aantalMaaltijden,
+      postTrainingBoost,
     },
   };
 
