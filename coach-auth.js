@@ -4,10 +4,13 @@
 // bypass or clear it. It exists purely to stop a client who ends up with
 // this URL from casually seeing the dashboard.
 
-const PIN_HASH_KEY = 'pt-intake:coach-pin-hash:v1';
-const SESSION_UNLOCK_KEY = 'pt-intake:coach-unlocked';
+// Exported so index.html's small "coach access" panel can verify the same
+// pincode (and jump straight into an unlocked coach.html) without a second,
+// separately-maintained hashing implementation.
+export const PIN_HASH_KEY = 'pt-intake:coach-pin-hash:v1';
+export const SESSION_UNLOCK_KEY = 'pt-intake:coach-unlocked';
 
-async function hashPin(pin) {
+export async function hashPin(pin) {
   const data = new TextEncoder().encode(pin);
   const digest = await crypto.subtle.digest('SHA-256', data);
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');

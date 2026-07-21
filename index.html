@@ -276,6 +276,21 @@
 
 </main>
 
+<footer class="coach-toegang">
+  <button type="button" class="coach-toegang__toggle" id="btn-coach-toggle" data-i18n="coach.link">Coach</button>
+  <div class="coach-toegang__paneel" id="coach-paneel" hidden>
+    <form id="coach-pin-form">
+      <input type="password" id="coach-pin-input" inputmode="numeric" autocomplete="off" data-i18n-placeholder="coach.pinPlaceholder" placeholder="Pincode">
+      <button type="submit" class="btn btn--ghost btn--small" data-i18n="coach.gaNaarDashboard">Ga naar dashboard</button>
+    </form>
+    <p class="hint" id="coach-pin-fout" data-i18n="coach.foutieveCode" hidden>Onjuiste pincode.</p>
+    <p class="hint" id="coach-pin-nieuw" hidden>
+      <span data-i18n="coach.nogGeenPincode">Nog geen pincode ingesteld.</span>
+      <a href="coach.html" data-i18n="coach.naarDashboard">Ga naar het dashboard</a>
+    </p>
+  </div>
+</footer>
+
 <script type="module" src="client.js"></script>
 </body>
 </html>

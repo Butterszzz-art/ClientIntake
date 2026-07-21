@@ -142,6 +142,13 @@ export const VERTALINGEN = {
 
     'confirm.eerderFormulier': 'We vonden een eerder gestart formulier op dit apparaat. Wil je daarmee verdergaan?\n\nAnnuleren = opnieuw beginnen.',
     'taal.label': 'Taal',
+
+    'coach.link': 'Coach',
+    'coach.pinPlaceholder': 'Pincode',
+    'coach.gaNaarDashboard': 'Ga naar dashboard',
+    'coach.foutieveCode': 'Onjuiste pincode.',
+    'coach.nogGeenPincode': 'Nog geen pincode ingesteld.',
+    'coach.naarDashboard': 'Ga naar het dashboard',
   },
 
   en: {
@@ -272,6 +279,13 @@ export const VERTALINGEN = {
 
     'confirm.eerderFormulier': 'We found a form you started earlier on this device. Do you want to continue with it?\n\nCancel = start over.',
     'taal.label': 'Language',
+
+    'coach.link': 'Coach',
+    'coach.pinPlaceholder': 'PIN code',
+    'coach.gaNaarDashboard': 'Go to dashboard',
+    'coach.foutieveCode': 'Incorrect PIN code.',
+    'coach.nogGeenPincode': 'No PIN code set up yet.',
+    'coach.naarDashboard': 'Go to the dashboard',
   },
 
   es: {
@@ -402,6 +416,13 @@ export const VERTALINGEN = {
 
     'confirm.eerderFormulier': 'Encontramos un formulario que empezaste antes en este dispositivo. ¿Quieres continuar con él?\n\nCancelar = empezar de nuevo.',
     'taal.label': 'Idioma',
+
+    'coach.link': 'Coach',
+    'coach.pinPlaceholder': 'Código PIN',
+    'coach.gaNaarDashboard': 'Ir al panel',
+    'coach.foutieveCode': 'Código PIN incorrecto.',
+    'coach.nogGeenPincode': 'Aún no se ha configurado un código PIN.',
+    'coach.naarDashboard': 'Ir al panel',
   },
 
   pt: {
@@ -532,6 +553,13 @@ export const VERTALINGEN = {
 
     'confirm.eerderFormulier': 'Encontramos um formulário que você começou antes neste dispositivo. Deseja continuar com ele?\n\nCancelar = começar de novo.',
     'taal.label': 'Idioma',
+
+    'coach.link': 'Coach',
+    'coach.pinPlaceholder': 'Código PIN',
+    'coach.gaNaarDashboard': 'Ir para o painel',
+    'coach.foutieveCode': 'Código PIN incorreto.',
+    'coach.nogGeenPincode': 'Ainda não há um código PIN configurado.',
+    'coach.naarDashboard': 'Ir para o painel',
   },
 };
 

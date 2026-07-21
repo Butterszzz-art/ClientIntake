@@ -3,6 +3,7 @@ import {
   maakLeegClient, initTagInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij, renderApparatuurChecklist,
 } from './intake-form.js';
 import { TALEN, vertaal, apparatuurLabel } from './i18n.js';
+import { PIN_HASH_KEY, SESSION_UNLOCK_KEY, hashPin } from './coach-auth.js';
 
 // This page never talks to the coach dashboard: no client list, no
 // calculations, no localStorage key shared with app.js. It only ever reads
@@ -225,9 +226,43 @@ async function verstuur() {
   }
 }
 
+// Small, easy-to-miss entry point for the coach only: reveals a pincode
+// field that, on the same pincode used by coach.html, jumps straight into
+// an unlocked dashboard. Clients have no reason to ever open this.
+function initCoachToegang() {
+  const toggle = document.getElementById('btn-coach-toggle');
+  const paneel = document.getElementById('coach-paneel');
+  const form = document.getElementById('coach-pin-form');
+  const input = document.getElementById('coach-pin-input');
+  const foutMelding = document.getElementById('coach-pin-fout');
+  const nogGeenPincode = document.getElementById('coach-pin-nieuw');
+
+  toggle.addEventListener('click', () => {
+    paneel.hidden = !paneel.hidden;
+    if (paneel.hidden) return;
+    const heeftPin = !!localStorage.getItem(PIN_HASH_KEY);
+    form.hidden = !heeftPin;
+    nogGeenPincode.hidden = heeftPin;
+    foutMelding.hidden = true;
+    if (heeftPin) input.focus();
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const opgeslagenHash = localStorage.getItem(PIN_HASH_KEY);
+    if (opgeslagenHash && (await hashPin(input.value)) === opgeslagenHash) {
+      sessionStorage.setItem(SESSION_UNLOCK_KEY, '1');
+      location.href = 'coach.html';
+    } else {
+      foutMelding.hidden = false;
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   pasVertalingToe(bepaalStartTaal());
   initTagInputs();
+  initCoachToegang();
 
   const opgeslagenConcept = localStorage.getItem(DRAFT_KEY);
   if (opgeslagenConcept) {

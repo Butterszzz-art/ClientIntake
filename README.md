@@ -113,6 +113,22 @@ De pincode-hash (SHA-256, geen plaintext) staat lokaal in `localStorage`
 enige uitweg is de knop **"Pincode vergeten? Reset alles"**, die expliciet
 waarschuwt dat dit *alle* lokale cliëntgegevens op dat apparaat wist.
 
+### Coach-toegang vanaf de rootURL
+
+Omdat de rootURL (`index.html`) het cliëntformulier is — de link die je
+overal deelt — heb je waarschijnlijk geen apart bladwijzer naar `coach.html`.
+Onderaan het cliëntformulier staat daarom een klein, laagdrempelig
+**"Coach"**-linkje (bewust onopvallend gestyled — een cliënt heeft geen
+reden om het op te merken of erop te klikken). Klik je erop, dan verschijnt
+een pincode-veldje: vul dezelfde pincode in als je op `coach.html` gebruikt,
+en je komt direct in het ontgrendelde dashboard terecht (geen tweede prompt).
+Is er nog geen pincode ingesteld, dan toont het paneeltje in plaats daarvan
+een link om naar `coach.html` te gaan en er daar één aan te maken.
+
+Deze pincode-verificatie hergebruikt exact dezelfde hash-logica als de gate
+op `coach.html` (`hashPin`/`PIN_HASH_KEY` geëxporteerd vanuit
+`coach-auth.js`) — er is dus maar één pincode om te onthouden, niet twee.
+
 ## Taal — nl / en / es / pt (alleen op het cliëntformulier)
 
 `index.html` heeft een taalkeuze rechtsboven (Nederlands/English/Español/Português).
@@ -327,6 +343,12 @@ gekozen en overal in de UI aanpasbaar (stap 2, "Berekeningen controleren"):
    De cliënt verschijnt in de lijst.
 3. Wil je zelf een intake invoeren (bv. tijdens een intakegesprek)? **+ Nieuwe
    cliënt** → vul het formulier zelf in.
+3b. **Snelle rekentool** (knop naast "+ Nieuwe cliënt") → losse, directe
+   berekeningen (voeding, frame size, 1RM &amp; rep target, werkcapaciteit)
+   zonder dat er een cliëntprofiel wordt aangemaakt of iets wordt opgeslagen —
+   handig tijdens een gesprek of ter controle. Gebruikt dezelfde functies uit
+   `calculations.js` als de rest van de app. Alleen bereikbaar via
+   `coach.html`; cliënten zien dit nergens.
 4. Klik een cliënt aan → **Berekeningen controleren**: pas instellingen aan
    indien nodig (herrekent live) en check de tooltip-teksten onder elk
    kerncijfer.

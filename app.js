@@ -226,6 +226,132 @@ function renderOverzicht(client) {
   `;
 }
 
+// ---------- Snelle rekentool (losse berekeningen, geen cliëntprofiel) ----------
+
+function maaltijdNamenRekentool(n) {
+  if (n === 3) return ['Ontbijt', 'Lunch', 'Avondeten'];
+  if (n === 4) return ['Ontbijt', 'Lunch', 'Avondeten', 'Pre-bed'];
+  if (n === 5) return ['Ontbijt', 'Lunch', 'Tussendoor', 'Avondeten', 'Pre-bed'];
+  return Array.from({ length: n }, (_, i) => `Maaltijd ${i + 1}`);
+}
+
+function renderMaaltijdTabelRekentool(titel, maaltijden) {
+  const namen = maaltijdNamenRekentool(maaltijden.length);
+  const rijen = maaltijden.map((m, i) => `
+    <tr class="${m.postTraining ? 'post-training' : ''}">
+      <td>${escapeHtml(namen[i])}</td>
+      <td class="${m.postTraining ? 'post-training' : ''}">${fmt(m.eiwit, 1)} g</td>
+      <td>${fmt(m.vet, 1)} g</td>
+      <td>${fmt(m.koolhydraten, 1)} g</td>
+      <td>${fmt(m.kcal)} kcal</td>
+    </tr>
+  `).join('');
+  return `
+    <h4 style="margin-top: 1rem;">${escapeHtml(titel)}</h4>
+    <table class="data-tabel">
+      <thead><tr><th>Maaltijd</th><th>Eiwit</th><th>Vet</th><th>Koolhydraten</th><th>Kcal</th></tr></thead>
+      <tbody>${rijen}</tbody>
+    </table>
+  `;
+}
+
+function berekenVoedingRekentool() {
+  const naam = document.getElementById('r-naam').value.trim() || 'cliënt';
+  const gewicht = num(document.getElementById('r-gewicht').value);
+  const vetpct = num(document.getElementById('r-vetpct-lichaam').value);
+  const pal = num(document.getElementById('r-pal').value);
+  const tef = num(document.getElementById('r-tef').value);
+  const duur = num(document.getElementById('r-duur').value);
+  const dagen = num(document.getElementById('r-dagen').value);
+  const ebf = num(document.getElementById('r-ebf').value);
+  const eiwitFactor = num(document.getElementById('r-eiwitfactor').value);
+  const vetPctRee = num(document.getElementById('r-vetpct-ree').value) / 100;
+  const maaltijden = num(document.getElementById('r-maaltijden').value);
+
+  const vvm = calc.vetvrijeMassa(gewicht, vetpct);
+  const bmr = calc.katchMcArdleBMR(vvm);
+  const ee = calc.energieverbruikTrainingsdag(gewicht, duur);
+  const ree = calc.energieverbruikRustdag(bmr, pal, tef);
+  const totaalTrainingsdag = calc.totaalEnergieTrainingsdag(ree, ee, tef);
+  const onderhoudDag = calc.onderhoudsinnamePerDag(totaalTrainingsdag, ree, dagen);
+  const beoogdRustdag = calc.beoogdeInnameRustdag(onderhoudDag, ebf);
+  const beoogdTrainingsdag = calc.beoogdeInnameTrainingsdag(beoogdRustdag, ee);
+
+  const eiwit = calc.eiwitGrammen(gewicht, eiwitFactor);
+  const vet = calc.vetGrammen(ree, vetPctRee);
+  const koolRust = calc.koolhydratenGrammen(beoogdRustdag, eiwit, vet);
+  const koolTraining = calc.koolhydratenGrammen(beoogdTrainingsdag, eiwit, vet);
+
+  const rustRijen = calc.verdeelMaaltijden({ eiwit, vet, koolhydraten: koolRust }, maaltijden);
+  const trainRijen = calc.verdeelMaaltijden({ eiwit, vet, koolhydraten: koolTraining }, maaltijden);
+
+  document.getElementById('rekentool-voeding-resultaat').innerHTML = `
+    <div class="kerncijfers">
+      ${kerncijferHtml('Naam', escapeHtml(naam))}
+      ${kerncijferHtml('Vetvrije massa', fmt(vvm, 1), 'kg')}
+      ${kerncijferHtml('BMR (Katch-McArdle)', fmt(bmr), 'kcal')}
+      ${kerncijferHtml('EE (trainingsdag)', fmt(ee), 'kcal')}
+      ${kerncijferHtml('REE (rustdag)', fmt(ree), 'kcal')}
+      ${kerncijferHtml('Totaal trainingsdag', fmt(totaalTrainingsdag), 'kcal')}
+      ${kerncijferHtml('Onderhoud/dag', fmt(onderhoudDag), 'kcal')}
+      ${kerncijferHtml('Beoogd — rustdag', fmt(beoogdRustdag), 'kcal')}
+      ${kerncijferHtml('Beoogd — trainingsdag', fmt(beoogdTrainingsdag), 'kcal')}
+      ${kerncijferHtml('Eiwit', fmt(eiwit, 1), 'g')}
+      ${kerncijferHtml('Vet', fmt(vet, 1), 'g')}
+      ${kerncijferHtml('Koolhydraten rustdag', fmt(koolRust, 1), 'g')}
+      ${kerncijferHtml('Koolhydraten trainingsdag', fmt(koolTraining, 1), 'g')}
+    </div>
+    ${renderMaaltijdTabelRekentool('Voeding rustdag', rustRijen)}
+    ${renderMaaltijdTabelRekentool('Voeding trainingsdag', trainRijen)}
+    <p class="hint" style="margin-top: 0.75rem;">Vergeet niet: vezelinname 25–38 g/dag, voedingskeuzes afstemmen op
+      smaakvoorkeuren, en het kcal-tekort/surplus samen met de cliënt toetsen op haalbaarheid.</p>
+  `;
+}
+
+function berekenFrameRekentool() {
+  const enkel = num(document.getElementById('r-enkel').value);
+  const pols = num(document.getElementById('r-pols').value);
+  const { afwijking, binnenNorm } = calc.frameSizeCheck(enkel);
+
+  document.getElementById('rekentool-frame-resultaat').innerHTML = `
+    <div class="kerncijfers">
+      ${kerncijferHtml('Enkelomtrek', fmt(enkel, 1), 'cm')}
+      ${kerncijferHtml('Normwaarde', '21,9 ± 1,3', 'cm')}
+      ${kerncijferHtml('Beoordeling', binnenNorm ? 'Binnen normaalwaarde' : 'Buiten normaalwaarde')}
+      ${kerncijferHtml('Polsomtrek (informatief)', fmt(pols, 1), 'cm')}
+    </div>
+    <p class="hint">Afwijking t.o.v. norm: ${afwijking > 0 ? '+' : ''}${fmt(afwijking, 2)} cm</p>
+  `;
+}
+
+function berekenRmRekentool() {
+  const gewicht = num(document.getElementById('r-rm-gewicht').value);
+  const reps = num(document.getElementById('r-rm-reps').value);
+  const pct = num(document.getElementById('r-rm-pct').value) / 100;
+  const rm = calc.geschat1RM(gewicht, reps);
+  const target = calc.repTargetGewicht(rm, pct);
+
+  document.getElementById('rekentool-rm-resultaat').innerHTML = `
+    <div class="kerncijfers">
+      ${kerncijferHtml('Geschatte 1RM', fmt(rm, 1), 'kg')}
+      ${kerncijferHtml(`Rep target (${fmt(pct * 100, 0)}% 1RM)`, fmt(target, 1), 'kg')}
+    </div>
+  `;
+}
+
+function berekenWerkcapaciteitRekentool() {
+  const oud = num(document.getElementById('r-oud').value);
+  const nieuw = num(document.getElementById('r-nieuw').value);
+  const wc = calc.werkcapaciteit(oud, nieuw);
+
+  document.getElementById('rekentool-wc-resultaat').innerHTML = `
+    <div class="kerncijfers">
+      ${kerncijferHtml('Werkcapaciteit', `${wc >= 0 ? '+' : ''}${fmt(wc, 1)}`, '%')}
+      ${kerncijferHtml('Interpretatie', wc >= 0 ? 'Vooruitgang t.o.v. vorige sessie' : 'Terugval t.o.v. vorige sessie')}
+    </div>
+  `;
+}
+
 // ---------- Client list view ----------
 
 function renderClientLijst() {
@@ -306,7 +432,7 @@ function toonView(naam) {
   document.getElementById(`view-${naam}`).classList.add('active');
 
   const headerInfo = document.getElementById('header-client-info');
-  if (naam === 'lijst') {
+  if (naam === 'lijst' || naam === 'rekentool') {
     headerInfo.hidden = true;
   } else if (huidigeClient) {
     headerInfo.hidden = false;
@@ -332,6 +458,12 @@ function wireEvents() {
     vulIntakeFormIn(huidigeClient);
     toonView('intake');
   });
+
+  document.getElementById('btn-snelle-rekentool').addEventListener('click', () => toonView('rekentool'));
+  document.getElementById('btn-bereken-voeding').addEventListener('click', berekenVoedingRekentool);
+  document.getElementById('btn-bereken-frame').addEventListener('click', berekenFrameRekentool);
+  document.getElementById('btn-bereken-rm').addEventListener('click', berekenRmRekentool);
+  document.getElementById('btn-bereken-werkcapaciteit').addEventListener('click', berekenWerkcapaciteitRekentool);
 
   document.getElementById('intake-form').addEventListener('submit', (e) => {
     e.preventDefault();

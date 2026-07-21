@@ -17,6 +17,12 @@
 
 * { box-sizing: border-box; }
 
+/* Author rules like `.app-header { display: flex }` would otherwise beat the
+   UA stylesheet's `[hidden] { display: none }` at equal specificity — this
+   makes sure anything marked hidden actually stays hidden (used by the coach
+   pincode gate to keep the header/dashboard off-screen until unlocked). */
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   padding: 0;
@@ -175,6 +181,46 @@ a { color: var(--accent); }
 .verzend-status--bezig { border-left-color: var(--text-dim); color: var(--text-dim); }
 .verzend-status--ok { border-left-color: var(--groen); color: var(--groen); }
 .verzend-status--fout { border-left-color: var(--oranje); color: var(--oranje); }
+
+/* ---------- Coach access (client page only) ----------
+   Deliberately unobtrusive: a client filling in the form should have no
+   reason to notice or click this. */
+.coach-toegang {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 2rem;
+  text-align: center;
+}
+
+.coach-toegang__toggle {
+  background: none;
+  border: none;
+  color: var(--border);
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 0.5em;
+}
+
+.coach-toegang__toggle:hover { color: var(--text-dim); }
+
+.coach-toegang__paneel {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.coach-toegang__paneel form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.coach-toegang__paneel input {
+  width: 140px;
+  text-align: center;
+}
 
 /* ---------- Layout ---------- */
 main#app {
