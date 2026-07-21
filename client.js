@@ -1,9 +1,9 @@
-import { downloadJson } from './utils.js';
+import { downloadJson } from './utils.js?v=2';
 import {
   maakLeegClient, initTagInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij, renderApparatuurChecklist,
-} from './intake-form.js';
-import { TALEN, vertaal, apparatuurLabel } from './i18n.js';
-import { PIN_HASH_KEY, SESSION_UNLOCK_KEY, hashPin } from './coach-auth.js';
+} from './intake-form.js?v=2';
+import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=2';
+import { PIN_HASH_KEY, SESSION_UNLOCK_KEY, hashPin } from './coach-auth.js?v=2';
 
 // This page never talks to the coach dashboard: no client list, no
 // calculations, no localStorage key shared with app.js. It only ever reads

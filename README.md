@@ -386,3 +386,19 @@ verwijdert ze — exporteer dus regelmatig als back-up.
 Voor lokaal testen: gebruik een lokale server (bv. `npx serve .` of
 `python -m http.server`) in plaats van het bestand direct te openen — sommige
 browsers blokkeren ES-module `import`/`export` op het `file://`-protocol.
+
+### Cache-busting na een update
+
+Elk lokaal bestand (`.js`, `.css`) wordt zowel in de `<script>`/`<link>`-tags
+als in elke interne `import`-statement gevolgd door een versie-query,
+bv. `client.js?v=2`. Zonder build-stap is dit de eenvoudigste manier om te
+voorkomen dat een browser na een update stilletjes een oude, gecachete versie
+van een bestand blijft gebruiken (dit gebeurde echt: een knop werkte niet meer
+na een wijziging, puur omdat de browser nog de oude `client.js` in cache had).
+
+**Verhoog dit versienummer overal tegelijk (alle `?v=N` in `index.html`,
+`coach.html`, `client.js`, `app.js`, `intake-form.js`) telkens wanneer je een
+van de `.js`- of `.css`-bestanden wijzigt en opnieuw deployt.** Vergeet je dit,
+dan is het risico dat jij (niet je cliënten — zij laden alles voor het eerst)
+een oude versie blijft zien totdat je handmatig een hard refresh doet
+(Ctrl/Cmd+Shift+R) of de site-data van je browser wist.

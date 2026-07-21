@@ -1,9 +1,9 @@
-import * as calc from './calculations.js';
-import { escapeHtml, fmt, num, downloadJson } from './utils.js';
+import * as calc from './calculations.js?v=2';
+import { escapeHtml, fmt, num, downloadJson } from './utils.js?v=2';
 import {
   maakLeegClient, initTagInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij,
-} from './intake-form.js';
-import { initCoachGate, lockNow } from './coach-auth.js';
+} from './intake-form.js?v=2';
+import { initCoachGate, lockNow } from './coach-auth.js?v=2';
 
 const STORAGE_KEY = 'pt-intake:clients:v1';
 
