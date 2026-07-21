@@ -58,6 +58,25 @@ alleen de leesbare samenvatting doet dat. Wil je dat de cliënt niets meer
 handmatig hoeft door te sturen, dan is de enige optie een betaald Web3Forms-
 plan (zie hieronder).
 
+**Bekend betrouwbaarheidsprobleem:** in de praktijk is gebleken dat Web3Forms
+soms `success: true` teruggeeft (het bedankt-scherm toont dan "Verstuurd naar
+Arman") terwijl de e-mail nooit aankomt — vermoedelijk stille spamfiltering
+door Web3Forms zelf of door de ontvangende mailserver, getriggerd door de
+inhoud van een specifieke inzending. Test-inzendingen met neutrale tekst
+kwamen wél aan; een echte intake met gevoelige vrije tekst (blessures, PEDs,
+dieet, motivatie) niet. Daarom is de app niet blind vertrouwd op deze status:
+- De statustekst claimt nu alleen dat er verstuurd is, niet dat het is
+  aangekomen.
+- Er staat op het bedankt-scherm altijd (niet alleen bij een gemelde fout)
+  een knop **"Mail dit bestand naar Arman"** — een `mailto:`-link naar
+  `armanbahali@pocketcoachcoms.org`, volledig onafhankelijk van Web3Forms.
+  De cliënt moet het gedownloade bestand daarbij nog wel zelf als bijlage
+  toevoegen (`mailto:` kan dat niet automatisch).
+- Check bij twijfel over een gemiste inzending het
+  [Web3Forms-dashboard](https://web3forms.com) (inloggen met
+  `armanbahali@pocketcoachcoms.org`) voor de inzendingsgeschiedenis, en de
+  spamfolder van dat mailadres.
+
 **Over de Web3Forms-koppeling:** `client.js` bevat een public **access key**
 (`4e27ae27-18e9-4a54-bdc7-bd8c4e316a48`), aangemaakt op web3forms.com en
 gekoppeld aan `armanbahali@pocketcoachcoms.org`. Dit is bewust een publieke

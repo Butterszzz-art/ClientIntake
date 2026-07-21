@@ -184,6 +184,17 @@ async function verstuurNaarArman(client) {
   return result.success === true;
 }
 
+// Independent of Web3Forms entirely — a real client submission once showed
+// "sent successfully" here but never arrived by email, so this always-visible
+// mailto link gives a second channel that doesn't depend on that service at all.
+function mailtoLink(client, bestandsnaam) {
+  const onderwerp = `${vertaal(huidigeTaal, 'header.brand')} — ${client.naam || 'Naamloos'}`;
+  const body = vertaal(huidigeTaal, 'mailto.body')
+    .replace('{bestand}', bestandsnaam)
+    .replace('{naam}', client.naam || '');
+  return `mailto:armanbahali@pocketcoachcoms.org?subject=${encodeURIComponent(onderwerp)}&body=${encodeURIComponent(body)}`;
+}
+
 function zetVerzendStatus(sleutel, variant) {
   huidigeStatusSleutel = sleutel;
   const el = document.getElementById('verzend-status');
@@ -201,6 +212,7 @@ async function verstuur() {
 
   document.getElementById('bedankt-naam').textContent = huidigClient.naam || 'daar';
   document.getElementById('bedankt-bestandsnaam').textContent = laatsteBestandsnaam;
+  document.getElementById('btn-mail-backup').href = mailtoLink(huidigClient, laatsteBestandsnaam);
   zetVerzendStatus('status.bezig', 'bezig');
   toonView('bedankt');
 
