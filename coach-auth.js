@@ -1,127 +1,85 @@
-// Local passcode gate for the coach dashboard. This is a deterrent, not real
-// security: the PIN hash and all client data live in this browser's own
-// localStorage, so anyone with devtools access to this browser/profile can
-// bypass or clear it. It exists purely to stop a client who ends up with
-// this URL from casually seeing the dashboard.
+// Real coach authentication via Firebase Auth (email + password). This
+// replaces the old local-pincode deterrent: access to client data is now
+// actually enforced by Firestore security rules checking `request.auth !=
+// null` on the server side, not just hidden behind client-side JS.
 
-// Exported so index.html's small "coach access" panel can verify the same
-// pincode (and jump straight into an unlocked coach.html) without a second,
-// separately-maintained hashing implementation.
-export const PIN_HASH_KEY = 'pt-intake:coach-pin-hash:v1';
-export const SESSION_UNLOCK_KEY = 'pt-intake:coach-unlocked';
+import { auth } from './firebase.js?v=2';
+import {
+  signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail,
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
-export async function hashPin(pin) {
-  const data = new TextEncoder().encode(pin);
-  const digest = await crypto.subtle.digest('SHA-256', data);
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-function pinIsSet() {
-  return !!localStorage.getItem(PIN_HASH_KEY);
-}
-
-async function pinIsCorrect(pin) {
-  return (await hashPin(pin)) === localStorage.getItem(PIN_HASH_KEY);
-}
-
-function isUnlockedThisSession() {
-  return sessionStorage.getItem(SESSION_UNLOCK_KEY) === '1';
-}
-
-function unlockSession() {
-  sessionStorage.setItem(SESSION_UNLOCK_KEY, '1');
-}
-
-function resetAlles() {
-  localStorage.clear();
-  sessionStorage.clear();
-}
-
-function renderGateUI(overlay, moetInstellen) {
-  overlay.innerHTML = moetInstellen ? `
+function renderLoginUI(overlay, melding) {
+  overlay.innerHTML = `
     <div class="lock-card">
-      <h2>Stel een pincode in</h2>
-      <p class="hint">Dit dashboard bevat cliëntgegevens. Kies een pincode zodat niet iedereen met deze link erin kan.
-      Let op: dit is lokale afscherming, geen echte beveiliging.</p>
-      <form id="setup-form">
-        <input type="password" id="setup-pin" minlength="4" inputmode="numeric" autocomplete="off" required placeholder="Kies een pincode (min. 4 tekens)">
-        <input type="password" id="setup-pin-confirm" minlength="4" inputmode="numeric" autocomplete="off" required placeholder="Herhaal pincode">
-        <button type="submit" class="btn btn--accent">Instellen</button>
+      <h2>Coach-login</h2>
+      <p class="hint" id="login-hint">Log in met je coach-account om het dashboard te openen.</p>
+      <form id="login-form">
+        <input type="email" id="login-email" autocomplete="username" required placeholder="E-mailadres">
+        <input type="password" id="login-password" autocomplete="current-password" required placeholder="Wachtwoord">
+        <button type="submit" class="btn btn--accent">Inloggen</button>
       </form>
-      <p class="vlag vlag--rood" id="setup-error" hidden></p>
-    </div>
-  ` : `
-    <div class="lock-card">
-      <h2>Coach dashboard vergrendeld</h2>
-      <p class="hint">Voer je pincode in.</p>
-      <form id="lock-form">
-        <input type="password" id="lock-pin" inputmode="numeric" autocomplete="off" required autofocus>
-        <button type="submit" class="btn btn--accent">Ontgrendelen</button>
-      </form>
-      <p class="vlag vlag--rood" id="lock-error" hidden>Onjuiste pincode.</p>
-      <button type="button" class="btn btn--ghost btn--small" id="lock-reset">Pincode vergeten? Reset alles</button>
+      ${melding ? `<p class="vlag vlag--rood">${melding}</p>` : ''}
+      <button type="button" class="btn btn--ghost btn--small" id="wachtwoord-vergeten">Wachtwoord vergeten?</button>
     </div>
   `;
+
+  overlay.querySelector('#login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = overlay.querySelector('#login-email').value;
+    const password = overlay.querySelector('#login-password').value;
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged below takes it from here.
+    } catch {
+      renderLoginUI(overlay, 'Inloggen mislukt — controleer je e-mailadres en wachtwoord.');
+    }
+  });
+
+  overlay.querySelector('#wachtwoord-vergeten').addEventListener('click', async () => {
+    const email = overlay.querySelector('#login-email').value;
+    if (!email) {
+      renderLoginUI(overlay, 'Vul eerst je e-mailadres in, dan sturen we een reset-link.');
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      renderLoginUI(overlay, '');
+      overlay.querySelector('#login-hint').textContent = `Reset-link verstuurd naar ${email}.`;
+    } catch {
+      renderLoginUI(overlay, 'Kon geen reset-mail versturen — controleer het e-mailadres.');
+    }
+  });
 }
 
-// Shows the gate if needed, otherwise reveals the dashboard immediately.
-// Calls `onUnlocked` exactly once, right before the dashboard becomes visible.
+// Shows the login form when signed out, otherwise reveals the dashboard.
+// Calls `onUnlocked` exactly once per sign-in (guarded so a Firebase token
+// refresh — which also fires onAuthStateChanged — doesn't re-run init and
+// attach duplicate event listeners).
 export function initCoachGate(onUnlocked) {
   const overlay = document.getElementById('lock-overlay');
   const app = document.getElementById('app');
   const header = document.querySelector('.app-header');
+  let alGeinitialiseerd = false;
 
-  function toonDashboard() {
-    overlay.hidden = true;
-    app.hidden = false;
-    header.hidden = false;
-    onUnlocked();
-  }
-
-  if (isUnlockedThisSession()) {
-    toonDashboard();
-    return;
-  }
-
-  const moetInstellen = !pinIsSet();
-  renderGateUI(overlay, moetInstellen);
-
-  if (moetInstellen) {
-    overlay.querySelector('#setup-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const pin = overlay.querySelector('#setup-pin').value;
-      const confirmPin = overlay.querySelector('#setup-pin-confirm').value;
-      if (pin !== confirmPin) {
-        const err = overlay.querySelector('#setup-error');
-        err.textContent = 'Pincodes komen niet overeen.';
-        err.hidden = false;
-        return;
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      overlay.hidden = true;
+      app.hidden = false;
+      header.hidden = false;
+      if (!alGeinitialiseerd) {
+        alGeinitialiseerd = true;
+        onUnlocked();
       }
-      localStorage.setItem(PIN_HASH_KEY, await hashPin(pin));
-      unlockSession();
-      toonDashboard();
-    });
-  } else {
-    overlay.querySelector('#lock-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const pin = overlay.querySelector('#lock-pin').value;
-      if (await pinIsCorrect(pin)) {
-        unlockSession();
-        toonDashboard();
-      } else {
-        overlay.querySelector('#lock-error').hidden = false;
-      }
-    });
-    overlay.querySelector('#lock-reset').addEventListener('click', () => {
-      if (confirm('Dit wist ALLE lokale cliëntgegevens en de pincode op dit apparaat. Dit kan niet ongedaan gemaakt worden. Doorgaan?')) {
-        resetAlles();
-        location.reload();
-      }
-    });
-  }
+    } else {
+      alGeinitialiseerd = false;
+      app.hidden = true;
+      header.hidden = true;
+      overlay.hidden = false;
+      renderLoginUI(overlay, '');
+    }
+  });
 }
 
 export function lockNow() {
-  sessionStorage.removeItem(SESSION_UNLOCK_KEY);
-  location.reload();
+  signOut(auth);
 }

@@ -1,133 +1,138 @@
 # PT Intake & Overzicht
 
-Statische web-app (vanilla HTML/CSS/JS, geen build-stap) voor personal trainers:
-zet een cliënt-intake automatisch om in een trainings- en voedingsoverzicht.
-Draait volledig client-side — data wordt opgeslagen in `localStorage` van de
-browser, met JSON-export/import als portable back-up- en koppelformaat.
+Web-app (vanilla HTML/CSS/JS, geen build-stap) voor personal trainers: zet een
+cliënt-intake automatisch om in een trainings- en voedingsoverzicht. De
+gehoste bestanden zijn nog steeds pure statische HTML/CSS/JS (bv. via GitHub
+Pages), maar de data zelf leeft in **Firebase** (Firestore + Authentication)
+in plaats van alleen in de browser van elke gebruiker — zo verschijnt een
+cliënt-intake automatisch in het coach-dashboard, zonder handmatige stap.
 
 ## Twee aparte pagina's — cliënt ziet nooit het coach-dashboard
 
-Dit project bestaat uit **twee losstaande HTML-pagina's** die niets met elkaar
-delen behalve de rekenlogica en het JSON-schema:
+Dit project bestaat uit **twee losstaande HTML-pagina's** die dezelfde
+Firestore-database delen, maar verder niets:
 
 - **`index.html` (root) — het cliëntformulier.** Dit is de link die je naar
   cliënten stuurt. Hij bevat alléén de intake: geen cliëntenlijst, geen
   berekeningen, geen overzicht, geen data van andere cliënten. Het formulier
   spreekt de cliënt aan als **Arman Bahali persoonlijk** (ik-vorm), niet als
   een team of bedrijf. Na het versturen wordt de intake automatisch naar
-  Arman gemaild (zie hieronder) én gedownload als `.json`-bestand voor de
-  cliënt zelf.
-- **`coach.html` — jouw dashboard.** Cliëntenlijst, "Importeer JSON" (voor
-  bestanden die je los binnenkrijgt, bv. als de automatische mail een keer
-  mislukt), de berekeningen-stap en het overzicht. Bookmark deze URL voor
-  jezelf; deel hem niet met cliënten.
+  Firestore geschreven (zie hieronder) én gedownload als `.json`-bestand voor
+  de cliënt zelf.
+- **`coach.html` — jouw dashboard.** Log in met je coach-account (e-mail +
+  wachtwoord) en de cliëntenlijst laadt live uit Firestore — een nieuwe
+  intake verschijnt vanzelf, ook terwijl je ernaar kijkt. Bookmark deze URL
+  voor jezelf; deel hem niet met cliënten.
 
-Omdat dit een statische site zonder server/login is, is er geen "echte"
-toegangscontrole mogelijk — zie de sectie **Pincode-gate** hieronder voor wat
-dat in de praktijk betekent en waarom dat voor dit gebruik voldoende is.
+Cliënten kunnen `coach.html` in theorie gewoon openen (het is een publieke
+URL, net als elke pagina op een statische site), maar zonder in te loggen
+zien ze niets — geen enkele cliëntgegeven wordt getoond of zelfs maar
+opgehaald voordat Firebase bevestigt dat er een geldige sessie is. Dat is
+*echte* toegangscontrole (afgedwongen door Firestore's security rules op de
+server, niet alleen verborgen in de UI), in tegenstelling tot de oude lokale
+pincode-gate uit een eerdere versie van dit project.
 
-### Handoff-workflow: automatische e-mail via Web3Forms
-
-Cliëntdata verlaat de browser van de cliënt op twee manieren tegelijk:
+### Handoff-workflow: automatisch, via Firestore
 
 1. Coach deelt de link naar `index.html` met een (nieuwe) cliënt.
 2. Cliënt vult het formulier in op zijn/haar eigen apparaat. Tussentijds wordt
    een concept lokaal in die browser bewaard (`pt-intake:client-draft:v1`),
    zodat een per ongeluk gesloten tabblad niets kost.
-3. Cliënt klikt **Versturen**. Er gebeurt dan meteen twee dingen:
-   - De browser **downloadt** `<naam>-intake.json` (altijd, ongeacht of de
-     e-mail lukt) — de cliënt heeft dus zelf ook een kopie.
-   - `client.js` **post** de intake naar [Web3Forms](https://web3forms.com),
-     die het doorstuurt naar `armanbahali@pocketcoachcoms.org`. De e-mail
-     bevat een leesbare samenvatting van alle velden in de body — **geen
-     JSON-bijlage**, want Web3Forms' gratis tier weigert de hele inzending
-     zodra er een bestand wordt meegestuurd ("Pro feature required"). Het
-     JSON-bestand blijft dus alléén beschikbaar via de download in stap 3.
-   - Het bedankt-scherm toont live of het versturen gelukt is. Lukt het niet
-     (geen internet, Web3Forms plat, etc.), dan staat er expliciet dat de
-     cliënt het gedownloade bestand zelf moet doorsturen.
-4. Coach leest de mail voor een snel overzicht, en importeert — als hij de
-   berekeningen/het overzicht in het dashboard wil — het door de cliënt
-   toegestuurde `.json`-bestand via **Importeer JSON** op `coach.html`. De
-   cliënt verschijnt in de lijst; berekeningen worden bij het openen
-   automatisch gegenereerd.
+3. Cliënt klikt **Versturen**. Er gebeuren dan drie dingen tegelijk:
+   - `client.js` schrijft het cliëntprofiel rechtstreeks naar de
+     `clients`-collectie in Firestore — dit is de **primaire, gezaghebbende**
+     route. Firestore's security rules staan dit toe voor iedereen
+     (`allow create: if true`), zonder dat de cliënt hoeft in te loggen.
+   - De browser **downloadt** ook `<naam>-intake.json` als eigen back-up voor
+     de cliënt.
+   - Er gaat een **heads-up e-mail** naar Arman via Web3Forms (fire-and-forget,
+     blokkeert niks) — een leesbare samenvatting, handig om snel te scannen,
+     maar niet meer de manier waarop data in het dashboard terechtkomt.
+   - Het bedankt-scherm toont of de Firestore-schrijfactie gelukt is. Lukt dat
+     niet (geen internet, Firestore plat), dan staat er expliciet dat de
+     cliënt het gedownloade bestand naar Arman moet mailen via de altijd
+     zichtbare **"Mail dit bestand naar Arman"**-knop (`mailto:`, volledig
+     onafhankelijk van zowel Firestore als Web3Forms).
+4. Coach opent `coach.html` (al ingelogd, of logt in) en ziet de cliënt meteen
+   in de lijst staan — geen import nodig. **Importeer JSON** blijft bestaan
+   als handmatige fallback (bv. voor een bestand dat via de mailto-knop is
+   binnengekomen); het schrijft het geïmporteerde profiel alsnog naar
+   Firestore, zodat het net zo in de live lijst verschijnt.
 
-**Beperking om te weten:** omdat het gratis Web3Forms-plan geen bijlagen
-ondersteunt, komt het JSON-bestand nooit automatisch bij de coach terecht —
-alleen de leesbare samenvatting doet dat. Wil je dat de cliënt niets meer
-handmatig hoeft door te sturen, dan is de enige optie een betaald Web3Forms-
-plan (zie hieronder).
+**Over de Web3Forms-koppeling:** deze bestaat nog steeds als secundaire
+notificatie (zie `verstuurNaarArman()` in `client.js`), met dezelfde
+public access key en dezelfde beperkingen als eerder gedocumenteerd (geen
+bijlage-ondersteuning op het gratis plan, en een bekend geval waarin Web3Forms
+`success: true` teruggaf terwijl de mail nooit aankwam). Dat is nu minder
+kritiek, omdat de Firestore-schrijfactie de échte bron van waarheid is voor
+het dashboard — de e-mail is puur een bonus-notificatie.
 
-**Bekend betrouwbaarheidsprobleem:** in de praktijk is gebleken dat Web3Forms
-soms `success: true` teruggeeft (het bedankt-scherm toont dan "Verstuurd naar
-Arman") terwijl de e-mail nooit aankomt — vermoedelijk stille spamfiltering
-door Web3Forms zelf of door de ontvangende mailserver, getriggerd door de
-inhoud van een specifieke inzending. Test-inzendingen met neutrale tekst
-kwamen wél aan; een echte intake met gevoelige vrije tekst (blessures, PEDs,
-dieet, motivatie) niet. Daarom is de app niet blind vertrouwd op deze status:
-- De statustekst claimt nu alleen dat er verstuurd is, niet dat het is
-  aangekomen.
-- Er staat op het bedankt-scherm altijd (niet alleen bij een gemelde fout)
-  een knop **"Mail dit bestand naar Arman"** — een `mailto:`-link naar
-  `armanbahali@pocketcoachcoms.org`, volledig onafhankelijk van Web3Forms.
-  De cliënt moet het gedownloade bestand daarbij nog wel zelf als bijlage
-  toevoegen (`mailto:` kan dat niet automatisch).
-- Check bij twijfel over een gemiste inzending het
-  [Web3Forms-dashboard](https://web3forms.com) (inloggen met
-  `armanbahali@pocketcoachcoms.org`) voor de inzendingsgeschiedenis, en de
-  spamfolder van dat mailadres.
+## Firebase-architectuur
 
-**Over de Web3Forms-koppeling:** `client.js` bevat een public **access key**
-(`4e27ae27-18e9-4a54-bdc7-bd8c4e316a48`), aangemaakt op web3forms.com en
-gekoppeld aan `armanbahali@pocketcoachcoms.org`. Dit is bewust een publieke
-sleutel — Web3Forms is zo ontworpen dat deze sleutel zichtbaar in
-client-side code mag staan; misbruik is alleen mogelijk als vervelende mail
-náár dat ene adres, niet als toegang tot data. Wil je het versturen naar een
-ander e-mailadres laten gaan, maak dan een nieuwe access key aan op
-web3forms.com voor dat adres en vervang de waarde van `WEB3FORMS_ACCESS_KEY`
-bovenaan `client.js`.
+### Waarom dit nodig was
 
-Wil je later JSON-bijlagen wél automatisch laten meesturen (zodat importeren
-niet meer nodig is), dan moet het Web3Forms-account naar een betaald plan
-(vanaf hun "Pro" tier); in `verstuurNaarArman()` in `client.js` voeg je dan
-weer een `formData.append('attachment', blob, bestandsnaam)`-regel toe met
-het JSON-bestand als `Blob` (zoals ook bij de lokale download gebeurt).
+Zonder een gedeelde backend leven cliëntformulier en coach-dashboard in twee
+volledig gescheiden browsers op twee verschillende apparaten. Er is dan
+principieel geen manier waarop data van de één naar de ander kan "oversteken"
+zonder een tussenstation dat beide kanten kunnen bereiken. Web3Forms (e-mail)
+was zo'n tussenstation, maar levert alleen een leesbare samenvatting af in een
+inbox — niet een structured record dat automatisch in een cliëntenlijst
+verschijnt. Firestore lost dat op: beide pagina's lezen/schrijven naar
+dezelfde database.
 
-## Pincode-gate op het coach-dashboard
+### Firestore
 
-`coach.html` vraagt bij het eerste gebruik om een pincode in te stellen, en
-daarna bij elk bezoek (per browsersessie) om die pincode in te voeren voordat
-er iets van het dashboard zichtbaar wordt.
+- **Collectie:** `clients`. Elk document = één cliënt-object, exact het
+  schema hieronder (`id`, `naam`, `createdAt`, `intake`, `instellingen`,
+  `calculations`), met het document-ID gelijk aan `client.id`.
+- **Security rules** (ingesteld via de Firebase Console → Firestore Database
+  → Rules):
+  ```
+  rules_version = '2';
+  service cloud.firestore {
+    match /databases/{database}/documents {
+      match /clients/{clientId} {
+        allow create: if true;
+        allow read, update, delete: if request.auth != null;
+      }
+    }
+  }
+  ```
+  Vertaling: **iedereen** (ook een niet-ingelogde cliënt) mag een nieuw
+  cliëntprofiel aanmaken; **alleen een ingelogde gebruiker** mag iets lezen,
+  bewerken of verwijderen. Firestore behandelt een schrijfactie naar een
+  bestaand document-ID automatisch als `update` (niet `create`), dus een
+  cliënt kan sowieso nooit andermans bestaande record overschrijven, zelfs
+  niet als die het toevallige UUID zou raden.
+- **Live updates:** `coach.html` gebruikt Firestore's `onSnapshot` (geen
+  eenmalige `getDocs`) voor de cliëntenlijst — een nieuwe intake verschijnt
+  dus zonder de pagina te hoeven verversen.
 
-**Belangrijk om te beseffen: dit is geen echte beveiliging.** Er is geen
-server, dus er is geen manier om een wachtwoord écht af te dwingen — iemand
-met devtools-toegang tot deze browser kan de gate omzeilen of de opgeslagen
-pincode-hash wissen. Het doel is puur om te voorkomen dat een cliënt die
-toevallig de dashboard-link tegenkomt (of een voorbijganger op een gedeeld
-apparaat) zomaar cliëntgegevens ziet. Zolang je de `coach.html`-link niet deelt
-met cliënten, is de pincode een extra vangnet, geen vervanging daarvoor.
+### Firebase Authentication
 
-De pincode-hash (SHA-256, geen plaintext) staat lokaal in `localStorage`
-(`pt-intake:coach-pin-hash:v1`); de ontgrendeling geldt per browsersessie
-(`sessionStorage`). Er is geen "wachtwoord vergeten"-flow met herstel — de
-enige uitweg is de knop **"Pincode vergeten? Reset alles"**, die expliciet
-waarschuwt dat dit *alle* lokale cliëntgegevens op dat apparaat wist.
+`coach.html` logt in met **e-mail + wachtwoord** via Firebase Auth
+(`signInWithEmailAndPassword` in `coach-auth.js`). Er is precies één account
+(dat van Arman) — er is bewust geen publieke registratieflow gebouwd. Een
+"Wachtwoord vergeten?"-link stuurt een reset-mail via Firebase's ingebouwde
+`sendPasswordResetEmail`. Een sessie blijft actief tot je op **Vergrendel**
+klikt (roept `signOut` aan) of het wachtwoord ergens anders wijzigt — Firebase
+regelt de sessie-persistentie zelf, dus dit werkt ook na een volledige
+herstart van de browser.
 
-### Coach-toegang vanaf de rootURL
+Omdat Firebase's sessie-opslag gedeeld is tussen alle pagina's op hetzelfde
+origin, hoeft `index.html`'s kleine **"Coach"**-linkje (onderaan, bewust
+onopvallend gestyled) niets zelf te verifiëren — het is een simpele link naar
+`coach.html`. Ben je daar al ingelogd, dan zie je meteen het dashboard; zo
+niet, dan toont `coach.html` zijn eigen inlogscherm.
 
-Omdat de rootURL (`index.html`) het cliëntformulier is — de link die je
-overal deelt — heb je waarschijnlijk geen apart bladwijzer naar `coach.html`.
-Onderaan het cliëntformulier staat daarom een klein, laagdrempelig
-**"Coach"**-linkje (bewust onopvallend gestyled — een cliënt heeft geen
-reden om het op te merken of erop te klikken). Klik je erop, dan verschijnt
-een pincode-veldje: vul dezelfde pincode in als je op `coach.html` gebruikt,
-en je komt direct in het ontgrendelde dashboard terecht (geen tweede prompt).
-Is er nog geen pincode ingesteld, dan toont het paneeltje in plaats daarvan
-een link om naar `coach.html` te gaan en er daar één aan te maken.
+### Configuratie
 
-Deze pincode-verificatie hergebruikt exact dezelfde hash-logica als de gate
-op `coach.html` (`hashPin`/`PIN_HASH_KEY` geëxporteerd vanuit
-`coach-auth.js`) — er is dus maar één pincode om te onthouden, niet twee.
+`firebase.js` bevat het Firebase-configuratieobject (`apiKey`, `authDomain`,
+`projectId`, ...). Dit is **geen geheime sleutel** — Firebase's `apiKey`
+identificeert alleen het project; de daadwerkelijke beveiliging zit in de
+security rules hierboven plus de login-eis. Het is dus geen probleem dat dit
+object zichtbaar is in client-side code (het staat letterlijk in elke
+Firebase-tutorial zo gedocumenteerd).
 
 ## Taal — nl / en / es / pt (alleen op het cliëntformulier)
 
@@ -162,10 +167,11 @@ de rauwe oude labels in plaats van vertaalde labels.
 | Bestand | Rol |
 |---|---|
 | `index.html` | Cliëntformulier — het enige wat cliënten te zien krijgen |
-| `client.js` | Logica voor `index.html`: concept-autosave, versturen (Web3Forms-mail + JSON-download), bedankt-scherm |
-| `coach.html` | Coach-dashboard — cliëntenlijst, intake (handmatige invoer), berekeningen, overzicht |
-| `app.js` | Logica voor `coach.html`: rendering, `localStorage`, export/import, pincode-gate |
-| `coach-auth.js` | Lokale pincode-gate voor `coach.html` (zie hierboven) |
+| `client.js` | Logica voor `index.html`: concept-autosave, versturen (Firestore-write + Web3Forms-mail + JSON-download), bedankt-scherm |
+| `coach.html` | Coach-dashboard — cliëntenlijst (live uit Firestore), intake (handmatige invoer), berekeningen, overzicht |
+| `app.js` | Logica voor `coach.html`: rendering, Firestore CRUD + live `onSnapshot`-lijst, export/import |
+| `coach-auth.js` | Echte login voor `coach.html` via Firebase Auth (e-mail + wachtwoord), zie hierboven |
+| `firebase.js` | Firebase-initialisatie (config + `db`/`auth`-instanties), gedeeld door `client.js` en `app.js` |
 | `intake-form.js` | Gedeeld tussen `client.js` en `app.js`: schema-factory, formulier lezen/invullen, tag-input/kracht-tabel/apparatuur-widgets |
 | `i18n.js` | Vertaalwoordenboek (nl/en/es/pt) en helpers, alleen gebruikt door `client.js` — `coach.html` blijft Nederlandstalig |
 | `utils.js` | Kleine gedeelde helpers: `escapeHtml`, `fmt`, `num`, `downloadJson` |
@@ -194,8 +200,8 @@ een backend/API of aan een andere fitness-app, zonder herschrijven:
 
 ## JSON-schema
 
-Elke cliënt is één object met deze vorm (opgeslagen als array van dit soort
-objecten in `localStorage`, en als `{ "client": {...} }` bij export):
+Elke cliënt is één object met deze vorm (zo opgeslagen als document in de
+Firestore-collectie `clients`, en als `{ "client": {...} }` bij export):
 
 ```json
 {
@@ -331,16 +337,20 @@ gekozen en overal in de UI aanpasbaar (stap 2, "Berekeningen controleren"):
    je mentaal in elkaar zit, zodat hij je als persoon leert kennen, niet
    alleen als cijfers. Tussentijds opslaan gebeurt automatisch (lokaal,
    alleen op dit apparaat).
-3. **Versturen** → je intake wordt automatisch naar Arman gemaild, én
-   gedownload als `<naam>-intake.json` voor jezelf.
-4. Het bedankt-scherm laat zien of het versturen gelukt is. Zo niet: stuur het
-   gedownloade bestand alsnog even zelf door (WhatsApp, e-mail, AirDrop, ...).
+3. **Versturen** → je intake wordt automatisch naar Firestore geschreven (zo
+   verschijnt hij vanzelf in Armans dashboard), er gaat een heads-up e-mail
+   naar Arman, én je krijgt zelf `<naam>-intake.json` als download.
+4. Het bedankt-scherm laat zien of het opslaan gelukt is. Zo niet: klik dan
+   de knop **"Mail dit bestand naar Arman"** om het gedownloade bestand
+   alsnog rechtstreeks naar hem te sturen.
 
 ### Als coach (`coach.html`)
 
-1. Eerste keer: stel een pincode in voor het dashboard.
-2. **Importeer JSON** → selecteer een bestand dat een cliënt heeft teruggestuurd.
-   De cliënt verschijnt in de lijst.
+1. Log in met je coach-e-mailadres en wachtwoord (zie **Firebase Authentication**
+   hierboven voor hoe dat account is aangemaakt).
+2. Cliënten die de intake invullen verschijnen **automatisch** in de lijst —
+   geen actie nodig. **Importeer JSON** blijft beschikbaar als handmatige
+   fallback (bv. voor een bestand dat via de mailto-knop is binnengekomen).
 3. Wil je zelf een intake invoeren (bv. tijdens een intakegesprek)? **+ Nieuwe
    cliënt** → vul het formulier zelf in.
 3b. **Snelle rekentool** (knop naast "+ Nieuwe cliënt") → losse, directe
@@ -358,27 +368,30 @@ gekozen en overal in de UI aanpasbaar (stap 2, "Berekeningen controleren"):
    stylesheet (navigatie verborgen, licht thema voor papier).
 7. **Export JSON** downloadt het volledige cliëntprofiel + berekeningen (bv.
    als back-up, of om over te zetten naar een ander apparaat).
-8. **Vergrendel** (knop in de header) sluit het dashboard direct af zonder
-   data te wissen — handig als je even wegloopt bij een gedeeld apparaat.
+8. **Vergrendel** (knop in de header) logt je uit (`signOut`) zonder data te
+   wissen — handig als je even wegloopt bij een gedeeld apparaat.
 
-Alle cliënten staan in `localStorage` onder de sleutel `pt-intake:clients:v1`,
-alléén in de browser waarin je `coach.html` gebruikt. Wissen van browserdata
-verwijdert ze — exporteer dus regelmatig als back-up.
+Alle cliënten staan in de `clients`-collectie in Firestore — niet meer lokaal
+in de browser. Exporteer regelmatig via **Export JSON** als portable back-up
+per cliënt als je dat wilt.
 
 ## Deployen naar GitHub Pages
 
-1. Maak een nieuwe (of gebruik deze) GitHub-repository en push de bestanden:
+1. Zorg dat het Firestore-project + security rules + coach-account staan zoals
+   beschreven onder **Firebase-architectuur** hierboven (eenmalig, in de
+   Firebase Console — niet iets wat via deze repo gebeurt).
+2. Maak een nieuwe (of gebruik deze) GitHub-repository en push de bestanden:
    ```bash
    git init
-   git add index.html client.js coach.html app.js coach-auth.js intake-form.js utils.js calculations.js styles.css README.md
+   git add index.html client.js coach.html app.js coach-auth.js firebase.js intake-form.js utils.js calculations.js i18n.js styles.css README.md
    git commit -m "Initial commit: PT intake app"
    git branch -M main
    git remote add origin <jouw-repo-url>
    git push -u origin main
    ```
-2. Ga naar **Settings → Pages** in de GitHub-repo.
-3. Kies bij **Source**: branch `main`, map `/ (root)`.
-4. Na een minuut is de app live:
+3. Ga naar **Settings → Pages** in de GitHub-repo.
+4. Kies bij **Source**: branch `main`, map `/ (root)`.
+5. Na een minuut is de app live:
    - Cliëntformulier: `https://<gebruikersnaam>.github.io/<repo-naam>/`
    - Coach-dashboard: `https://<gebruikersnaam>.github.io/<repo-naam>/coach.html`
      (bookmark deze zelf — deel hem niet met cliënten)
@@ -397,8 +410,9 @@ van een bestand blijft gebruiken (dit gebeurde echt: een knop werkte niet meer
 na een wijziging, puur omdat de browser nog de oude `client.js` in cache had).
 
 **Verhoog dit versienummer overal tegelijk (alle `?v=N` in `index.html`,
-`coach.html`, `client.js`, `app.js`, `intake-form.js`) telkens wanneer je een
-van de `.js`- of `.css`-bestanden wijzigt en opnieuw deployt.** Vergeet je dit,
+`coach.html`, `client.js`, `app.js`, `coach-auth.js`, `intake-form.js`,
+`firebase.js`) telkens wanneer je een van de `.js`- of `.css`-bestanden
+wijzigt en opnieuw deployt.** Vergeet je dit,
 dan is het risico dat jij (niet je cliënten — zij laden alles voor het eerst)
 een oude versie blijft zien totdat je handmatig een hard refresh doet
 (Ctrl/Cmd+Shift+R) of de site-data van je browser wist.

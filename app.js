@@ -4,41 +4,33 @@ import {
   maakLeegClient, initTagInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij,
 } from './intake-form.js?v=2';
 import { initCoachGate, lockNow } from './coach-auth.js?v=2';
+import { db } from './firebase.js?v=2';
+import {
+  collection, doc, setDoc, getDoc, deleteDoc, query, orderBy, onSnapshot,
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const STORAGE_KEY = 'pt-intake:clients:v1';
+const CLIENTS_COLLECTIE = 'clients';
 
-// ---------- Storage ----------
+// ---------- Storage (Firestore — shared with client.js's submissions) ----------
 
-function laadClients() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  } catch {
-    return [];
-  }
+async function upsertClient(client) {
+  await setDoc(doc(db, CLIENTS_COLLECTIE, client.id), client);
 }
 
-function opslaanClients(clients) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+async function verwijderClient(id) {
+  await deleteDoc(doc(db, CLIENTS_COLLECTIE, id));
 }
 
-function upsertClient(client) {
-  const clients = laadClients();
-  const i = clients.findIndex((c) => c.id === client.id);
-  if (i >= 0) clients[i] = client; else clients.push(client);
-  opslaanClients(clients);
-}
-
-function verwijderClientUitStorage(id) {
-  opslaanClients(laadClients().filter((c) => c.id !== id));
-}
-
-function vindClient(id) {
-  return laadClients().find((c) => c.id === id) ?? null;
+async function vindClient(id) {
+  const snap = await getDoc(doc(db, CLIENTS_COLLECTIE, id));
+  return snap.exists() ? snap.data() : null;
 }
 
 // ---------- App state ----------
 
 let huidigeClient = null;
+let huidigeLijst = [];
+let opslaanTimer = null;
 
 // ---------- Berekening view ----------
 
@@ -98,8 +90,15 @@ function herberekenEnRender() {
   if (!huidigeClient) return;
   huidigeClient.instellingen = leesInstellingenForm();
   huidigeClient.calculations = calc.berekenClient(huidigeClient.intake, huidigeClient.instellingen);
-  upsertClient(huidigeClient);
   renderBerekeningResultaten(huidigeClient.calculations);
+
+  // Recompute/render instantly (local, free); debounce the network write so
+  // rapid slider/typing changes in the settings panel don't spam Firestore.
+  clearTimeout(opslaanTimer);
+  const teBewaren = huidigeClient;
+  opslaanTimer = setTimeout(() => {
+    upsertClient(teBewaren).catch((err) => console.error('Opslaan mislukt:', err));
+  }, 500);
 }
 
 function renderBerekeningResultaten(c) {
@@ -352,20 +351,30 @@ function berekenWerkcapaciteitRekentool() {
   `;
 }
 
-// ---------- Client list view ----------
+// ---------- Client list view (live — updates automatically as clients submit) ----------
 
-function renderClientLijst() {
+function startLiveClientLijst() {
+  const q = query(collection(db, CLIENTS_COLLECTIE), orderBy('createdAt', 'desc'));
+  onSnapshot(q, (snapshot) => {
+    huidigeLijst = snapshot.docs.map((d) => d.data());
+    renderClientLijstDom();
+  }, (err) => {
+    document.getElementById('client-lijst').innerHTML =
+      `<div class="empty-state">Kon cliënten niet laden: ${escapeHtml(err.message)}</div>`;
+  });
+}
+
+function renderClientLijstDom() {
   const container = document.getElementById('client-lijst');
   const tpl = document.getElementById('tpl-client-kaart');
-  const clients = laadClients().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   container.innerHTML = '';
-  if (!clients.length) {
-    container.innerHTML = '<div class="empty-state">Nog geen cliënten. Klik op "+ Nieuwe cliënt" of importeer een ingevulde intake.</div>';
+  if (!huidigeLijst.length) {
+    container.innerHTML = '<div class="empty-state">Nog geen cliënten. Klik op "+ Nieuwe cliënt", of wacht tot een cliënt de intake invult — die verschijnt hier vanzelf.</div>';
     return;
   }
 
-  for (const client of clients) {
+  for (const client of huidigeLijst) {
     const node = tpl.content.cloneNode(true);
     const naam = client.intake.persoonsgegevens.naam || client.naam || 'Naamloos';
     node.querySelector('.client-kaart__naam').textContent = naam;
@@ -379,20 +388,19 @@ function renderClientLijst() {
     node.querySelector('[data-action="verwijder"]').addEventListener('click', (e) => {
       e.stopPropagation();
       if (confirm(`"${naam}" verwijderen? Dit kan niet ongedaan gemaakt worden.`)) {
-        verwijderClientUitStorage(client.id);
-        renderClientLijst();
+        verwijderClient(client.id).catch((err) => alert(`Verwijderen mislukt: ${err.message}`));
       }
     });
     container.appendChild(node);
   }
 }
 
-function openClient(id) {
-  const client = vindClient(id);
+async function openClient(id) {
+  const client = await vindClient(id);
   if (!client) return;
   huidigeClient = client;
   client.calculations = calc.berekenClient(client.intake, client.instellingen);
-  upsertClient(client);
+  await upsertClient(client);
   vulIntakeFormIn(client);
   vulInstellingenFormIn(client);
   renderBerekeningResultaten(client.calculations);
@@ -409,15 +417,14 @@ function exporteerClient(client) {
 
 function importeerJsonBestand(file) {
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
     try {
       const data = JSON.parse(reader.result);
       const client = data.client ?? data;
       if (!client.intake) throw new Error('Geen geldig cliëntprofiel gevonden in dit bestand.');
       client.id = client.id || crypto.randomUUID();
       client.instellingen = client.instellingen || {};
-      upsertClient(client);
-      renderClientLijst();
+      await upsertClient(client);
     } catch (err) {
       alert(`Import mislukt: ${err.message}`);
     }
@@ -447,7 +454,7 @@ function wireEvents() {
   document.querySelectorAll('[data-nav]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const target = btn.dataset.nav;
-      if (target === 'lijst') { renderClientLijst(); toonView('lijst'); }
+      if (target === 'lijst') toonView('lijst');
       else if (target === 'intake-terug') toonView('intake');
       else if (target === 'berekening-terug') toonView('berekening');
     });
@@ -465,12 +472,17 @@ function wireEvents() {
   document.getElementById('btn-bereken-rm').addEventListener('click', berekenRmRekentool);
   document.getElementById('btn-bereken-werkcapaciteit').addEventListener('click', berekenWerkcapaciteitRekentool);
 
-  document.getElementById('intake-form').addEventListener('submit', (e) => {
+  document.getElementById('intake-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!huidigeClient) huidigeClient = maakLeegClient();
     huidigeClient.intake = leesIntakeForm();
     huidigeClient.naam = huidigeClient.intake.persoonsgegevens.naam;
-    upsertClient(huidigeClient);
+    try {
+      await upsertClient(huidigeClient);
+    } catch (err) {
+      alert(`Opslaan mislukt: ${err.message}`);
+      return;
+    }
     vulInstellingenFormIn(huidigeClient);
     herberekenEnRender();
     toonView('berekening');
@@ -507,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCoachGate(() => {
     initTagInputs();
     wireEvents();
-    renderClientLijst();
+    startLiveClientLijst();
     toonView('lijst');
   });
 });

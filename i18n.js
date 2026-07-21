@@ -137,18 +137,13 @@ export const VERTALINGEN = {
     'btn.nieuwFormulier': 'Nieuw formulier',
 
     'status.bezig': 'Bezig met versturen naar Arman...',
-    'status.ok': 'Verstuurd naar Arman.',
-    'status.fout': 'Automatisch versturen is niet gelukt. Stuur het gedownloade bestand hieronder even zelf naar mij door.',
+    'status.ok': 'Verstuurd — dit verschijnt automatisch in het dashboard van Arman.',
+    'status.fout': 'Automatisch opslaan is niet gelukt. Stuur het gedownloade bestand hieronder even zelf naar Arman door.',
 
     'confirm.eerderFormulier': 'We vonden een eerder gestart formulier op dit apparaat. Wil je daarmee verdergaan?\n\nAnnuleren = opnieuw beginnen.',
     'taal.label': 'Taal',
 
     'coach.link': 'Coach',
-    'coach.pinPlaceholder': 'Pincode',
-    'coach.gaNaarDashboard': 'Ga naar dashboard',
-    'coach.foutieveCode': 'Onjuiste pincode.',
-    'coach.nogGeenPincode': 'Nog geen pincode ingesteld.',
-    'coach.naarDashboard': 'Ga naar het dashboard',
   },
 
   en: {
@@ -274,18 +269,13 @@ export const VERTALINGEN = {
     'btn.nieuwFormulier': 'New form',
 
     'status.bezig': 'Sending to Arman...',
-    'status.ok': 'Sent to Arman.',
-    'status.fout': 'Automatic sending didn\'t work. Please send the downloaded file below to me yourself.',
+    'status.ok': 'Sent — this will appear in Arman\'s dashboard automatically.',
+    'status.fout': 'Automatic saving didn\'t work. Please send the downloaded file below to Arman yourself.',
 
     'confirm.eerderFormulier': 'We found a form you started earlier on this device. Do you want to continue with it?\n\nCancel = start over.',
     'taal.label': 'Language',
 
     'coach.link': 'Coach',
-    'coach.pinPlaceholder': 'PIN code',
-    'coach.gaNaarDashboard': 'Go to dashboard',
-    'coach.foutieveCode': 'Incorrect PIN code.',
-    'coach.nogGeenPincode': 'No PIN code set up yet.',
-    'coach.naarDashboard': 'Go to the dashboard',
   },
 
   es: {
@@ -411,18 +401,13 @@ export const VERTALINGEN = {
     'btn.nieuwFormulier': 'Nuevo formulario',
 
     'status.bezig': 'Enviando a Arman...',
-    'status.ok': 'Enviado a Arman.',
-    'status.fout': 'El envío automático no funcionó. Por favor, envíame tú mismo el archivo descargado más abajo.',
+    'status.ok': 'Enviado — esto aparecerá automáticamente en el panel de Arman.',
+    'status.fout': 'El guardado automático no funcionó. Por favor, envíale tú mismo el archivo descargado a Arman.',
 
     'confirm.eerderFormulier': 'Encontramos un formulario que empezaste antes en este dispositivo. ¿Quieres continuar con él?\n\nCancelar = empezar de nuevo.',
     'taal.label': 'Idioma',
 
     'coach.link': 'Coach',
-    'coach.pinPlaceholder': 'Código PIN',
-    'coach.gaNaarDashboard': 'Ir al panel',
-    'coach.foutieveCode': 'Código PIN incorrecto.',
-    'coach.nogGeenPincode': 'Aún no se ha configurado un código PIN.',
-    'coach.naarDashboard': 'Ir al panel',
   },
 
   pt: {
@@ -548,18 +533,13 @@ export const VERTALINGEN = {
     'btn.nieuwFormulier': 'Novo formulário',
 
     'status.bezig': 'Enviando para o Arman...',
-    'status.ok': 'Enviado para o Arman.',
-    'status.fout': 'O envio automático não funcionou. Por favor, me envie você mesmo o arquivo baixado abaixo.',
+    'status.ok': 'Enviado — isso vai aparecer automaticamente no painel do Arman.',
+    'status.fout': 'O salvamento automático não funcionou. Por favor, envie você mesmo o arquivo baixado para o Arman.',
 
     'confirm.eerderFormulier': 'Encontramos um formulário que você começou antes neste dispositivo. Deseja continuar com ele?\n\nCancelar = começar de novo.',
     'taal.label': 'Idioma',
 
     'coach.link': 'Coach',
-    'coach.pinPlaceholder': 'Código PIN',
-    'coach.gaNaarDashboard': 'Ir para o painel',
-    'coach.foutieveCode': 'Código PIN incorreto.',
-    'coach.nogGeenPincode': 'Ainda não há um código PIN configurado.',
-    'coach.naarDashboard': 'Ir para o painel',
   },
 };
 

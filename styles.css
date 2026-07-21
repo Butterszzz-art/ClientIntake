@@ -193,34 +193,14 @@ a { color: var(--accent); }
 }
 
 .coach-toegang__toggle {
-  background: none;
-  border: none;
   color: var(--border);
   font-family: var(--font-data);
   font-size: 0.7rem;
-  cursor: pointer;
+  text-decoration: none;
   padding: 0.5em;
 }
 
 .coach-toegang__toggle:hover { color: var(--text-dim); }
-
-.coach-toegang__paneel {
-  margin-top: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.coach-toegang__paneel form {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.coach-toegang__paneel input {
-  width: 140px;
-  text-align: center;
-}
 
 /* ---------- Layout ---------- */
 main#app {
@@ -281,7 +261,7 @@ input, select, textarea, button {
   font-size: 0.95rem;
 }
 
-input[type="text"], input[type="number"], input[type="file"], select, textarea {
+input[type="text"], input[type="number"], input[type="file"], input[type="email"], input[type="password"], select, textarea {
   background: var(--bg);
   border: 1px solid var(--border);
   color: var(--text);
