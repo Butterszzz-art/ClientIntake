@@ -7,6 +7,7 @@ export const STANDAARD_PAL = {
   sedentair: 1.2,
   'licht actief': 1.375,
   actief: 1.55,
+  'erg actief': 1.725,
 };
 
 export const STANDAARD_TEF = 1.1;
@@ -110,6 +111,71 @@ export function repTargetGewicht(rm, gewenstPercentage1RM) {
 
 export function werkcapaciteit(oudeSet, nieuweSet) {
   return ((nieuweSet - oudeSet) / oudeSet) * 100;
+}
+
+// ---------- Training Volume Calculator (Menno Henselmans model) ----------
+// trainingsstatus: 1 (beginner) - 3 (gevorderd/elite). vrouw: 0/1.
+// herstelfactor: 0.5-1.2. energiebalansfactor: vermenigvuldiger (bv. lager
+// tijdens een dieetfase). trainingsfrequentie: keer/week dat de spiergroep
+// wordt getraind — boven de 3x/week telt effectief nog maar 2.5x mee.
+export function trainingsvolumeAdvies(trainingsstatus, vrouw, herstelfactor, energiebalansfactor, trainingsfrequentie) {
+  const statusGeklemd = Math.max(1, Math.min(3, trainingsstatus));
+  const herstelGeklemd = Math.max(0.5, Math.min(1.2, herstelfactor));
+  const effectieveFrequentie = trainingsfrequentie < 3 ? trainingsfrequentie : 2.5;
+  const optimaalVolume = (effectieveFrequentie * 5) * herstelGeklemd * energiebalansfactor
+    * Math.sqrt(statusGeklemd) + (vrouw ? 3 : 0);
+  return round(optimaalVolume, 1);
+}
+
+// ---------- 1RM Calculator — three subcalculators (Menno Henselmans) ------
+// Each returns { epley1RM, tabel } where tabel is the full loading table
+// across the standard percentage set, not just the 1RM itself.
+export const RM_BELASTING_PERCENTAGES = [0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60, 0.50, 0.30];
+
+// A) Free weights & machine exercises.
+export function rm1VrijGewicht(gewicht, herhalingen) {
+  const epley1RM = gewicht * (1 + herhalingen / 30);
+  const tabel = RM_BELASTING_PERCENTAGES.map((percentage) => ({
+    percentage,
+    gewicht: round(percentage * epley1RM, 1),
+  }));
+  return { epley1RM: round(epley1RM, 1), tabel };
+}
+
+// B) Bodyweight exercises (chin-up, dip, ...) — the source spreadsheet's
+// assumption is that 93.48% of bodyweight loads the exercise.
+const BODYWEIGHT_FACTOR = 0.9348;
+export function rm1Bodyweight(lichaamsgewicht, externGewicht, herhalingen) {
+  const totaalGewicht = BODYWEIGHT_FACTOR * lichaamsgewicht + externGewicht;
+  const epley1RM = totaalGewicht * (1 + herhalingen / 30);
+  const tabel = RM_BELASTING_PERCENTAGES.map((percentage) => ({
+    percentage,
+    externGewicht: round(percentage * epley1RM - BODYWEIGHT_FACTOR * lichaamsgewicht, 1),
+  }));
+  return { epley1RM: round(epley1RM, 1), tabel };
+}
+
+// C) Push-ups — same shape as B, but only 75% of bodyweight loads the
+// exercise (the feet take the rest of the weight).
+const PUSHUP_FACTOR = 0.75;
+export function rm1PushUp(lichaamsgewicht, externGewicht, herhalingen) {
+  const totaalGewicht = PUSHUP_FACTOR * lichaamsgewicht + externGewicht;
+  const epley1RM = totaalGewicht * (1 + herhalingen / 30);
+  const tabel = RM_BELASTING_PERCENTAGES.map((percentage) => ({
+    percentage,
+    externGewicht: round(percentage * epley1RM - PUSHUP_FACTOR * lichaamsgewicht, 1),
+  }));
+  return { epley1RM: round(epley1RM, 1), tabel };
+}
+
+// ---------- Werkcapaciteit / rustinterval reference data ------------------
+// Pure aggregation over data/werkcapaciteit-referentie.json — used for the
+// optional per-client rest-interval suggestion (Task 4).
+export function gemiddeldeVermoeidheidPerGroep(data, group) {
+  const relevant = (data ?? []).filter((r) => r.group === group && r.fatigue_pct != null);
+  if (!relevant.length) return null;
+  const gemiddelde = relevant.reduce((sum, r) => sum + r.fatigue_pct, 0) / relevant.length;
+  return { gemiddelde: round(gemiddelde, 1), n: relevant.length };
 }
 
 export function frameSizeCheck(enkelomtrek) {
@@ -255,7 +321,9 @@ export function genereerRodeVlaggen(intake, calculations) {
     });
   }
 
-  if (intake.lifestyle?.stressLevel === 'hoog') {
+  // 'hoog' is the pre-Task-1 value (kept so older stored intakes still flag
+  // correctly); 'veel_stress' is the current 4-level scale's top option.
+  if (intake.lifestyle?.stressLevel === 'hoog' || intake.lifestyle?.stressLevel === 'veel_stress') {
     vlaggen.push({
       niveau: 'oranje',
       bericht: 'Hoog stressniveau gerapporteerd — houd rekening met verminderd herstelvermogen.',

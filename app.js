@@ -1,10 +1,11 @@
-import * as calc from './calculations.js?v=3';
-import { escapeHtml, fmt, num, downloadJson } from './utils.js?v=3';
+import * as calc from './calculations.js?v=4';
+import { escapeHtml, fmt, num, downloadJson } from './utils.js?v=4';
 import {
-  maakLeegClient, initTagInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij,
-} from './intake-form.js?v=3';
-import { initCoachGate, lockNow } from './coach-auth.js?v=3';
-import { db } from './firebase.js?v=3';
+  maakLeegClient, initTagInputs, initFileInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij,
+  toggleePedsDisclaimer,
+} from './intake-form.js?v=4';
+import { initCoachGate, lockNow } from './coach-auth.js?v=4';
+import { db } from './firebase.js?v=4';
 import {
   collection, doc, setDoc, getDoc, deleteDoc, query, orderBy, onSnapshot,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
@@ -210,6 +211,8 @@ function renderOverzicht(client) {
     <p>${c.advies.splitsdagen.dagen.map(escapeHtml).join(' → ')}</p>
   `;
 
+  renderRustintervalAdvies(intake);
+
   renderMaaltijdTabel('ov-voeding-rustdag', c.maaltijdVerdeling.rustdag);
   renderMaaltijdTabel('ov-voeding-trainingsdag', c.maaltijdVerdeling.trainingsdag);
 
@@ -334,17 +337,56 @@ function berekenFrameRekentool() {
   `;
 }
 
-function berekenRmRekentool() {
-  const gewicht = num(document.getElementById('r-rm-gewicht').value);
-  const reps = num(document.getElementById('r-rm-reps').value);
-  const pct = num(document.getElementById('r-rm-pct').value) / 100;
-  const rm = calc.geschat1RM(gewicht, reps);
-  const target = calc.repTargetGewicht(rm, pct);
+// Shared renderer for the three 1RM subcalculators' loading tables.
+// `kolomLabel`/`waardeFn` let each variant show its own second column
+// (absolute weight for A, external weight needed for B/C).
+function renderBelastingstabel(elId, epley1RM, tabel, kolomLabel, waardeFn) {
+  const rijen = tabel.map((r) => `
+    <tr><td>${fmt(r.percentage * 100, 0)}%</td><td>${fmt(waardeFn(r), 1)} kg</td></tr>
+  `).join('');
+  document.getElementById(elId).innerHTML = `
+    <div class="kerncijfers">${kerncijferHtml('Geschatte 1RM', fmt(epley1RM, 1), 'kg')}</div>
+    <table class="data-tabel">
+      <thead><tr><th>% van 1RM</th><th>${escapeHtml(kolomLabel)}</th></tr></thead>
+      <tbody>${rijen}</tbody>
+    </table>
+  `;
+}
 
-  document.getElementById('rekentool-rm-resultaat').innerHTML = `
+function berekenRmARekentool() {
+  const gewicht = num(document.getElementById('r-rmA-gewicht').value);
+  const reps = num(document.getElementById('r-rmA-reps').value);
+  const { epley1RM, tabel } = calc.rm1VrijGewicht(gewicht, reps);
+  renderBelastingstabel('rekentool-rmA-resultaat', epley1RM, tabel, 'Gewicht', (r) => r.gewicht);
+}
+
+function berekenRmBRekentool() {
+  const lichaamsgewicht = num(document.getElementById('r-rmB-lichaamsgewicht').value);
+  const extern = num(document.getElementById('r-rmB-extern').value);
+  const reps = num(document.getElementById('r-rmB-reps').value);
+  const { epley1RM, tabel } = calc.rm1Bodyweight(lichaamsgewicht, extern, reps);
+  renderBelastingstabel('rekentool-rmB-resultaat', epley1RM, tabel, 'Benodigd extern gewicht', (r) => r.externGewicht);
+}
+
+function berekenRmCRekentool() {
+  const lichaamsgewicht = num(document.getElementById('r-rmC-lichaamsgewicht').value);
+  const extern = num(document.getElementById('r-rmC-extern').value);
+  const reps = num(document.getElementById('r-rmC-reps').value);
+  const { epley1RM, tabel } = calc.rm1PushUp(lichaamsgewicht, extern, reps);
+  renderBelastingstabel('rekentool-rmC-resultaat', epley1RM, tabel, 'Benodigd extern gewicht', (r) => r.externGewicht);
+}
+
+function berekenVolumeRekentool() {
+  const status = num(document.getElementById('r-vol-status').value);
+  const vrouw = num(document.getElementById('r-vol-vrouw').value);
+  const herstel = num(document.getElementById('r-vol-herstel').value);
+  const ebf = num(document.getElementById('r-vol-ebf').value);
+  const frequentie = num(document.getElementById('r-vol-frequentie').value);
+  const volume = calc.trainingsvolumeAdvies(status, vrouw, herstel, ebf, frequentie);
+
+  document.getElementById('rekentool-volume-resultaat').innerHTML = `
     <div class="kerncijfers">
-      ${kerncijferHtml('Geschatte 1RM', fmt(rm, 1), 'kg')}
-      ${kerncijferHtml(`Rep target (${fmt(pct * 100, 0)}% 1RM)`, fmt(target, 1), 'kg')}
+      ${kerncijferHtml('Geschat optimaal trainingsvolume (sets/week/spiergroep)', fmt(volume, 1))}
     </div>
   `;
 }
@@ -360,6 +402,108 @@ function berekenWerkcapaciteitRekentool() {
       ${kerncijferHtml('Interpretatie', wc >= 0 ? 'Vooruitgang t.o.v. vorige sessie' : 'Terugval t.o.v. vorige sessie')}
     </div>
   `;
+}
+
+// ---------- Werkcapaciteit / rustinterval reference tool (Task 4) --------
+
+let werkcapaciteitData = null; // { bron, definitie, voetnoten, data }
+const werkcapaciteitFilter = { group: 'alle', oefening: '', sort: 'rest_min' };
+
+async function laadWerkcapaciteitData() {
+  try {
+    const res = await fetch('data/werkcapaciteit-referentie.json');
+    werkcapaciteitData = await res.json();
+    renderWerkcapaciteitDefinitie();
+    renderWerkcapaciteitTabel();
+  } catch (err) {
+    console.error('Kon werkcapaciteit-referentiedata niet laden:', err);
+  }
+}
+
+function renderWerkcapaciteitDefinitie() {
+  if (!werkcapaciteitData) return;
+  document.getElementById('wc-definitie').textContent = werkcapaciteitData.definitie;
+  const entries = Object.entries(werkcapaciteitData.voetnoten ?? {});
+  document.getElementById('wc-voetnoten').innerHTML = entries.length
+    ? `<ol>${entries.map(([nr, tekst]) => `<li><strong>${escapeHtml(nr)}.</strong> ${escapeHtml(tekst)}</li>`).join('')}</ol>`
+    : '';
+}
+
+// Green (low performance loss) -> red (high) — a conditional-formatting-style
+// color scale for fatigue_pct, same idea as a spreadsheet color scale.
+function fatigueKleur(pct) {
+  if (pct == null) return '';
+  const clamped = Math.max(0, Math.min(100, pct));
+  const hue = 140 - (clamped / 100) * 140; // 140=green, 0=red
+  return `background: hsl(${hue}, 55%, 22%); color: #fff;`;
+}
+
+function renderWerkcapaciteitTabel() {
+  if (!werkcapaciteitData) return;
+  const { group, oefening, sort } = werkcapaciteitFilter;
+  let rijen = werkcapaciteitData.data.slice();
+
+  if (group !== 'alle') rijen = rijen.filter((r) => r.group === group);
+  if (oefening) {
+    const q = oefening.toLowerCase();
+    rijen = rijen.filter((r) => (r.exercise || '').toLowerCase().includes(q) || r.study.toLowerCase().includes(q));
+  }
+  rijen.sort((a, b) => (sort === 'fatigue_pct'
+    ? (b.fatigue_pct ?? -1) - (a.fatigue_pct ?? -1)
+    : (a.rest_min ?? 999) - (b.rest_min ?? 999)));
+
+  const html = rijen.map((r) => `
+    <tr>
+      <td>${escapeHtml(r.group)}</td>
+      <td>${escapeHtml(r.study)}</td>
+      <td>${escapeHtml(r.population)}</td>
+      <td>${r.sets}</td>
+      <td>${escapeHtml(r.intensity)}</td>
+      <td>${escapeHtml(r.rest_txt)}</td>
+      <td>${escapeHtml(r.exercise || '—')}</td>
+      <td style="${fatigueKleur(r.fatigue_pct)}">${r.fatigue_pct != null ? `${fmt(r.fatigue_pct, 1)}%` : '—'}</td>
+      <td>${r.reps ?? '—'}</td>
+      <td>${r.footnote ? escapeHtml(String(r.footnote)) : ''}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('wc-tabel-body').innerHTML = html || '<tr><td colspan="10" class="hint">Geen resultaten.</td></tr>';
+  document.getElementById('wc-resultaat-count').textContent = `${rijen.length} van ${werkcapaciteitData.data.length} datapunten`;
+}
+
+function wireWerkcapaciteitFilters() {
+  document.getElementById('wc-filter-group').addEventListener('change', (e) => {
+    werkcapaciteitFilter.group = e.target.value;
+    renderWerkcapaciteitTabel();
+  });
+  document.getElementById('wc-filter-oefening').addEventListener('input', (e) => {
+    werkcapaciteitFilter.oefening = e.target.value;
+    renderWerkcapaciteitTabel();
+  });
+  document.getElementById('wc-filter-sort').addEventListener('change', (e) => {
+    werkcapaciteitFilter.sort = e.target.value;
+    renderWerkcapaciteitTabel();
+  });
+}
+
+// Optional per-client rest-interval suggestion on the overzicht screen
+// (Task 4, optional part) — dynamically averaged from the reference data,
+// not hardcoded. Training status is inferred from trainingservaring: under
+// 1 year counts as "Ongetraind", 1 year or more as "Getraind" — the
+// reference dataset only distinguishes these two groups.
+function renderRustintervalAdvies(intake) {
+  const el = document.getElementById('ov-rustinterval-advies');
+  if (!el) return;
+  if (!werkcapaciteitData) { el.innerHTML = '<p class="hint">Referentiedata nog niet geladen.</p>'; return; }
+
+  const groep = (intake.persoonsgegevens.trainingservaring ?? 0) >= 1 ? 'Getraind' : 'Ongetraind';
+  const gemiddelde = calc.gemiddeldeVermoeidheidPerGroep(werkcapaciteitData.data, groep);
+  if (!gemiddelde) { el.innerHTML = '<p class="hint">Onvoldoende referentiedata voor deze groep.</p>'; return; }
+
+  el.innerHTML = `<p>Op basis van ${gemiddelde.n} datapunten voor <strong>${escapeHtml(groep.toLowerCase())}e</strong> lifters
+    is het gemiddelde prestatieverlies over de onderzochte rustintervallen <strong>${fmt(gemiddelde.gemiddelde, 1)}%</strong>.
+    Kies een rustinterval dat voldoende hersteltijd geeft tussen sets voor déze cliënt — zie het tabblad
+    "Werkcapaciteit" (cliëntenlijst-scherm) voor de volledige referentietabel per studie.</p>`;
 }
 
 // ---------- Client list view (live — updates automatically as clients submit) ----------
@@ -450,7 +594,7 @@ function toonView(naam) {
   document.getElementById(`view-${naam}`).classList.add('active');
 
   const headerInfo = document.getElementById('header-client-info');
-  if (naam === 'lijst' || naam === 'rekentool') {
+  if (naam === 'lijst' || naam === 'rekentool' || naam === 'werkcapaciteit') {
     headerInfo.hidden = true;
   } else if (huidigeClient) {
     headerInfo.hidden = false;
@@ -480,8 +624,16 @@ function wireEvents() {
   document.getElementById('btn-snelle-rekentool').addEventListener('click', () => toonView('rekentool'));
   document.getElementById('btn-bereken-voeding').addEventListener('click', berekenVoedingRekentool);
   document.getElementById('btn-bereken-frame').addEventListener('click', berekenFrameRekentool);
-  document.getElementById('btn-bereken-rm').addEventListener('click', berekenRmRekentool);
+  document.getElementById('btn-bereken-rmA').addEventListener('click', berekenRmARekentool);
+  document.getElementById('btn-bereken-rmB').addEventListener('click', berekenRmBRekentool);
+  document.getElementById('btn-bereken-rmC').addEventListener('click', berekenRmCRekentool);
   document.getElementById('btn-bereken-werkcapaciteit').addEventListener('click', berekenWerkcapaciteitRekentool);
+  document.getElementById('btn-bereken-volume').addEventListener('click', berekenVolumeRekentool);
+
+  document.getElementById('btn-werkcapaciteit-tool').addEventListener('click', () => toonView('werkcapaciteit'));
+  wireWerkcapaciteitFilters();
+
+  document.getElementById('f-peds-gebruikt').addEventListener('change', toggleePedsDisclaimer);
 
   document.getElementById('intake-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -529,8 +681,10 @@ document.getElementById('btn-vergrendel').addEventListener('click', lockNow);
 document.addEventListener('DOMContentLoaded', () => {
   initCoachGate(() => {
     initTagInputs();
+    initFileInputs();
     wireEvents();
     startLiveClientLijst();
+    laadWerkcapaciteitData();
     toonView('lijst');
   });
 });

@@ -1,9 +1,10 @@
-import { downloadJson } from './utils.js?v=3';
+import { downloadJson } from './utils.js?v=4';
 import {
-  maakLeegClient, initTagInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij, renderApparatuurChecklist,
-} from './intake-form.js?v=3';
-import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=3';
-import { db } from './firebase.js?v=3';
+  maakLeegClient, initTagInputs, initFileInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij, renderApparatuurChecklist,
+  toggleePedsDisclaimer,
+} from './intake-form.js?v=4';
+import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=4';
+import { db } from './firebase.js?v=4';
 import { doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // This page never talks to the coach dashboard: no client list, no
@@ -233,6 +234,7 @@ async function verstuur() {
 document.addEventListener('DOMContentLoaded', () => {
   pasVertalingToe(bepaalStartTaal());
   initTagInputs();
+  initFileInputs();
 
   const opgeslagenConcept = localStorage.getItem(DRAFT_KEY);
   if (opgeslagenConcept) {
@@ -251,6 +253,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('taal-keuze').addEventListener('change', (e) => {
     pasVertalingToe(e.target.value);
   });
+
+  document.getElementById('f-peds-gebruikt').addEventListener('change', toggleePedsDisclaimer);
 
   document.getElementById('intake-form').addEventListener('submit', (e) => {
     e.preventDefault();

@@ -1,37 +1,48 @@
 // Shared intake-form logic: schema factory, form <-> data binding, and the
-// small UI widgets (tag input, kracht table, apparatuur checklist) used by
-// both the client-facing intake page and the coach dashboard. Both pages
-// render the same fieldset markup (same element IDs) and import this module
-// so the reading/writing logic exists exactly once.
+// small UI widgets (tag input, kracht table, apparatuur checklist, file
+// upload) used by both the client-facing intake page and the coach
+// dashboard. Both pages render the same fieldset markup (same element IDs)
+// and import this module so the reading/writing logic exists exactly once.
 
-import { escapeHtml, num } from './utils.js?v=3';
+import { escapeHtml, num } from './utils.js?v=4';
 
 // Stable canonical keys (not translated) — these are the values actually
 // stored in intake.materiaal.apparatuur, so the schema stays consistent no
 // matter which language a client filled the form in. Display labels are
 // looked up via `labelFn`, which defaults to Dutch (used by coach.html).
 export const APPARATUUR_OPTIES = [
-  'squat_rack', 'hyperextension_bench', 'chinup_belt', 'leg_curl_machine',
-  'leg_extension_machine', 'trx', 'powerlifting_bands', 'powerlifting_chains',
+  'squat_rack', 'hyperextension_bench', 'reverse_hyper', 'glute_ham_raise',
+  'standing_calf_raise_machine', 'seated_calf_raise', 'chinup_belt',
+  'leg_curl_machine', 'leg_extension_machine', 'knee_wraps', 'gymnastic_rings',
+  'trx', 'resistance_bands', 'powerlifting_bands', 'powerlifting_chains',
   'adjustable_bench', 'cable_machine', 'smith_machine', 'dumbbells_50kg',
 ];
 
 const STANDAARD_APPARATUUR_LABELS = {
-  squat_rack: 'Squat rek',
-  hyperextension_bench: 'Hyperextension bench',
-  chinup_belt: 'Chin-up belt (assist)',
-  leg_curl_machine: 'Leg curl machine',
+  squat_rack: 'Squat rack/cage',
+  hyperextension_bench: '45° hyperextension bank',
+  reverse_hyper: 'Reverse hyper',
+  glute_ham_raise: 'Glute-ham raise (GHR)',
+  standing_calf_raise_machine: 'Staande calf raise machine',
+  seated_calf_raise: 'Seated calf raise',
+  chinup_belt: 'Dip/chin-up belt (assist)',
+  leg_curl_machine: 'Leg curl machine (zittend/liggend/staand)',
   leg_extension_machine: 'Leg extension machine',
-  trx: 'TRX',
-  powerlifting_bands: 'Powerlifting bands',
-  powerlifting_chains: 'Powerlifting chains',
+  knee_wraps: 'Knee wraps',
+  gymnastic_rings: 'Gymnastiekringen',
+  trx: 'TRX / suspensietrainer',
+  resistance_bands: 'Weerstandsbanden',
+  powerlifting_bands: 'Powerlifting bands (accommodating resistance)',
+  powerlifting_chains: 'Kettingen',
   adjustable_bench: 'Verstelbare bank',
-  cable_machine: 'Kabel machine',
+  cable_machine: 'Kabelstation (verstelbaar)',
   smith_machine: 'Smith machine',
   dumbbells_50kg: 'Dumbbells tot 50kg+',
 };
 
 export const STANDAARD_KRACHT_RIJEN = ['Bench press', 'Squat', 'Chin-up', 'Overhead press'];
+
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5MB — generous for one photo/PDF, keeps localStorage safe
 
 // ---------- Schema factory ----------
 
@@ -42,21 +53,36 @@ export function maakLeegClient() {
     createdAt: new Date().toISOString(),
     intake: {
       persoonsgegevens: {
-        naam: '', email: '', leeftijd: null, lengte: null, gewicht: null, vetpercentage: null,
+        naam: '', email: '', adres: '', postcode: '', stad: '', land: '',
+        leeftijd: null, lengte: null, gewicht: null, vetpercentage: null,
         geslacht: 'man', trainingservaring: null,
       },
       huidigeKracht: STANDAARD_KRACHT_RIJEN.map((oefening) => ({ oefening, kg: 0, herhalingen: 0, sets: 0 })),
-      doel: { tekst: '', categorie: 'onderhoud' },
+      doel: {
+        tekst: '', categorie: 'onderhoud',
+        spiergroepenNietGroter: '', andereSporten: '', gewenstFrequentieTekst: '',
+      },
       motivatieMindset: { motivatie: '', mentaleInstelling: '' },
-      trainingsfrequentie: { huidig: 3, trainingsmomenten: [], baan: { type: '', urenZittend: null, urenStaand: null } },
+      trainingsfrequentie: {
+        huidig: 3, trainingsmomenten: [], nietBeschikbaarTekst: '',
+        baan: { type: '', urenZittend: null, urenStaand: null },
+      },
       blessures: { tekst: '', vermijdenOefeningen: [] },
-      dieet: { huidig: '', voorkeuren: [], afkeuren: [] },
-      peds: { gebruikt: false, toelichting: '' },
-      lifestyle: { activityLevel: 'sedentair', stressLevel: 'gemiddeld', slaap: { uren: null, kwaliteit: 'matig' }, cafeine: null },
-      vetpercentageMeting: { huidplooimeter: false },
-      materiaal: { laagstePlaat: null, dumbbellStapgrootte: null, apparatuur: [] },
+      dieet: { huidig: '', specifiekDieet: '', voorkeuren: [], afkeuren: [] },
+      peds: { gebruikt: false, toelichting: '', disclaimerGeaccepteerd: false },
+      lifestyle: {
+        activityLevel: 'sedentair', stressLevel: 'gemiddeld',
+        slaap: { uren: null, kwaliteit: 'matig', ritmeToelichting: '' },
+        cafeine: null, cafeineToelichting: '',
+      },
+      vetpercentageMeting: { huidplooimeter: false, methode: '' },
+      materiaal: { laagstePlaat: null, dumbbellStapgrootte: null, apparatuur: [], overig: '' },
       supplementen: '',
-      genen: { polsomtrek: null, enkelomtrek: null, gewichtVoorheen: '', zwareBaby: false },
+      genen: {
+        polsomtrek: null, enkelomtrek: null, gewichtVoorheen: '', lengteVoorheen: '', zwareBaby: false,
+        handFotoDataUrl: null, handFotoBestandsnaam: '',
+      },
+      huidigProgramma: { tekst: '', bestandDataUrl: null, bestandNaam: '' },
     },
     instellingen: {},
     calculations: null,
@@ -155,12 +181,75 @@ export function leesApparatuurChecklist() {
   return [...document.querySelectorAll('#apparatuur-checklist input:checked')].map((i) => i.value);
 }
 
+// ---------- File upload (hand photo, program attachment) ----------
+// Client-side-only architecture (no backend) — an uploaded file is read as a
+// base64 data: URL and stored directly in the intake JSON, the same way the
+// rest of the app persists everything (localStorage + JSON export/import).
+// A 5MB cap keeps a single photo/PDF well within localStorage's ~5-10MB
+// per-origin quota.
+
+export function leesBestandAlsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) { resolve(null); return; }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      reject(new Error('Bestand is groter dan 5MB — kies een kleiner bestand.'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error ?? new Error('Kon bestand niet lezen.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+// Wires every <input type="file" data-upload-status="..."> on the page: on
+// selection, reads the file into a data: URL and stashes it as a property on
+// the input element itself (browsers won't let script set `.files`, so this
+// is the only way to both show the existing value on reload and carry a
+// freshly-picked file through to leesIntakeForm()).
+export function initFileInputs() {
+  for (const el of document.querySelectorAll('input[type="file"][data-upload-status]')) {
+    el.addEventListener('change', async () => {
+      const statusEl = document.getElementById(el.dataset.uploadStatus);
+      const file = el.files?.[0];
+      if (!file) return;
+      try {
+        el.dataUrl = await leesBestandAlsDataUrl(file);
+        el.bestandNaam = file.name;
+        if (statusEl) statusEl.textContent = file.name;
+      } catch (err) {
+        el.value = '';
+        el.dataUrl = null;
+        el.bestandNaam = '';
+        alert(err.message);
+      }
+    });
+  }
+}
+
+function zetBestandVeld(inputId, statusId, dataUrl, bestandNaam) {
+  const input = document.getElementById(inputId);
+  input.dataUrl = dataUrl ?? null;
+  input.bestandNaam = bestandNaam ?? '';
+  const statusEl = document.getElementById(statusId);
+  if (statusEl) statusEl.textContent = bestandNaam || '';
+}
+
+function leesBestandVeld(inputId) {
+  const input = document.getElementById(inputId);
+  return { dataUrl: input.dataUrl ?? null, bestandNaam: input.bestandNaam ?? '' };
+}
+
 // ---------- Intake form <-> data ----------
 
 export function vulIntakeFormIn(client, apparatuurLabelFn) {
   const i = client.intake;
   document.getElementById('f-naam').value = i.persoonsgegevens.naam;
   document.getElementById('f-email').value = i.persoonsgegevens.email ?? '';
+  document.getElementById('f-adres').value = i.persoonsgegevens.adres ?? '';
+  document.getElementById('f-postcode').value = i.persoonsgegevens.postcode ?? '';
+  document.getElementById('f-stad').value = i.persoonsgegevens.stad ?? '';
+  document.getElementById('f-land').value = i.persoonsgegevens.land ?? '';
   document.getElementById('f-leeftijd').value = i.persoonsgegevens.leeftijd ?? '';
   document.getElementById('f-lengte').value = i.persoonsgegevens.lengte ?? '';
   document.getElementById('f-gewicht').value = i.persoonsgegevens.gewicht ?? '';
@@ -168,16 +257,21 @@ export function vulIntakeFormIn(client, apparatuurLabelFn) {
   document.getElementById('f-geslacht').value = i.persoonsgegevens.geslacht;
   document.getElementById('f-trainingservaring').value = i.persoonsgegevens.trainingservaring ?? '';
   document.getElementById('f-huidplooimeter').checked = !!i.vetpercentageMeting.huidplooimeter;
+  document.getElementById('f-huidplooimeter-methode').value = i.vetpercentageMeting.methode ?? '';
 
   renderKrachtTabel(i.huidigeKracht);
 
   document.getElementById('f-doel-categorie').value = i.doel.categorie;
   document.getElementById('f-doel-tekst').value = i.doel.tekst;
+  document.getElementById('f-doel-spiergroepen-niet-groter').value = i.doel.spiergroepenNietGroter ?? '';
+  document.getElementById('f-doel-andere-sporten').value = i.doel.andereSporten ?? '';
+  document.getElementById('f-doel-gewenste-frequentie').value = i.doel.gewenstFrequentieTekst ?? '';
 
   document.getElementById('f-motivatie').value = i.motivatieMindset?.motivatie ?? '';
   document.getElementById('f-mentale-instelling').value = i.motivatieMindset?.mentaleInstelling ?? '';
 
   document.getElementById('f-trainingsfrequentie').value = i.trainingsfrequentie.huidig ?? 3;
+  document.getElementById('f-niet-beschikbaar').value = i.trainingsfrequentie.nietBeschikbaarTekst ?? '';
   document.getElementById('f-baan-type').value = i.trainingsfrequentie.baan.type;
   document.getElementById('f-baan-uren-zittend').value = i.trainingsfrequentie.baan.urenZittend ?? '';
   document.getElementById('f-baan-uren-staand').value = i.trainingsfrequentie.baan.urenStaand ?? '';
@@ -187,20 +281,26 @@ export function vulIntakeFormIn(client, apparatuurLabelFn) {
   document.getElementById('tags-vermijden-oefeningen').setTags(i.blessures.vermijdenOefeningen);
 
   document.getElementById('f-dieet-huidig').value = i.dieet.huidig;
+  document.getElementById('f-dieet-specifiek').value = i.dieet.specifiekDieet ?? '';
   document.getElementById('tags-voorkeuren').setTags(i.dieet.voorkeuren);
   document.getElementById('tags-afkeuren').setTags(i.dieet.afkeuren);
 
   document.getElementById('f-peds-gebruikt').checked = !!i.peds.gebruikt;
   document.getElementById('f-peds-toelichting').value = i.peds.toelichting;
+  document.getElementById('f-peds-disclaimer').checked = !!i.peds.disclaimerGeaccepteerd;
+  toggleePedsDisclaimer();
 
   document.getElementById('f-activity-level').value = i.lifestyle.activityLevel;
   document.getElementById('f-stress-level').value = i.lifestyle.stressLevel;
   document.getElementById('f-slaap-uren').value = i.lifestyle.slaap.uren ?? '';
   document.getElementById('f-slaap-kwaliteit').value = i.lifestyle.slaap.kwaliteit;
+  document.getElementById('f-slaap-ritme').value = i.lifestyle.slaap.ritmeToelichting ?? '';
   document.getElementById('f-cafeine').value = i.lifestyle.cafeine ?? '';
+  document.getElementById('f-cafeine-toelichting').value = i.lifestyle.cafeineToelichting ?? '';
 
   document.getElementById('f-laagste-plaat').value = i.materiaal.laagstePlaat ?? '';
   document.getElementById('f-dumbbell-stap').value = i.materiaal.dumbbellStapgrootte ?? '';
+  document.getElementById('f-materiaal-overig').value = i.materiaal.overig ?? '';
   renderApparatuurChecklist(i.materiaal.apparatuur, apparatuurLabelFn);
 
   document.getElementById('f-supplementen').value = i.supplementen;
@@ -208,14 +308,35 @@ export function vulIntakeFormIn(client, apparatuurLabelFn) {
   document.getElementById('f-polsomtrek').value = i.genen.polsomtrek ?? '';
   document.getElementById('f-enkelomtrek').value = i.genen.enkelomtrek ?? '';
   document.getElementById('f-gewicht-voorheen').value = i.genen.gewichtVoorheen;
+  document.getElementById('f-lengte-voorheen').value = i.genen.lengteVoorheen ?? '';
   document.getElementById('f-zware-baby').checked = !!i.genen.zwareBaby;
+  zetBestandVeld('f-hand-foto', 'f-hand-foto-status', i.genen.handFotoDataUrl, i.genen.handFotoBestandsnaam);
+
+  document.getElementById('f-huidig-programma-tekst').value = i.huidigProgramma?.tekst ?? '';
+  zetBestandVeld('f-huidig-programma-bestand', 'f-huidig-programma-bestand-status', i.huidigProgramma?.bestandDataUrl, i.huidigProgramma?.bestandNaam);
+}
+
+// Shows/hides the PED liability disclaimer depending on whether "gebruikt"
+// is checked — the disclaimer only makes sense once PED use is disclosed.
+export function toggleePedsDisclaimer() {
+  const gebruikt = document.getElementById('f-peds-gebruikt').checked;
+  const wrap = document.getElementById('peds-disclaimer-wrap');
+  if (wrap) wrap.hidden = !gebruikt;
+  if (!gebruikt) document.getElementById('f-peds-disclaimer').checked = false;
 }
 
 export function leesIntakeForm() {
+  const handFoto = leesBestandVeld('f-hand-foto');
+  const programmaBestand = leesBestandVeld('f-huidig-programma-bestand');
+
   return {
     persoonsgegevens: {
       naam: document.getElementById('f-naam').value.trim(),
       email: document.getElementById('f-email').value.trim(),
+      adres: document.getElementById('f-adres').value.trim(),
+      postcode: document.getElementById('f-postcode').value.trim(),
+      stad: document.getElementById('f-stad').value.trim(),
+      land: document.getElementById('f-land').value.trim(),
       leeftijd: num(document.getElementById('f-leeftijd').value),
       lengte: num(document.getElementById('f-lengte').value),
       gewicht: num(document.getElementById('f-gewicht').value),
@@ -227,6 +348,9 @@ export function leesIntakeForm() {
     doel: {
       tekst: document.getElementById('f-doel-tekst').value.trim(),
       categorie: document.getElementById('f-doel-categorie').value,
+      spiergroepenNietGroter: document.getElementById('f-doel-spiergroepen-niet-groter').value.trim(),
+      andereSporten: document.getElementById('f-doel-andere-sporten').value.trim(),
+      gewenstFrequentieTekst: document.getElementById('f-doel-gewenste-frequentie').value.trim(),
     },
     motivatieMindset: {
       motivatie: document.getElementById('f-motivatie').value.trim(),
@@ -235,6 +359,7 @@ export function leesIntakeForm() {
     trainingsfrequentie: {
       huidig: num(document.getElementById('f-trainingsfrequentie').value, 3),
       trainingsmomenten: document.getElementById('tags-trainingsmomenten').getTags(),
+      nietBeschikbaarTekst: document.getElementById('f-niet-beschikbaar').value.trim(),
       baan: {
         type: document.getElementById('f-baan-type').value.trim(),
         urenZittend: num(document.getElementById('f-baan-uren-zittend').value),
@@ -247,12 +372,14 @@ export function leesIntakeForm() {
     },
     dieet: {
       huidig: document.getElementById('f-dieet-huidig').value.trim(),
+      specifiekDieet: document.getElementById('f-dieet-specifiek').value.trim(),
       voorkeuren: document.getElementById('tags-voorkeuren').getTags(),
       afkeuren: document.getElementById('tags-afkeuren').getTags(),
     },
     peds: {
       gebruikt: document.getElementById('f-peds-gebruikt').checked,
       toelichting: document.getElementById('f-peds-toelichting').value.trim(),
+      disclaimerGeaccepteerd: document.getElementById('f-peds-disclaimer').checked,
     },
     lifestyle: {
       activityLevel: document.getElementById('f-activity-level').value,
@@ -260,21 +387,35 @@ export function leesIntakeForm() {
       slaap: {
         uren: num(document.getElementById('f-slaap-uren').value),
         kwaliteit: document.getElementById('f-slaap-kwaliteit').value,
+        ritmeToelichting: document.getElementById('f-slaap-ritme').value.trim(),
       },
       cafeine: num(document.getElementById('f-cafeine').value),
+      cafeineToelichting: document.getElementById('f-cafeine-toelichting').value.trim(),
     },
-    vetpercentageMeting: { huidplooimeter: document.getElementById('f-huidplooimeter').checked },
+    vetpercentageMeting: {
+      huidplooimeter: document.getElementById('f-huidplooimeter').checked,
+      methode: document.getElementById('f-huidplooimeter-methode').value.trim(),
+    },
     materiaal: {
       laagstePlaat: num(document.getElementById('f-laagste-plaat').value),
       dumbbellStapgrootte: num(document.getElementById('f-dumbbell-stap').value),
       apparatuur: leesApparatuurChecklist(),
+      overig: document.getElementById('f-materiaal-overig').value.trim(),
     },
     supplementen: document.getElementById('f-supplementen').value.trim(),
     genen: {
       polsomtrek: num(document.getElementById('f-polsomtrek').value),
       enkelomtrek: num(document.getElementById('f-enkelomtrek').value),
       gewichtVoorheen: document.getElementById('f-gewicht-voorheen').value.trim(),
+      lengteVoorheen: document.getElementById('f-lengte-voorheen').value.trim(),
       zwareBaby: document.getElementById('f-zware-baby').checked,
+      handFotoDataUrl: handFoto.dataUrl,
+      handFotoBestandsnaam: handFoto.bestandNaam,
+    },
+    huidigProgramma: {
+      tekst: document.getElementById('f-huidig-programma-tekst').value.trim(),
+      bestandDataUrl: programmaBestand.dataUrl,
+      bestandNaam: programmaBestand.bestandNaam,
     },
   };
 }

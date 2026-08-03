@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=3">
+<link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
 
@@ -34,6 +34,7 @@
     <div class="view-header">
       <h2>Cliënten</h2>
       <div class="view-header__actions">
+        <button type="button" class="btn btn--ghost" id="btn-werkcapaciteit-tool">Werkcapaciteit</button>
         <button type="button" class="btn btn--ghost" id="btn-snelle-rekentool">Snelle rekentool</button>
         <label class="btn btn--ghost" for="import-json-input">Importeer JSON</label>
         <input type="file" id="import-json-input" accept="application/json" hidden>
@@ -129,21 +130,53 @@
     </fieldset>
 
     <fieldset class="card">
-      <legend>3. 1RM-schatter (Epley) &amp; rep target</legend>
+      <legend>3. 1RM-schatter (Epley) &amp; belastingstabel</legend>
+      <p class="hint">Drie varianten al naar gelang het type oefening. Elke variant toont de volledige belastingstabel
+        (90/85/80/75/70/65/60/50/30% van 1RM), niet alleen de 1RM zelf.</p>
+
+      <h4>A. Vrije gewichten &amp; machine-oefeningen</h4>
       <div class="form-grid">
         <label>Gebruikt gewicht (kg)
-          <input type="number" id="r-rm-gewicht" value="60" step="0.5">
+          <input type="number" id="r-rmA-gewicht" value="60" step="0.5">
         </label>
         <label>Aantal herhalingen
-          <input type="number" id="r-rm-reps" value="8" step="1">
-        </label>
-        <label>Gewenst %1RM voor rep target test
-          <input type="number" id="r-rm-pct" value="75" step="1">
+          <input type="number" id="r-rmA-reps" value="8" step="1">
         </label>
       </div>
-      <button type="button" class="btn btn--accent" id="btn-bereken-rm">Bereken 1RM &amp; rep target</button>
-      <p class="hint">Geschatte 1RM = (reps / 30 + 1) × gewicht &nbsp;|&nbsp; Rep target gewicht = 1RM × %1RM</p>
-      <div id="rekentool-rm-resultaat"></div>
+      <button type="button" class="btn btn--accent" id="btn-bereken-rmA">Bereken belastingstabel</button>
+      <div id="rekentool-rmA-resultaat"></div>
+
+      <h4>B. Bodyweight-oefeningen (chin-up, dip, ...)</h4>
+      <p class="hint">Aanname: 93,48% van het lichaamsgewicht wordt tijdens de oefening belast.</p>
+      <div class="form-grid">
+        <label>Lichaamsgewicht (kg)
+          <input type="number" id="r-rmB-lichaamsgewicht" value="80" step="0.5">
+        </label>
+        <label>Extern gewicht (kg)
+          <input type="number" id="r-rmB-extern" value="0" step="0.5">
+        </label>
+        <label>Aantal herhalingen
+          <input type="number" id="r-rmB-reps" value="8" step="1">
+        </label>
+      </div>
+      <button type="button" class="btn btn--accent" id="btn-bereken-rmB">Bereken belastingstabel</button>
+      <div id="rekentool-rmB-resultaat"></div>
+
+      <h4>C. Push-ups</h4>
+      <p class="hint">Aanname: 75% van het lichaamsgewicht wordt belast (voeten geven steun, dus lager dan bij B).</p>
+      <div class="form-grid">
+        <label>Lichaamsgewicht (kg)
+          <input type="number" id="r-rmC-lichaamsgewicht" value="80" step="0.5">
+        </label>
+        <label>Extern gewicht (kg)
+          <input type="number" id="r-rmC-extern" value="0" step="0.5">
+        </label>
+        <label>Aantal herhalingen
+          <input type="number" id="r-rmC-reps" value="20" step="1">
+        </label>
+      </div>
+      <button type="button" class="btn btn--accent" id="btn-bereken-rmC">Bereken belastingstabel</button>
+      <div id="rekentool-rmC-resultaat"></div>
     </fieldset>
 
     <fieldset class="card">
@@ -161,11 +194,76 @@
       <div id="rekentool-wc-resultaat"></div>
     </fieldset>
 
-    <p class="hint vlag vlag--oranje">
-      <strong>Let op:</strong> de sets/week volume-calculator van Menno Henselmans is proprietary cursusmateriaal en
-      wordt hier niet nagebouwd. Gebruik daarvoor de officiële tool uit de cursus met: trainingstatus, geslacht,
-      herstelfactor, energiebalansfactor en trainingsfrequentie als input.
-    </p>
+    <fieldset class="card">
+      <legend>5. Training Volume Calculator (Menno Henselmans model)</legend>
+      <div class="form-grid">
+        <label>Trainingsstatus (1 = beginner, 3 = gevorderd/elite)
+          <input type="number" id="r-vol-status" value="2" step="1" min="1" max="3">
+        </label>
+        <label>Geslacht
+          <select id="r-vol-vrouw">
+            <option value="0">Man</option>
+            <option value="1">Vrouw</option>
+          </select>
+        </label>
+        <label>Herstelfactor (0.5–1.2)
+          <input type="number" id="r-vol-herstel" value="1.0" step="0.05" min="0.5" max="1.2">
+        </label>
+        <label>Energiebalansfactor (tekort=&lt;1, surplus=&gt;1, onderhoud=1)
+          <input type="number" id="r-vol-ebf" value="1.0" step="0.05">
+        </label>
+        <label>Trainingsfrequentie (keer/week voor deze spiergroep)
+          <input type="number" id="r-vol-frequentie" value="2" step="1" min="1" max="7">
+        </label>
+      </div>
+      <button type="button" class="btn btn--accent" id="btn-bereken-volume">Bereken optimaal volume</button>
+      <p class="hint">effectieveFrequentie = frequentie &lt; 3 ? frequentie : 2.5 &nbsp;|&nbsp;
+        optimaalVolume = (effectieveFrequentie × 5) × herstelfactor × energiebalansfactor × &radic;trainingsstatus + vrouw × 3</p>
+      <div id="rekentool-volume-resultaat"></div>
+    </fieldset>
+  </section>
+
+  <!-- ============ VIEW: WERKCAPACITEIT / RUSTINTERVAL-REFERENTIE ============ -->
+  <section id="view-werkcapaciteit" class="view">
+    <div class="view-header">
+      <h2>Werkcapaciteit — rustinterval-referentie</h2>
+      <div class="view-header__actions">
+        <button type="button" class="btn btn--ghost" data-nav="lijst">&larr; Cliëntenlijst</button>
+      </div>
+    </div>
+    <p class="hint" id="wc-definitie"></p>
+
+    <div class="form-grid">
+      <label>Groep
+        <select id="wc-filter-group">
+          <option value="alle">Alle</option>
+          <option value="Ongetraind">Ongetraind</option>
+          <option value="Getraind">Getraind</option>
+        </select>
+      </label>
+      <label>Zoeken (oefening of studie)
+        <input type="text" id="wc-filter-oefening" placeholder="bv. bench press, Da Silva">
+      </label>
+      <label>Sorteren op
+        <select id="wc-filter-sort">
+          <option value="rest_min">Rustinterval (oplopend)</option>
+          <option value="fatigue_pct">Vermoeidheidsindex (hoog naar laag)</option>
+        </select>
+      </label>
+    </div>
+    <p class="hint" id="wc-resultaat-count"></p>
+
+    <table class="data-tabel">
+      <thead>
+        <tr>
+          <th>Groep</th><th>Studie</th><th>Populatie</th><th>Sets</th><th>Intensiteit</th>
+          <th>Rustinterval</th><th>Oefening</th><th>Vermoeidheidsindex</th><th>Reps</th><th>Voetnoot</th>
+        </tr>
+      </thead>
+      <tbody id="wc-tabel-body"></tbody>
+    </table>
+
+    <div id="wc-voetnoten"></div>
   </section>
 
   <!-- ============ VIEW: INTAKE FORMULIER (handmatige invoer door coach) ============ -->
@@ -188,6 +286,18 @@
           </label>
           <label>E-mailadres
             <input type="email" id="f-email" placeholder="client@voorbeeld.nl">
+          </label>
+          <label>Adres
+            <input type="text" id="f-adres">
+          </label>
+          <label>Postcode
+            <input type="text" id="f-postcode">
+          </label>
+          <label>Stad
+            <input type="text" id="f-stad">
+          </label>
+          <label>Land
+            <input type="text" id="f-land">
           </label>
           <label>Leeftijd (jaar)
             <input type="number" id="f-leeftijd" min="10" max="100" required>
@@ -214,6 +324,9 @@
           <label class="checkbox-label">
             <input type="checkbox" id="f-huidplooimeter">
             Vetpercentage gemeten met huidplooimeter
+          </label>
+          <label>Welke huidplooimeter/methode (indien van toepassing)
+            <input type="text" id="f-huidplooimeter-methode" placeholder="bv. Harpenden, 3-punts meting">
           </label>
         </div>
       </fieldset>
@@ -243,6 +356,15 @@
         </div>
         <label>Toelichting
           <textarea id="f-doel-tekst" rows="2" placeholder="Vrije tekst, bv. specifieke wedstrijd, deadline, motivatie..."></textarea>
+        </label>
+        <label>Spiergroepen die NIET groter mogen worden
+          <textarea id="f-doel-spiergroepen-niet-groter" rows="2" placeholder="bv. kuiten, nek — laat leeg als niet van toepassing"></textarea>
+        </label>
+        <label>Andere sporten naast krachttraining
+          <textarea id="f-doel-andere-sporten" rows="2" placeholder="bv. voetbal 2x/week, hardlopen"></textarea>
+        </label>
+        <label>Gewenste trainingsfrequentie per week
+          <input type="text" id="f-doel-gewenste-frequentie" placeholder="bv. 4x per week, liefst niet in het weekend">
         </label>
       </fieldset>
 
@@ -274,6 +396,9 @@
         </div>
         <label>Trainingsmomenten (tijdvakken)</label>
         <div class="tag-input" id="tags-trainingsmomenten" data-placeholder="bv. ma/wo/vr 18:00-19:00, Enter om toe te voegen"></div>
+        <label>Tijden waarop de cliënt niet kan/wil trainen (incl. werktijd)
+          <textarea id="f-niet-beschikbaar" rows="2" placeholder="bv. werk ma-vr 9:00-17:30, niet in het weekend"></textarea>
+        </label>
       </fieldset>
 
       <fieldset class="card">
@@ -290,6 +415,9 @@
         <label>Huidig dieet
           <textarea id="f-dieet-huidig" rows="2" placeholder="Vrije tekst"></textarea>
         </label>
+        <label>Specifiek dieet (bv. ketogeen, veganistisch)
+          <input type="text" id="f-dieet-specifiek" placeholder="bv. ketogeen, veganistisch — laat leeg als niet van toepassing">
+        </label>
         <label>Voorkeuren</label>
         <div class="tag-input" id="tags-voorkeuren" data-placeholder="bv. veel eiwit, Enter om toe te voegen"></div>
         <label>Afkeuren</label>
@@ -305,6 +433,12 @@
         <label>Toelichting
           <textarea id="f-peds-toelichting" rows="2"></textarea>
         </label>
+        <div id="peds-disclaimer-wrap" hidden>
+          <label class="checkbox-label">
+            <input type="checkbox" id="f-peds-disclaimer">
+            Cliënt verklaart deze middelen legaal te verkrijgen/gebruiken en vrijwaart de coach van aansprakelijkheid.
+          </label>
+        </div>
       </fieldset>
 
       <fieldset class="card">
@@ -315,13 +449,15 @@
               <option value="sedentair">Sedentair</option>
               <option value="licht actief">Licht actief</option>
               <option value="actief">Actief</option>
+              <option value="erg actief">Erg actief</option>
             </select>
           </label>
           <label>Stressniveau
             <select id="f-stress-level">
-              <option value="laag">Laag</option>
+              <option value="stressvrij">Stress-vrij</option>
+              <option value="sporadisch_mild">Sporadisch-mild</option>
               <option value="gemiddeld">Gemiddeld</option>
-              <option value="hoog">Hoog</option>
+              <option value="veel_stress">Veel stress</option>
             </select>
           </label>
           <label>Slaap (uren/nacht)
@@ -334,8 +470,14 @@
               <option value="goed">Goed</option>
             </select>
           </label>
+          <label>Slaapritme — toelichting
+            <input type="text" id="f-slaap-ritme" placeholder="bv. wisselende diensten, laat naar bed door telefoon">
+          </label>
           <label>Cafeïne-inname (mg/dag)
             <input type="number" id="f-cafeine" min="0" max="2000">
+          </label>
+          <label>Cafeïne — toelichting
+            <input type="text" id="f-cafeine-toelichting" placeholder="bv. meer op werkdagen, geen inname na 16:00">
           </label>
         </div>
       </fieldset>
@@ -352,6 +494,9 @@
         </div>
         <label>Beschikbare apparatuur</label>
         <div class="checklist" id="apparatuur-checklist"></div>
+        <label>Afwijkend materiaal (bv. Crossfit box, thuis)
+          <textarea id="f-materiaal-overig" rows="2" placeholder="Vrije tekst"></textarea>
+        </label>
       </fieldset>
 
       <fieldset class="card">
@@ -373,11 +518,29 @@
           <label>Gewicht voorheen (context)
             <input type="text" id="f-gewicht-voorheen" placeholder="bv. was 65kg 2 jaar geleden">
           </label>
+          <label>Lengte voorheen (context)
+            <input type="text" id="f-lengte-voorheen" placeholder="bv. was 165cm voor start krachttraining">
+          </label>
           <label class="checkbox-label">
             <input type="checkbox" id="f-zware-baby">
             Was een zware baby (&gt;4kg bij geboorte)
           </label>
         </div>
+        <label>Foto van rechterhand (voor vingerlengteverhouding)
+          <input type="file" id="f-hand-foto" accept="image/*" data-upload-status="f-hand-foto-status">
+          <small class="toelichting" id="f-hand-foto-status"></small>
+        </label>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend>Huidig trainingsprogramma</legend>
+        <label>Beschrijving (of upload hieronder een bijlage)
+          <textarea id="f-huidig-programma-tekst" rows="3" placeholder="Beschrijf het huidige trainingsprogramma zo gedetailleerd mogelijk"></textarea>
+        </label>
+        <label>Bijlage (foto/PDF van het programma)
+          <input type="file" id="f-huidig-programma-bestand" accept="image/*,application/pdf" data-upload-status="f-huidig-programma-bestand-status">
+          <small class="toelichting" id="f-huidig-programma-bestand-status"></small>
+        </label>
       </fieldset>
 
     </form>
@@ -496,6 +659,11 @@
       </section>
 
       <section class="card">
+        <h3>Rustinterval-suggestie</h3>
+        <div id="ov-rustinterval-advies"></div>
+      </section>
+
+      <section class="card">
         <h3>Voeding — rustdag vs. trainingsdag</h3>
         <div class="voedingstabellen">
           <div>
@@ -523,6 +691,6 @@
 
 </main>
 
-<script type="module" src="app.js?v=3"></script>
+<script type="module" src="app.js?v=4"></script>
 </body>
 </html>

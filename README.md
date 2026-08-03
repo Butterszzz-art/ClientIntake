@@ -177,6 +177,7 @@ de rauwe oude labels in plaats van vertaalde labels.
 | `utils.js` | Kleine gedeelde helpers: `escapeHtml`, `fmt`, `num`, `downloadJson` |
 | `calculations.js` | Pure rekenfuncties (geen DOM, geen side-effects) — het herbruikbare contract, alleen gebruikt door `app.js` |
 | `styles.css` | Donker thema (zwart/donkergroen/lichtgroen), responsive, print-stylesheet |
+| `data/werkcapaciteit-referentie.json` | Referentiedata voor het Werkcapaciteit-tabblad (Task 4) — zie "Werkcapaciteit-referentiedata" hierboven |
 | `README.md` | Dit bestand |
 
 `index.html` en `coach.html` renderen dezelfde `<form id="intake-form">`
@@ -211,7 +212,8 @@ Firestore-collectie `clients`, en als `{ "client": {...} }` bij export):
     "createdAt": "ISO date",
     "intake": {
       "persoonsgegevens": {
-        "naam": "string", "email": "string", "leeftijd": 0, "lengte": 0, "gewicht": 0,
+        "naam": "string", "email": "string", "adres": "string", "postcode": "string",
+        "stad": "string", "land": "string", "leeftijd": 0, "lengte": 0, "gewicht": 0,
         "vetpercentage": 0, "geslacht": "man|vrouw|anders", "trainingservaring": 0
       },
       "huidigeKracht": [
@@ -219,27 +221,33 @@ Firestore-collectie `clients`, en als `{ "client": {...} }` bij export):
       ],
       "doel": {
         "tekst": "string",
-        "categorie": "vetverlies|spieropbouw|onderhoud|krachttoename"
+        "categorie": "vetverlies|spieropbouw|onderhoud|krachttoename",
+        "spiergroepenNietGroter": "string", "andereSporten": "string", "gewenstFrequentieTekst": "string"
       },
       "motivatieMindset": { "motivatie": "string", "mentaleInstelling": "string" },
       "trainingsfrequentie": {
         "huidig": 0,
         "trainingsmomenten": ["string"],
+        "nietBeschikbaarTekst": "string",
         "baan": { "type": "string", "urenZittend": 0, "urenStaand": 0 }
       },
       "blessures": { "tekst": "string", "vermijdenOefeningen": ["string"] },
-      "dieet": { "huidig": "string", "voorkeuren": ["string"], "afkeuren": ["string"] },
-      "peds": { "gebruikt": false, "toelichting": "string" },
+      "dieet": { "huidig": "string", "specifiekDieet": "string", "voorkeuren": ["string"], "afkeuren": ["string"] },
+      "peds": { "gebruikt": false, "toelichting": "string", "disclaimerGeaccepteerd": false },
       "lifestyle": {
-        "activityLevel": "sedentair|licht actief|actief",
-        "stressLevel": "laag|gemiddeld|hoog",
-        "slaap": { "uren": 0, "kwaliteit": "slecht|matig|goed" },
-        "cafeine": 0
+        "activityLevel": "sedentair|licht actief|actief|erg actief",
+        "stressLevel": "stressvrij|sporadisch_mild|gemiddeld|veel_stress",
+        "slaap": { "uren": 0, "kwaliteit": "slecht|matig|goed", "ritmeToelichting": "string" },
+        "cafeine": 0, "cafeineToelichting": "string"
       },
-      "vetpercentageMeting": { "huidplooimeter": false },
-      "materiaal": { "laagstePlaat": 0, "dumbbellStapgrootte": 0, "apparatuur": ["squat_rack", "..."] },
+      "vetpercentageMeting": { "huidplooimeter": false, "methode": "string" },
+      "materiaal": { "laagstePlaat": 0, "dumbbellStapgrootte": 0, "apparatuur": ["squat_rack", "..."], "overig": "string" },
       "supplementen": "string",
-      "genen": { "polsomtrek": 0, "enkelomtrek": 0, "gewichtVoorheen": "string", "zwareBaby": false }
+      "genen": {
+        "polsomtrek": 0, "enkelomtrek": 0, "gewichtVoorheen": "string", "lengteVoorheen": "string",
+        "zwareBaby": false, "handFotoDataUrl": "data:...|null", "handFotoBestandsnaam": "string"
+      },
+      "huidigProgramma": { "tekst": "string", "bestandDataUrl": "data:...|null", "bestandNaam": "string" }
     },
     "instellingen": {
       "energiebalansFactor": 1.0, "eiwitFactor": 1.8, "percentageVetVanREE": 0.4,
@@ -281,6 +289,34 @@ coach aangepaste knoppen (energiebalans, eiwitfactor, aantal maaltijden, ...),
 die nodig waren om het overzichtsscherm te vullen. Alle oorspronkelijk
 gevraagde `calculations`-sleutels zijn ongewijzigd aanwezig.
 
+**Schema-uitbreiding (nieuwe velden):** alle bovenstaande `intake`-velden die
+in eerdere versies nog niet bestonden (adres/postcode/stad/land, de
+uitgebreide `doel`-, `dieet`- en `lifestyle`-velden, `huidigProgramma`, de
+foto-upload-velden, ...) zijn puur *additief* — een ouder opgeslagen
+cliëntbestand zonder deze velden blijft gewoon inladen; `vulIntakeFormIn`
+valt terug op `''`/`null`/`false` voor alles wat ontbreekt. Twee waarde-sets
+zijn wél gewijzigd, met behoud van achterwaartse compatibiliteit:
+- `lifestyle.activityLevel` kreeg een 4e optie (`erg actief`) naast de
+  bestaande drie — puur additief, geen breuk.
+- `lifestyle.stressLevel` ging van drie waarden (`laag`/`gemiddeld`/`hoog`)
+  naar vier (`stressvrij`/`sporadisch_mild`/`gemiddeld`/`veel_stress`), omdat
+  het cursusmateriaal expliciet vier niveaus onderscheidt. Een ouder record
+  met `"hoog"` toont geen aangevinkte optie meer in de `<select>` (geen van
+  de nieuwe opties matcht die waarde), maar `genereerRodeVlaggen()` in
+  `calculations.js` controleert nog steeds op zowel `'hoog'` als
+  `'veel_stress'`, dus de rode-vlag-detectie blijft voor oudere data werken.
+
+**Task 2/3/4 zijn bewust géén nieuwe `calculations`-velden:** de opdracht
+plaatst de Training Volume Calculator en de drie 1RM-subcalculators expliciet
+"in de calculator-UI" — dat is de bestaande **Snelle rekentool** (los van een
+cliëntprofiel, niets wordt opgeslagen, zie hieronder). Ze horen dus niet thuis
+in het per-cliënt schema. De optionele rustinterval-suggestie (Task 4) is wél
+per cliënt, maar wordt *live herberekend* bij het openen van het
+overzichtsscherm (`renderRustintervalAdvies()` in `app.js`) op basis van
+`data/werkcapaciteit-referentie.json` — net als de maaltijdtabellen elders in
+hetzelfde scherm — in plaats van als vast `calculations.rustintervalAdvies`-veld
+te worden weggeschreven.
+
 ## Rekenfuncties (`calculations.js`)
 
 Alle functies zijn pure ES-module exports: zelfde input → altijd zelfde
@@ -315,6 +351,11 @@ entrypoint dat de app zelf aanroept; de rest zijn de bouwstenen daaronder
 | `detecteerBlessureConflicten(blessures)` | `{tekst, vermijdenOefeningen}` | array | Matcht gemelde blessures/vermijdlijst tegen standaardoefeningen |
 | `genereerRodeVlaggen(intake, calculations)` | intake, calculations | array | Automatische coach-waarschuwingen |
 | `berekenClient(intake, instellingen)` | intake, instellingen (optioneel) | volledig `calculations`-object | Orchestreert alle bovenstaande functies |
+| `trainingsvolumeAdvies(trainingsstatus, vrouw, herstelfactor, energiebalansfactor, trainingsfrequentie)` | 1-3, 0/1, 0.5-1.2, factor, keer/week | getal (sets/week/spiergroep) | Menno Henselmans-model voor optimaal trainingsvolume (Task 2) — clamt status en herstelfactor binnen hun toegestane bereik |
+| `rm1VrijGewicht(gewicht, herhalingen)` | kg, reps | `{epley1RM, tabel}` | 1RM-subcalculator A: vrije gewichten & machine-oefeningen — `tabel` is de volledige belastingstabel (90-30% van 1RM) |
+| `rm1Bodyweight(lichaamsgewicht, externGewicht, herhalingen)` | kg, kg, reps | `{epley1RM, tabel}` | 1RM-subcalculator B: bodyweight-oefeningen (chin-up, dip, ...) — 93.48% van het lichaamsgewicht wordt belast; `tabel` geeft het benodigde extern gewicht per percentage |
+| `rm1PushUp(lichaamsgewicht, externGewicht, herhalingen)` | kg, kg, reps | `{epley1RM, tabel}` | 1RM-subcalculator C: push-ups — zelfde opzet als B maar met 75% (voeten geven steun) |
+| `gemiddeldeVermoeidheidPerGroep(data, group)` | werkcapaciteit-data-array, `"Ongetraind"\|"Getraind"` | `{gemiddelde, n}` of `null` | Gemiddeld `fatigue_pct` voor een groep uit `data/werkcapaciteit-referentie.json` (Task 4, optionele rustinterval-suggestie) |
 
 ### Aannames / standaardwaarden
 
@@ -322,7 +363,8 @@ De opdracht gaf exacte formules maar niet elke constante. Deze defaults zijn
 gekozen en overal in de UI aanpasbaar (stap 2, "Berekeningen controleren"):
 
 - **PAL** (activiteitsfactor buiten training): sedentair `1.2`, licht actief
-  `1.375`, actief `1.55`.
+  `1.375`, actief `1.55`, erg actief `1.725` (Task 1 — vierde niveau
+  toegevoegd, standaard PAL-waarde net boven "actief").
 - **TEF** (voedsel-thermogenese): `1.1` (10%).
 - **Energiebalans-factor** per doel: vetverlies `0.8`, onderhoud `1.0`,
   spieropbouw `1.1`, krachttoename `1.05`.
@@ -370,6 +412,51 @@ Herkomst van elk bereik:
   de één-maaltijd-situatie) in plaats van een vaste aanname.
 - **Trainingsduur**: `60` minuten, **MET**: `5.7`.
 
+### Training Volume Calculator & 1RM-subcalculators (Task 2/3)
+
+De formules voor deze twee rekentool-blokken kwamen exact gespecificeerd uit
+de opdracht (`Training_volume_calculator_MennoHenselmans.xlsx` en
+`1RM_Calculator_MennoHenselmans_.xlsx`) — geen aannames of standaardwaarden
+nodig, dus geen extra instelbare defaults zoals bij de voedingsberekeningen
+hierboven. Beide zijn uitsluitend beschikbaar in de **Snelle rekentool**
+(coach.html), los van een cliëntprofiel — zie "Task 2/3/4 zijn bewust géén
+nieuwe `calculations`-velden" hierboven voor waarom.
+
+### Werkcapaciteit-referentiedata (Task 4)
+
+`data/werkcapaciteit-referentie.json` bevat 189 datapunten uit 27 studies
+(bron: `Work_capacity_reference_data_PTC.docx`, Menno Henselmans
+PTC-cursusmateriaal) over prestatieverlies bij verschillende rustintervallen
+tussen sets. Structuur:
+
+```json
+{
+  "bron": "string",
+  "definitie": "string — uitleg van de vermoeidheidsindex",
+  "voetnoten": { "1": "string", "2": "string", "...": "..." },
+  "data": [
+    {
+      "group": "Ongetraind|Getraind", "study": "string", "population": "string",
+      "n": 0, "sets": 0, "intensity": "string", "rest_txt": "string",
+      "rest_min": 0, "footnote": null, "exercise": "string",
+      "fatigue_pct": 0, "reps": null
+    }
+  ]
+}
+```
+
+`fatigue_pct` en `reps` zijn wederzijds exclusief (1-set-protocollen
+rapporteren `reps` in plaats van een vermoeidheidsindex); een lege `exercise`
+betekent dat het protocol maar 1 oefening had. Het **Werkcapaciteit**-tabblad
+(knop naast "Snelle rekentool" in de cliëntenlijst) laadt dit bestand via
+`fetch()`, en biedt filteren op groep/oefening-of-studie, sorteren op
+rustinterval of vermoeidheidsindex, en een groen→rood kleurschaal op
+`fatigue_pct` (conditional-formatting-stijl). De optionele
+rustinterval-suggestie op het cliënt-overzichtsscherm gebruikt
+`gemiddeldeVermoeidheidPerGroep()` om live het gemiddelde te berekenen voor de
+groep die bij de cliënt past — zie de schema-notitie hierboven voor waarom
+dat niet als vast veld wordt opgeslagen.
+
 ## Gebruik
 
 ### Als cliënt (`index.html`)
@@ -396,11 +483,15 @@ Herkomst van elk bereik:
 3. Wil je zelf een intake invoeren (bv. tijdens een intakegesprek)? **+ Nieuwe
    cliënt** → vul het formulier zelf in.
 3b. **Snelle rekentool** (knop naast "+ Nieuwe cliënt") → losse, directe
-   berekeningen (voeding, frame size, 1RM &amp; rep target, werkcapaciteit)
-   zonder dat er een cliëntprofiel wordt aangemaakt of iets wordt opgeslagen —
-   handig tijdens een gesprek of ter controle. Gebruikt dezelfde functies uit
-   `calculations.js` als de rest van de app. Alleen bereikbaar via
-   `coach.html`; cliënten zien dit nergens.
+   berekeningen (voeding, frame size, 1RM-belastingstabellen voor drie
+   oefeningtypes A/B/C, werkcapaciteit tussen sessies, Training Volume
+   Calculator) zonder dat er een cliëntprofiel wordt aangemaakt of iets wordt
+   opgeslagen — handig tijdens een gesprek of ter controle. Gebruikt dezelfde
+   functies uit `calculations.js` als de rest van de app. Alleen bereikbaar
+   via `coach.html`; cliënten zien dit nergens.
+3c. **Werkcapaciteit** (knop naast "Snelle rekentool") → doorzoekbare
+   referentietabel van 189 datapunten over prestatieverlies per rustinterval
+   (zie "Werkcapaciteit-referentiedata" hierboven).
 4. Klik een cliënt aan → **Berekeningen controleren**: pas instellingen aan
    indien nodig (herrekent live) en check de tooltip-teksten onder elk
    kerncijfer.
