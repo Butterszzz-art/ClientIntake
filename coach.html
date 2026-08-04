@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=4">
+<link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
 
@@ -243,6 +243,11 @@
       </label>
       <label>Zoeken (oefening of studie)
         <input type="text" id="wc-filter-oefening" placeholder="bv. bench press, Da Silva">
+      </label>
+      <label>Rustinterval
+        <select id="wc-filter-rust">
+          <option value="alle">Alle</option>
+        </select>
       </label>
       <label>Sorteren op
         <select id="wc-filter-sort">
@@ -686,11 +691,16 @@
         <h3>Krachtniveau</h3>
         <table class="data-tabel" id="ov-kracht"></table>
       </section>
+
+      <section class="card">
+        <h3>Bijlagen</h3>
+        <div id="ov-bijlagen"></div>
+      </section>
     </div>
   </section>
 
 </main>
 
-<script type="module" src="app.js?v=4"></script>
+<script type="module" src="app.js?v=5"></script>
 </body>
 </html>

@@ -1,11 +1,12 @@
-import { downloadJson } from './utils.js?v=4';
+import { downloadJson } from './utils.js?v=5';
 import {
   maakLeegClient, initTagInputs, initFileInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij, renderApparatuurChecklist,
   toggleePedsDisclaimer,
-} from './intake-form.js?v=4';
-import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=4';
-import { db } from './firebase.js?v=4';
+} from './intake-form.js?v=5';
+import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=5';
+import { db, storage } from './firebase.js?v=5';
 import { doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 
 // This page never talks to the coach dashboard: no client list, no
 // calculations, no localStorage key shared with app.js. It only ever reads
@@ -32,6 +33,15 @@ function toonView(naam) {
 function bestandsnaamVoor(client) {
   const naam = (client.intake.persoonsgegevens.naam || 'intake').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
   return `${naam}-intake.json`;
+}
+
+// Uploads to Storage under clients/{clientId}/... — matches the security
+// rule path (`match /clients/{clientId}/{fileName}`), which lets anyone
+// write there but only a logged-in coach read it back.
+async function uploadNaarStorage(file, veldId) {
+  const pad = ref(storage, `clients/${huidigClient.id}/${veldId}-${Date.now()}-${file.name}`);
+  await uploadBytes(pad, file);
+  return getDownloadURL(pad);
 }
 
 function slaConceptOp() {
@@ -234,7 +244,7 @@ async function verstuur() {
 document.addEventListener('DOMContentLoaded', () => {
   pasVertalingToe(bepaalStartTaal());
   initTagInputs();
-  initFileInputs();
+  initFileInputs(uploadNaarStorage);
 
   const opgeslagenConcept = localStorage.getItem(DRAFT_KEY);
   if (opgeslagenConcept) {
