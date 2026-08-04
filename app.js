@@ -1,14 +1,15 @@
-import * as calc from './calculations.js?v=4';
-import { escapeHtml, fmt, num, downloadJson } from './utils.js?v=4';
+import * as calc from './calculations.js?v=5';
+import { escapeHtml, fmt, num, downloadJson } from './utils.js?v=5';
 import {
   maakLeegClient, initTagInputs, initFileInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij,
   toggleePedsDisclaimer,
-} from './intake-form.js?v=4';
-import { initCoachGate, lockNow } from './coach-auth.js?v=4';
-import { db } from './firebase.js?v=4';
+} from './intake-form.js?v=5';
+import { initCoachGate, lockNow } from './coach-auth.js?v=5';
+import { db, storage } from './firebase.js?v=5';
 import {
   collection, doc, setDoc, getDoc, deleteDoc, query, orderBy, onSnapshot,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 
 const CLIENTS_COLLECTIE = 'clients';
 
@@ -16,6 +17,14 @@ const CLIENTS_COLLECTIE = 'clients';
 
 async function upsertClient(client) {
   await setDoc(doc(db, CLIENTS_COLLECTIE, client.id), client);
+}
+
+// Uploads to Storage under clients/{clientId}/... — same path the client-facing
+// page uses, so files uploaded by the coach land in the same security-rule scope.
+async function uploadNaarStorage(file, veldId) {
+  const pad = ref(storage, `clients/${huidigeClient.id}/${veldId}-${Date.now()}-${file.name}`);
+  await uploadBytes(pad, file);
+  return getDownloadURL(pad);
 }
 
 async function verwijderClient(id) {
@@ -235,6 +244,15 @@ function renderOverzicht(client) {
     <thead><tr><th>Oefening</th><th>Kg</th><th>Reps</th><th>Sets</th><th>Geschat 1RM</th></tr></thead>
     <tbody>${krachtRijen || '<tr><td colspan="5" class="hint">Geen data</td></tr>'}</tbody>
   `;
+
+  const bijlagen = [];
+  if (intake.genen?.handFotoUrl) {
+    bijlagen.push(`<p><a href="${escapeHtml(intake.genen.handFotoUrl)}" target="_blank" rel="noopener">📎 Handfoto — ${escapeHtml(intake.genen.handFotoBestandsnaam || 'bestand')}</a></p>`);
+  }
+  if (intake.huidigProgramma?.bestandUrl) {
+    bijlagen.push(`<p><a href="${escapeHtml(intake.huidigProgramma.bestandUrl)}" target="_blank" rel="noopener">📎 Huidig programma — ${escapeHtml(intake.huidigProgramma.bestandNaam || 'bestand')}</a></p>`);
+  }
+  document.getElementById('ov-bijlagen').innerHTML = bijlagen.join('') || '<p class="hint">Geen bijlagen geüpload.</p>';
 }
 
 // ---------- Snelle rekentool (losse berekeningen, geen cliëntprofiel) ----------
@@ -407,17 +425,32 @@ function berekenWerkcapaciteitRekentool() {
 // ---------- Werkcapaciteit / rustinterval reference tool (Task 4) --------
 
 let werkcapaciteitData = null; // { bron, definitie, voetnoten, data }
-const werkcapaciteitFilter = { group: 'alle', oefening: '', sort: 'rest_min' };
+const werkcapaciteitFilter = { group: 'alle', oefening: '', rust: 'alle', sort: 'rest_min' };
 
 async function laadWerkcapaciteitData() {
   try {
     const res = await fetch('data/werkcapaciteit-referentie.json');
     werkcapaciteitData = await res.json();
     renderWerkcapaciteitDefinitie();
+    vulWerkcapaciteitRustFilter();
     renderWerkcapaciteitTabel();
   } catch (err) {
     console.error('Kon werkcapaciteit-referentiedata niet laden:', err);
   }
+}
+
+// Rustinterval-opties zijn niet vooraf bekend (afhankelijk van de data) —
+// dus dynamisch opgebouwd uit de daadwerkelijk voorkomende rest_min-waarden.
+function vulWerkcapaciteitRustFilter() {
+  const uniek = new Map();
+  for (const r of werkcapaciteitData.data) {
+    if (r.rest_min != null) uniek.set(r.rest_min, r.rest_txt);
+  }
+  const opties = [...uniek.entries()].sort((a, b) => a[0] - b[0]);
+  document.getElementById('wc-filter-rust').innerHTML = [
+    '<option value="alle">Alle</option>',
+    ...opties.map(([min, txt]) => `<option value="${min}">${escapeHtml(txt)}</option>`),
+  ].join('');
 }
 
 function renderWerkcapaciteitDefinitie() {
@@ -440,7 +473,7 @@ function fatigueKleur(pct) {
 
 function renderWerkcapaciteitTabel() {
   if (!werkcapaciteitData) return;
-  const { group, oefening, sort } = werkcapaciteitFilter;
+  const { group, oefening, rust, sort } = werkcapaciteitFilter;
   let rijen = werkcapaciteitData.data.slice();
 
   if (group !== 'alle') rijen = rijen.filter((r) => r.group === group);
@@ -448,6 +481,7 @@ function renderWerkcapaciteitTabel() {
     const q = oefening.toLowerCase();
     rijen = rijen.filter((r) => (r.exercise || '').toLowerCase().includes(q) || r.study.toLowerCase().includes(q));
   }
+  if (rust !== 'alle') rijen = rijen.filter((r) => r.rest_min === Number(rust));
   rijen.sort((a, b) => (sort === 'fatigue_pct'
     ? (b.fatigue_pct ?? -1) - (a.fatigue_pct ?? -1)
     : (a.rest_min ?? 999) - (b.rest_min ?? 999)));
@@ -478,6 +512,10 @@ function wireWerkcapaciteitFilters() {
   });
   document.getElementById('wc-filter-oefening').addEventListener('input', (e) => {
     werkcapaciteitFilter.oefening = e.target.value;
+    renderWerkcapaciteitTabel();
+  });
+  document.getElementById('wc-filter-rust').addEventListener('change', (e) => {
+    werkcapaciteitFilter.rust = e.target.value;
     renderWerkcapaciteitTabel();
   });
   document.getElementById('wc-filter-sort').addEventListener('change', (e) => {
@@ -681,7 +719,7 @@ document.getElementById('btn-vergrendel').addEventListener('click', lockNow);
 document.addEventListener('DOMContentLoaded', () => {
   initCoachGate(() => {
     initTagInputs();
-    initFileInputs();
+    initFileInputs(uploadNaarStorage);
     wireEvents();
     startLiveClientLijst();
     laadWerkcapaciteitData();

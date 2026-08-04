@@ -4,7 +4,7 @@
 // dashboard. Both pages render the same fieldset markup (same element IDs)
 // and import this module so the reading/writing logic exists exactly once.
 
-import { escapeHtml, num } from './utils.js?v=4';
+import { escapeHtml, num } from './utils.js?v=5';
 
 // Stable canonical keys (not translated) — these are the values actually
 // stored in intake.materiaal.apparatuur, so the schema stays consistent no
@@ -42,7 +42,7 @@ const STANDAARD_APPARATUUR_LABELS = {
 
 export const STANDAARD_KRACHT_RIJEN = ['Bench press', 'Squat', 'Chin-up', 'Overhead press'];
 
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5MB — generous for one photo/PDF, keeps localStorage safe
+const MAX_UPLOAD_BYTES = 15 * 1024 * 1024; // matches the Storage security rule's 15MB cap
 
 // ---------- Schema factory ----------
 
@@ -80,9 +80,9 @@ export function maakLeegClient() {
       supplementen: '',
       genen: {
         polsomtrek: null, enkelomtrek: null, gewichtVoorheen: '', lengteVoorheen: '', zwareBaby: false,
-        handFotoDataUrl: null, handFotoBestandsnaam: '',
+        handFotoUrl: null, handFotoBestandsnaam: '',
       },
-      huidigProgramma: { tekst: '', bestandDataUrl: null, bestandNaam: '' },
+      huidigProgramma: { tekst: '', bestandUrl: null, bestandNaam: '' },
     },
     instellingen: {},
     calculations: null,
@@ -182,62 +182,60 @@ export function leesApparatuurChecklist() {
 }
 
 // ---------- File upload (hand photo, program attachment) ----------
-// Client-side-only architecture (no backend) — an uploaded file is read as a
-// base64 data: URL and stored directly in the intake JSON, the same way the
-// rest of the app persists everything (localStorage + JSON export/import).
-// A 5MB cap keeps a single photo/PDF well within localStorage's ~5-10MB
-// per-origin quota.
-
-export function leesBestandAlsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    if (!file) { resolve(null); return; }
-    if (file.size > MAX_UPLOAD_BYTES) {
-      reject(new Error('Bestand is groter dan 5MB — kies een kleiner bestand.'));
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error ?? new Error('Kon bestand niet lezen.'));
-    reader.readAsDataURL(file);
-  });
-}
+// Files go to Firebase Storage, not into the Firestore document — Firestore
+// hard-caps a document at 1MB, so embedding a photo as a base64 data: URL
+// would silently fail to save the moment someone uploads a real photo
+// instead of a tiny test file. The document only ever stores the resulting
+// download URL (a short string) plus the original filename.
+//
+// `uploadFn(file, veldId) => Promise<url>` is injected by the caller
+// (client.js / app.js), which both already own the Firebase Storage
+// reference — keeps this module free of a hard Firebase dependency, same as
+// the rest of it.
 
 // Wires every <input type="file" data-upload-status="..."> on the page: on
-// selection, reads the file into a data: URL and stashes it as a property on
+// selection, uploads the file and stashes the resulting URL as a property on
 // the input element itself (browsers won't let script set `.files`, so this
 // is the only way to both show the existing value on reload and carry a
 // freshly-picked file through to leesIntakeForm()).
-export function initFileInputs() {
+export function initFileInputs(uploadFn) {
   for (const el of document.querySelectorAll('input[type="file"][data-upload-status]')) {
     el.addEventListener('change', async () => {
       const statusEl = document.getElementById(el.dataset.uploadStatus);
       const file = el.files?.[0];
       if (!file) return;
+      if (file.size > MAX_UPLOAD_BYTES) {
+        el.value = '';
+        alert('Bestand is groter dan 15MB — kies een kleiner bestand.');
+        return;
+      }
+      if (statusEl) statusEl.textContent = 'Uploaden...';
       try {
-        el.dataUrl = await leesBestandAlsDataUrl(file);
+        el.downloadUrl = await uploadFn(file, el.id);
         el.bestandNaam = file.name;
-        if (statusEl) statusEl.textContent = file.name;
+        if (statusEl) statusEl.textContent = `${file.name} ✓`;
       } catch (err) {
         el.value = '';
-        el.dataUrl = null;
+        el.downloadUrl = null;
         el.bestandNaam = '';
-        alert(err.message);
+        if (statusEl) statusEl.textContent = '';
+        alert(`Uploaden mislukt: ${err.message}`);
       }
     });
   }
 }
 
-function zetBestandVeld(inputId, statusId, dataUrl, bestandNaam) {
+function zetBestandVeld(inputId, statusId, downloadUrl, bestandNaam) {
   const input = document.getElementById(inputId);
-  input.dataUrl = dataUrl ?? null;
+  input.downloadUrl = downloadUrl ?? null;
   input.bestandNaam = bestandNaam ?? '';
   const statusEl = document.getElementById(statusId);
-  if (statusEl) statusEl.textContent = bestandNaam || '';
+  if (statusEl) statusEl.textContent = bestandNaam ? `${bestandNaam} ✓` : '';
 }
 
 function leesBestandVeld(inputId) {
   const input = document.getElementById(inputId);
-  return { dataUrl: input.dataUrl ?? null, bestandNaam: input.bestandNaam ?? '' };
+  return { downloadUrl: input.downloadUrl ?? null, bestandNaam: input.bestandNaam ?? '' };
 }
 
 // ---------- Intake form <-> data ----------
@@ -310,10 +308,10 @@ export function vulIntakeFormIn(client, apparatuurLabelFn) {
   document.getElementById('f-gewicht-voorheen').value = i.genen.gewichtVoorheen;
   document.getElementById('f-lengte-voorheen').value = i.genen.lengteVoorheen ?? '';
   document.getElementById('f-zware-baby').checked = !!i.genen.zwareBaby;
-  zetBestandVeld('f-hand-foto', 'f-hand-foto-status', i.genen.handFotoDataUrl, i.genen.handFotoBestandsnaam);
+  zetBestandVeld('f-hand-foto', 'f-hand-foto-status', i.genen.handFotoUrl, i.genen.handFotoBestandsnaam);
 
   document.getElementById('f-huidig-programma-tekst').value = i.huidigProgramma?.tekst ?? '';
-  zetBestandVeld('f-huidig-programma-bestand', 'f-huidig-programma-bestand-status', i.huidigProgramma?.bestandDataUrl, i.huidigProgramma?.bestandNaam);
+  zetBestandVeld('f-huidig-programma-bestand', 'f-huidig-programma-bestand-status', i.huidigProgramma?.bestandUrl, i.huidigProgramma?.bestandNaam);
 }
 
 // Shows/hides the PED liability disclaimer depending on whether "gebruikt"
@@ -409,12 +407,12 @@ export function leesIntakeForm() {
       gewichtVoorheen: document.getElementById('f-gewicht-voorheen').value.trim(),
       lengteVoorheen: document.getElementById('f-lengte-voorheen').value.trim(),
       zwareBaby: document.getElementById('f-zware-baby').checked,
-      handFotoDataUrl: handFoto.dataUrl,
+      handFotoUrl: handFoto.downloadUrl,
       handFotoBestandsnaam: handFoto.bestandNaam,
     },
     huidigProgramma: {
       tekst: document.getElementById('f-huidig-programma-tekst').value.trim(),
-      bestandDataUrl: programmaBestand.dataUrl,
+      bestandUrl: programmaBestand.downloadUrl,
       bestandNaam: programmaBestand.bestandNaam,
     },
   };

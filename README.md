@@ -108,6 +108,37 @@ dezelfde database.
   eenmalige `getDocs`) voor de cliëntenlijst — een nieuwe intake verschijnt
   dus zonder de pagina te hoeven verversen.
 
+### Firebase Storage
+
+Twee upload-velden in de intake (handfoto voor vingerlengteverhouding, bijlage
+huidig trainingsprogramma) gaan naar **Firebase Storage**, niet naar Firestore
+— een los bestand als base64 in een Firestore-document proppen loopt al snel
+tegen Firestore's limiet van 1 MB per document aan. `client.js` en `app.js`
+uploaden allebei via dezelfde `uploadNaarStorage()`-achtige functie naar het
+pad `clients/{clientId}/{veldId}-{tijdstempel}-{bestandsnaam}`; het
+`intake`-document bewaart alleen de resulterende `downloadUrl` en
+bestandsnaam (`genen.handFotoUrl`, `huidigProgramma.bestandUrl`).
+
+- **Security rules** (ingesteld via de Firebase Console → Storage → Rules):
+  ```
+  rules_version = '2';
+  service firebase.storage {
+    match /b/{bucket}/o {
+      match /clients/{clientId}/{fileName} {
+        allow write: if request.resource.size < 15 * 1024 * 1024;
+        allow read: if request.auth != null;
+      }
+    }
+  }
+  ```
+  Zelfde principe als de Firestore-rules hierboven: **iedereen** mag een
+  bestand uploaden (tot 15 MB, zie `MAX_UPLOAD_BYTES` in `intake-form.js`),
+  **alleen een ingelogde coach** mag het terug downloaden/bekijken. Deze
+  rules moet je zelf één keer instellen in de Firebase Console — Claude Code
+  kan dit niet namens jou doen.
+- Geüploade bestanden verschijnen als klikbare links onder **"Bijlagen"**
+  onderaan het overzichtsscherm in `coach.html`.
+
 ### Firebase Authentication
 
 `coach.html` logt in met **e-mail + wachtwoord** via Firebase Auth
@@ -245,9 +276,9 @@ Firestore-collectie `clients`, en als `{ "client": {...} }` bij export):
       "supplementen": "string",
       "genen": {
         "polsomtrek": 0, "enkelomtrek": 0, "gewichtVoorheen": "string", "lengteVoorheen": "string",
-        "zwareBaby": false, "handFotoDataUrl": "data:...|null", "handFotoBestandsnaam": "string"
+        "zwareBaby": false, "handFotoUrl": "https://firebasestorage.../...|null", "handFotoBestandsnaam": "string"
       },
-      "huidigProgramma": { "tekst": "string", "bestandDataUrl": "data:...|null", "bestandNaam": "string" }
+      "huidigProgramma": { "tekst": "string", "bestandUrl": "https://firebasestorage.../...|null", "bestandNaam": "string" }
     },
     "instellingen": {
       "energiebalansFactor": 1.0, "eiwitFactor": 1.8, "percentageVetVanREE": 0.4,
@@ -449,8 +480,9 @@ tussen sets. Structuur:
 rapporteren `reps` in plaats van een vermoeidheidsindex); een lege `exercise`
 betekent dat het protocol maar 1 oefening had. Het **Werkcapaciteit**-tabblad
 (knop naast "Snelle rekentool" in de cliëntenlijst) laadt dit bestand via
-`fetch()`, en biedt filteren op groep/oefening-of-studie, sorteren op
-rustinterval of vermoeidheidsindex, en een groen→rood kleurschaal op
+`fetch()`, en biedt filteren op groep/oefening-of-studie/rustinterval
+(dropdown dynamisch gevuld met de daadwerkelijk voorkomende waarden), sorteren
+op rustinterval of vermoeidheidsindex, en een groen→rood kleurschaal op
 `fatigue_pct` (conditional-formatting-stijl). De optionele
 rustinterval-suggestie op het cliënt-overzichtsscherm gebruikt
 `gemiddeldeVermoeidheidPerGroep()` om live het gemiddelde te berekenen voor de
