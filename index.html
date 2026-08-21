@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Arman Bahali — Evidence-Based Fysiek Coaching</title>
-<meta name="description" content="Evidence-based fysiektransformaties, voor elk niveau en elk doel. Programmering gebouwd rond wat jij wilt en kan, opgezet om het hele jaar door te blijven werken.">
+<title data-i18n="meta.title">Arman Bahali — Evidence-Based Physique Coaching</title>
+<meta name="description" data-i18n="meta.description" content="Evidence-based physique transformations for all levels and goals. Programming built around what you want and can do, structured to keep working year-round.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=8">
+<link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body class="marketing-page">
 
@@ -18,42 +18,51 @@
       <span class="app-header__mark">AB</span>
       <span>
         <span style="display:block; font-family:var(--font-heading); font-size:1.05rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--text);">Arman Bahali</span>
-        <span style="display:block; font-family:var(--font-data); font-size:0.65rem; color:var(--text-dim); letter-spacing:0.08em; text-transform:uppercase; margin-top:0.1em;">Fysiek Coaching</span>
+        <span style="display:block; font-family:var(--font-data); font-size:0.65rem; color:var(--text-dim); letter-spacing:0.08em; text-transform:uppercase; margin-top:0.1em;" data-i18n="nav.tag">Physique Coaching</span>
       </span>
     </a>
     <div class="marketing-nav-links" id="navLinks">
-      <a class="marketing-nav-link" href="#aanpak">Aanpak</a>
-      <a class="marketing-nav-link" href="#specs">Wat je krijgt</a>
-      <a class="marketing-nav-link" href="#proces">Proces</a>
-      <a class="marketing-nav-link" href="#prijzen">Prijzen</a>
-      <a class="btn btn--accent" href="intake.html">Start intake</a>
+      <label class="taal-switcher">
+        <span data-i18n="taal.label">Language</span>
+        <select id="taal-keuze">
+          <option value="en">English</option>
+          <option value="nl">Nederlands</option>
+          <option value="es">Español</option>
+          <option value="pt">Português</option>
+        </select>
+      </label>
+      <a class="marketing-nav-link" href="#aanpak" data-i18n="nav.aanpak">Approach</a>
+      <a class="marketing-nav-link" href="#specs" data-i18n="nav.specs">What you get</a>
+      <a class="marketing-nav-link" href="#proces" data-i18n="nav.proces">Process</a>
+      <a class="marketing-nav-link" href="#prijzen" data-i18n="nav.prijzen">Pricing</a>
+      <a class="btn btn--accent" href="intake.html" data-i18n="nav.startIntake">Start intake</a>
     </div>
-    <button class="marketing-nav-toggle" id="navToggle" aria-label="Menu openen/sluiten" aria-expanded="false">☰</button>
+    <button class="marketing-nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
   </div>
 </nav>
 
 <header class="marketing-hero">
   <div class="marketing-hero-bg" aria-hidden="true">
-    <!-- Voeg hier je eigen fysiek-foto's toe zodra je ze hebt, bv.:
+    <!-- Add your own physique photos here once you have them, e.g.:
          <img src="foto1.jpg" alt="">
          <img src="foto2.jpg" alt="">
-         Elke <img> vult een gelijk deel van de hero-breedte (object-fit: cover),
-         en de donkere overlay (styles.css, .marketing-hero-bg::after) zorgt dat
-         de tekst erboven leesbaar blijft. Zonder foto's blijft dit gewoon leeg
-         en zie je de huidige effen achtergrond. -->
+         Each <img> fills an equal share of the hero width (object-fit: cover),
+         and the dark overlay (styles.css, .marketing-hero-bg::after) keeps the
+         text above it readable. Left empty, this does nothing — you just see
+         the current plain background. -->
   </div>
   <div class="marketing-container marketing-hero-grid">
     <div>
-      <span class="marketing-eyebrow">Evidence-based fysiek coaching</span>
-      <h1>Potentieel telt pas<br>zodra het<br><span class="hl">resultaat er is</span></h1>
-      <p class="marketing-hero-sub">Evidence-based fysiektransformaties voor elk niveau en elk doel — gebouwd op programmering die je écht ergens brengt, niet alleen door de komende vier weken.</p>
+      <span class="marketing-eyebrow" data-i18n="hero.eyebrow">Evidence-based physique coaching</span>
+      <h1 data-i18n-html="hero.h1">Potential is only<br>defined once the<br><span class="hl">result is achieved</span></h1>
+      <p class="marketing-hero-sub" data-i18n="hero.sub">Evidence-based physique transformations for all levels and goals — built on programming that's actually structured to get you there, not just through the next four weeks.</p>
       <div class="marketing-hero-actions">
-        <a class="btn btn--accent" href="intake.html">Start je intake</a>
-        <a class="secondary" href="#proces">Bekijk hoe het werkt →</a>
+        <a class="btn btn--accent" href="intake.html" data-i18n="hero.actionPrimary">Start your intake</a>
+        <a class="secondary" href="#proces" data-i18n="hero.actionSecondary">See how it works →</a>
       </div>
     </div>
     <div class="progress-graphic tilt-card reveal" aria-hidden="true">
-      <div class="pg-label"><span>Programma-opbouw</span><span>Blok voor blok</span></div>
+      <div class="pg-label"><span data-i18n="pg.label1">Program structure</span><span data-i18n="pg.label2">Block by block</span></div>
       <div class="bars" id="barsContainer">
         <div class="bar-group">
           <div class="bar" data-h="34"></div>
@@ -75,9 +84,9 @@
         </div>
       </div>
       <div class="pg-blocks">
-        <span>Blok 1</span><span>Blok 2</span><span>Blok 3</span>
+        <span data-i18n="pg.block1">Block 1</span><span data-i18n="pg.block2">Block 2</span><span data-i18n="pg.block3">Block 3</span>
       </div>
-      <p class="pg-caption">Geen twee blokken zijn identiek — elk blok is gebouwd op hoe het vorige daadwerkelijk ging.</p>
+      <p class="pg-caption" data-i18n="pg.caption">No two blocks are identical — every one is built on how the last one actually went.</p>
     </div>
   </div>
 </header>
@@ -85,12 +94,12 @@
 <section id="aanpak" class="marketing-section">
   <div class="marketing-container">
     <div class="marketing-section-head">
-      <span class="marketing-eyebrow">De aanpak</span>
-      <h2>Coaching, geen giswerk.</h2>
+      <span class="marketing-eyebrow" data-i18n="approach.eyebrow">The approach</span>
+      <h2 data-i18n="approach.h2">Coaching, not guesswork.</h2>
     </div>
     <div class="approach-body reveal">
-      <p>De meeste coaching is óf een gerecycled template, óf giswerk op de gym-vloer verpakt als expertise. Dit is geen van beide. Elk programma is gebouwd op actueel onderzoek naar hypertrofie, periodisering en herstel — en wordt daarna aangepast aan hoe jij daadwerkelijk reageert, niet aan wat een boek zegt dat zou moeten.</p>
-      <p>Beginner of wedstrijdatleet, de methode verandert niet: het doel bepalen, de structuur eromheen bouwen, en bijsturen op basis van wat de data — en je lichaam — je daadwerkelijk vertellen. Evidence-based fysiektransformatie, voor elk niveau en elk doel.</p>
+      <p data-i18n="approach.p1">Most coaching is either a recycled template or gym-floor guesswork dressed up as expertise. This is neither. Every program is built on current research in hypertrophy, periodization, and recovery — then adapted to how you actually respond, not what a textbook says you should.</p>
+      <p data-i18n="approach.p2">Beginner or competitor, the method doesn't change: define the goal, build the structure around it, and adjust based on what the data — and your body — actually tell us. Evidence-based physique transformation, for all levels and all goals.</p>
     </div>
   </div>
 </section>
@@ -98,24 +107,24 @@
 <section id="specs" class="marketing-section alt">
   <div class="marketing-container">
     <div class="marketing-section-head">
-      <span class="marketing-eyebrow">Wat dit in de praktijk betekent</span>
-      <h2>Drie dingen die niet veranderen.</h2>
+      <span class="marketing-eyebrow" data-i18n="specs.eyebrow">What this looks like in practice</span>
+      <h2 data-i18n="specs.h2">Three things that don't change.</h2>
     </div>
     <div class="spec-list reveal">
       <div class="spec-row">
-        <span class="spec-tag">Niveau</span>
-        <h3>Voor elk niveau</h3>
-        <p class="spec-desc">Fysiektransformatie-coaching voor beginners én ervaren wedstrijdatleten — de principes schalen mee, maar de uitvoering wordt voor geen van beide uitgehold.</p>
+        <span class="spec-tag" data-i18n="specs.row1.tag">Level</span>
+        <h3 data-i18n="specs.row1.h3">For all levels</h3>
+        <p class="spec-desc" data-i18n="specs.row1.desc">Physique transformation coaching for first-timers and seasoned competitors alike — the principles scale, but the execution never gets diluted for either end.</p>
       </div>
       <div class="spec-row">
-        <span class="spec-tag">Programmering</span>
-        <h3>Gebouwd rond jou</h3>
-        <p class="spec-desc">Programmering wordt gebouwd rond jouw doelen én jouw beperkingen — oude blessures, agenda, materiaal, voorkeuren — niet in een template geperst die doet alsof die niet bestaan.</p>
+        <span class="spec-tag" data-i18n="specs.row2.tag">Programming</span>
+        <h3 data-i18n="specs.row2.h3">Built around you</h3>
+        <p class="spec-desc" data-i18n="specs.row2.desc">Programming is built around your goals and your limitations — old injuries, schedule, equipment, preferences — not forced into a template that pretends they don't exist.</p>
       </div>
       <div class="spec-row">
-        <span class="spec-tag">Structuur</span>
-        <h3>Gebouwd om te blijven werken</h3>
-        <p class="spec-desc">Programmering voor het hele jaar, met gestructureerde progressie, blok voor blok, zodat resultaten zich opstapelen in plaats van elke paar weken weer bij nul te beginnen.</p>
+        <span class="spec-tag" data-i18n="specs.row3.tag">Structure</span>
+        <h3 data-i18n="specs.row3.h3">Built to last</h3>
+        <p class="spec-desc" data-i18n="specs.row3.desc">Year-round programming with structured progression, block by block, so results compound over a year instead of resetting every few weeks.</p>
       </div>
     </div>
   </div>
@@ -124,24 +133,24 @@
 <section id="proces" class="marketing-section">
   <div class="marketing-container">
     <div class="marketing-section-head">
-      <span class="marketing-eyebrow">Hoe het begint</span>
-      <h2>Drie stappen erin.</h2>
+      <span class="marketing-eyebrow" data-i18n="process.eyebrow">How it starts</span>
+      <h2 data-i18n="process.h2">Three steps in.</h2>
     </div>
     <div class="process-list reveal">
       <div class="process-item tilt-card">
         <span class="num mono">01</span>
-        <h3>Intake</h3>
-        <p>Een volledig beeld van je doelen, trainingsgeschiedenis, beperkingen en agenda — voordat er ook maar één set geprogrammeerd wordt.</p>
+        <h3 data-i18n="process.step1.h3">Intake</h3>
+        <p data-i18n="process.step1.p">A full look at your goals, training history, limitations, and schedule — before a single set is programmed.</p>
       </div>
       <div class="process-item tilt-card">
         <span class="num mono">02</span>
-        <h3>Programmering</h3>
-        <p>Een gestructureerd plan, specifiek gebouwd op wat uit de intake naar voren komt — niet aangepast vanuit een template.</p>
+        <h3 data-i18n="process.step2.h3">Programming</h3>
+        <p data-i18n="process.step2.p">A structured plan built specifically around what came out of the intake — not adjusted from a template.</p>
       </div>
       <div class="process-item tilt-card">
         <span class="num mono">03</span>
-        <h3>Uitvoering &amp; bijsturing</h3>
-        <p>Doorlopende coaching, bijgehouden voortgang, en programmering die blijft meebewegen met jou — blok voor blok, het hele jaar door.</p>
+        <h3 data-i18n="process.step3.h3">Execution &amp; adjustment</h3>
+        <p data-i18n="process.step3.p">Ongoing coaching, tracked progress, and programming that keeps adapting as you do — block by block, year-round.</p>
       </div>
     </div>
   </div>
@@ -150,71 +159,431 @@
 <section id="prijzen" class="marketing-section alt">
   <div class="marketing-container">
     <div class="marketing-section-head">
-      <span class="marketing-eyebrow">Prijzen</span>
-      <h2>Drie niveaus van toegang.</h2>
-      <p>Dezelfde evidence-based aanpak op elk niveau — het verschil zit in contactfrequentie, flexibiliteit, en hoeveel dagelijkse bijsturing erbij zit.</p>
+      <span class="marketing-eyebrow" data-i18n="pricing.eyebrow">Pricing</span>
+      <h2 data-i18n="pricing.h2">Three levels of access.</h2>
+      <p data-i18n="pricing.sub">Same evidence-based approach at every level — the difference is contact frequency, flexibility, and how much day-to-day adjustment is included.</p>
     </div>
     <div class="pricing-grid reveal">
       <div class="price-card tilt-card" data-tier="Basis">
-        <h3>Basis</h3>
-        <p class="prijs"><span class="bedrag">€150</span> / maand</p>
+        <h3 data-i18n="tier.basic.name">Basic</h3>
+        <p class="prijs"><span class="bedrag">€150</span> <span data-i18n="pricing.perMonth">/ month</span></p>
         <ul>
-          <li>1 jaarprogramma, gebouwd rond jouw doel</li>
-          <li>Wekelijkse video check-in voor voortgang</li>
-          <li>Maandelijkse foto-analyse</li>
-          <li>Eenmalige macro- en calorie-instelling</li>
+          <li data-i18n="tier.basic.li1">1 yearly program, built around your goal</li>
+          <li data-i18n="tier.basic.li2">Weekly video check-in on progress</li>
+          <li data-i18n="tier.basic.li3">Monthly photo analysis</li>
+          <li data-i18n="tier.basic.li4">One-time macro and calorie setup</li>
         </ul>
-        <a class="btn btn--ghost tier-cta" href="intake.html" data-tier="Basis">Kies Basis</a>
+        <a class="btn btn--ghost tier-cta" href="intake.html" data-tier="Basis" data-i18n="tier.basic.cta">Choose Basic</a>
       </div>
-      <div class="price-card featured tilt-card" data-tier="Medium">
-        <h3>Medium</h3>
-        <p class="prijs"><span class="bedrag">€260</span> / maand</p>
+      <div class="price-card featured tilt-card" data-tier="Medium" data-featured-label="Most chosen">
+        <h3 data-i18n="tier.medium.name">Medium</h3>
+        <p class="prijs"><span class="bedrag">€260</span> <span data-i18n="pricing.perMonth">/ month</span></p>
         <ul>
-          <li>Alles uit Basis</li>
-          <li>Nieuw programma op aanvraag (ander doel of blessure)</li>
-          <li>2x per week video check-in</li>
-          <li>Meerdere foto-checks per week</li>
-          <li>Doorlopende dieetaanpassingen op basis van je voortgang</li>
+          <li data-i18n="tier.medium.li1">Everything in Basic</li>
+          <li data-i18n="tier.medium.li2">New program on request (different goal or injury)</li>
+          <li data-i18n="tier.medium.li3">2x per week video check-in</li>
+          <li data-i18n="tier.medium.li4">Multiple photo checks per week</li>
+          <li data-i18n="tier.medium.li5">Ongoing diet adjustments based on your progress</li>
         </ul>
-        <a class="btn btn--accent tier-cta" href="intake.html" data-tier="Medium">Kies Medium</a>
+        <a class="btn btn--accent tier-cta" href="intake.html" data-tier="Medium" data-i18n="tier.medium.cta">Choose Medium</a>
       </div>
       <div class="price-card tilt-card" data-tier="Premium">
-        <h3>Premium</h3>
-        <p class="prijs"><span class="bedrag">€385</span> / maand</p>
+        <h3 data-i18n="tier.premium.name">Premium</h3>
+        <p class="prijs"><span class="bedrag">€385</span> <span data-i18n="pricing.perMonth">/ month</span></p>
         <ul>
-          <li>Alles uit Medium</li>
-          <li>Flexibele toegang tot meerdere programma's tegelijk</li>
-          <li>Piekweek- en wedstrijdbegeleiding</li>
-          <li>Dagelijkse foto- en voedingscheck-ups</li>
-          <li>Kennisoverdracht om uiteindelijk zelfstandig door te gaan</li>
+          <li data-i18n="tier.premium.li1">Everything in Medium</li>
+          <li data-i18n="tier.premium.li2">Flexible access to multiple programs at once</li>
+          <li data-i18n="tier.premium.li3">Peak-week and competition coaching</li>
+          <li data-i18n="tier.premium.li4">Daily photo and nutrition check-ups</li>
+          <li data-i18n="tier.premium.li5">Knowledge transfer so you can eventually go it alone</li>
         </ul>
-        <a class="btn btn--ghost tier-cta" href="intake.html" data-tier="Premium">Kies Premium</a>
+        <a class="btn btn--ghost tier-cta" href="intake.html" data-tier="Premium" data-i18n="tier.premium.cta">Choose Premium</a>
       </div>
     </div>
-    <p class="pricing-note">↳ Deze prijzen zijn een startpunt — pas ze aan naar je eigen markt. Elke knop hierboven
-      logt de keuze voor de business tracker en gaat daarna direct naar de intake.</p>
+    <p class="pricing-note" data-i18n="pricing.note">↳ These prices are a starting point — adjust them to your own market. Every button above logs the choice for the business tracker and then goes straight to the intake.</p>
   </div>
 </section>
 
 <section class="marketing-cta">
   <div class="marketing-container">
-    <span class="marketing-eyebrow">Aan de slag</span>
-    <h2>Klaar om erachter te komen wat je écht kan?</h2>
-    <p>De eerste stap is een korte intake — je doelen, je geschiedenis, je beperkingen. Geen verplichting daarna.</p>
-    <a class="btn btn--accent" href="intake.html">Start je intake</a>
+    <span class="marketing-eyebrow" data-i18n="cta.eyebrow">Get started</span>
+    <h2 data-i18n="cta.h2">Ready to find out what you're actually capable of?</h2>
+    <p data-i18n="cta.p">The first step is a short intake — your goals, your history, your limitations. No commitment beyond that.</p>
+    <a class="btn btn--accent" href="intake.html" data-i18n="cta.btn">Start your intake</a>
   </div>
 </section>
 
 <footer class="marketing-footer">
   <div class="marketing-container marketing-footer-inner">
-    <span>© <span id="year"></span> Arman Bahali. Alle rechten voorbehouden.</span>
-    <span>Evidence-based fysiek coaching</span>
+    <span>© <span id="year"></span> <span data-i18n="footer.rights">Arman Bahali. All rights reserved.</span></span>
+    <span data-i18n="footer.tagline">Evidence-based physique coaching</span>
   </div>
 </footer>
 
 <script>
 (function () {
   document.getElementById('year').textContent = new Date().getFullYear();
+
+  // ---- Taal (i18n) ----
+  // Zelfstandig woordenboek voor deze pagina — index.html deelt geen module
+  // met client.js/i18n.js, blijft dus een los, self-contained bestand net als
+  // voorheen. Zelfde vier taalcodes als de rest van de site voor
+  // herkenbaarheid, maar hier is Engels de standaardtaal (niet Nederlands).
+  const TAAL_KEY = 'pt-intake:homepage-taal:v1';
+  const TALEN = ['en', 'nl', 'es', 'pt'];
+
+  const VERTALINGEN = {
+    en: {
+      'meta.title': 'Arman Bahali — Evidence-Based Physique Coaching',
+      'meta.description': 'Evidence-based physique transformations for all levels and goals. Programming built around what you want and can do, structured to keep working year-round.',
+      'nav.tag': 'Physique Coaching',
+      'nav.aanpak': 'Approach',
+      'nav.specs': 'What you get',
+      'nav.proces': 'Process',
+      'nav.prijzen': 'Pricing',
+      'nav.startIntake': 'Start intake',
+      'taal.label': 'Language',
+      'hero.eyebrow': 'Evidence-based physique coaching',
+      'hero.h1': 'Potential is only<br>defined once the<br><span class="hl">result is achieved</span>',
+      'hero.sub': "Evidence-based physique transformations for all levels and goals — built on programming that's actually structured to get you there, not just through the next four weeks.",
+      'hero.actionPrimary': 'Start your intake',
+      'hero.actionSecondary': 'See how it works →',
+      'pg.label1': 'Program structure',
+      'pg.label2': 'Block by block',
+      'pg.block1': 'Block 1',
+      'pg.block2': 'Block 2',
+      'pg.block3': 'Block 3',
+      'pg.caption': 'No two blocks are identical — every one is built on how the last one actually went.',
+      'pg.tooltipPeak': ' — peak week',
+      'pg.tooltipWeek': ' — week ',
+      'approach.eyebrow': 'The approach',
+      'approach.h2': 'Coaching, not guesswork.',
+      'approach.p1': 'Most coaching is either a recycled template or gym-floor guesswork dressed up as expertise. This is neither. Every program is built on current research in hypertrophy, periodization, and recovery — then adapted to how you actually respond, not what a textbook says you should.',
+      'approach.p2': "Beginner or competitor, the method doesn't change: define the goal, build the structure around it, and adjust based on what the data — and your body — actually tell us. Evidence-based physique transformation, for all levels and all goals.",
+      'specs.eyebrow': 'What this looks like in practice',
+      'specs.h2': "Three things that don't change.",
+      'specs.row1.tag': 'Level',
+      'specs.row1.h3': 'For all levels',
+      'specs.row1.desc': 'Physique transformation coaching for first-timers and seasoned competitors alike — the principles scale, but the execution never gets diluted for either end.',
+      'specs.row2.tag': 'Programming',
+      'specs.row2.h3': 'Built around you',
+      'specs.row2.desc': "Programming is built around your goals and your limitations — old injuries, schedule, equipment, preferences — not forced into a template that pretends they don't exist.",
+      'specs.row3.tag': 'Structure',
+      'specs.row3.h3': 'Built to last',
+      'specs.row3.desc': 'Year-round programming with structured progression, block by block, so results compound over a year instead of resetting every few weeks.',
+      'process.eyebrow': 'How it starts',
+      'process.h2': 'Three steps in.',
+      'process.step1.h3': 'Intake',
+      'process.step1.p': 'A full look at your goals, training history, limitations, and schedule — before a single set is programmed.',
+      'process.step2.h3': 'Programming',
+      'process.step2.p': 'A structured plan built specifically around what came out of the intake — not adjusted from a template.',
+      'process.step3.h3': 'Execution & adjustment',
+      'process.step3.p': 'Ongoing coaching, tracked progress, and programming that keeps adapting as you do — block by block, year-round.',
+      'pricing.eyebrow': 'Pricing',
+      'pricing.h2': 'Three levels of access.',
+      'pricing.sub': 'Same evidence-based approach at every level — the difference is contact frequency, flexibility, and how much day-to-day adjustment is included.',
+      'pricing.featuredBadge': 'Most chosen',
+      'pricing.perMonth': '/ month',
+      'pricing.note': '↳ These prices are a starting point — adjust them to your own market. Every button above logs the choice for the business tracker and then goes straight to the intake.',
+      'tier.basic.name': 'Basic',
+      'tier.basic.li1': '1 yearly program, built around your goal',
+      'tier.basic.li2': 'Weekly video check-in on progress',
+      'tier.basic.li3': 'Monthly photo analysis',
+      'tier.basic.li4': 'One-time macro and calorie setup',
+      'tier.basic.cta': 'Choose Basic',
+      'tier.medium.name': 'Medium',
+      'tier.medium.li1': 'Everything in Basic',
+      'tier.medium.li2': 'New program on request (different goal or injury)',
+      'tier.medium.li3': '2x per week video check-in',
+      'tier.medium.li4': 'Multiple photo checks per week',
+      'tier.medium.li5': 'Ongoing diet adjustments based on your progress',
+      'tier.medium.cta': 'Choose Medium',
+      'tier.premium.name': 'Premium',
+      'tier.premium.li1': 'Everything in Medium',
+      'tier.premium.li2': 'Flexible access to multiple programs at once',
+      'tier.premium.li3': 'Peak-week and competition coaching',
+      'tier.premium.li4': 'Daily photo and nutrition check-ups',
+      'tier.premium.li5': 'Knowledge transfer so you can eventually go it alone',
+      'tier.premium.cta': 'Choose Premium',
+      'cta.eyebrow': 'Get started',
+      'cta.h2': "Ready to find out what you're actually capable of?",
+      'cta.p': 'The first step is a short intake — your goals, your history, your limitations. No commitment beyond that.',
+      'cta.btn': 'Start your intake',
+      'footer.rights': 'Arman Bahali. All rights reserved.',
+      'footer.tagline': 'Evidence-based physique coaching',
+    },
+    nl: {
+      'meta.title': 'Arman Bahali — Evidence-Based Fysiek Coaching',
+      'meta.description': 'Evidence-based fysiektransformaties, voor elk niveau en elk doel. Programmering gebouwd rond wat jij wilt en kan, opgezet om het hele jaar door te blijven werken.',
+      'nav.tag': 'Fysiek Coaching',
+      'nav.aanpak': 'Aanpak',
+      'nav.specs': 'Wat je krijgt',
+      'nav.proces': 'Proces',
+      'nav.prijzen': 'Prijzen',
+      'nav.startIntake': 'Start intake',
+      'taal.label': 'Taal',
+      'hero.eyebrow': 'Evidence-based fysiek coaching',
+      'hero.h1': 'Potentieel telt pas<br>zodra het<br><span class="hl">resultaat er is</span>',
+      'hero.sub': 'Evidence-based fysiektransformaties voor elk niveau en elk doel — gebouwd op programmering die je écht ergens brengt, niet alleen door de komende vier weken.',
+      'hero.actionPrimary': 'Start je intake',
+      'hero.actionSecondary': 'Bekijk hoe het werkt →',
+      'pg.label1': 'Programma-opbouw',
+      'pg.label2': 'Blok voor blok',
+      'pg.block1': 'Blok 1',
+      'pg.block2': 'Blok 2',
+      'pg.block3': 'Blok 3',
+      'pg.caption': 'Geen twee blokken zijn identiek — elk blok is gebouwd op hoe het vorige daadwerkelijk ging.',
+      'pg.tooltipPeak': ' — piekweek',
+      'pg.tooltipWeek': ' — week ',
+      'approach.eyebrow': 'De aanpak',
+      'approach.h2': 'Coaching, geen giswerk.',
+      'approach.p1': 'De meeste coaching is óf een gerecycled template, óf giswerk op de gym-vloer verpakt als expertise. Dit is geen van beide. Elk programma is gebouwd op actueel onderzoek naar hypertrofie, periodisering en herstel — en wordt daarna aangepast aan hoe jij daadwerkelijk reageert, niet aan wat een boek zegt dat zou moeten.',
+      'approach.p2': 'Beginner of wedstrijdatleet, de methode verandert niet: het doel bepalen, de structuur eromheen bouwen, en bijsturen op basis van wat de data — en je lichaam — je daadwerkelijk vertellen. Evidence-based fysiektransformatie, voor elk niveau en elk doel.',
+      'specs.eyebrow': 'Wat dit in de praktijk betekent',
+      'specs.h2': 'Drie dingen die niet veranderen.',
+      'specs.row1.tag': 'Niveau',
+      'specs.row1.h3': 'Voor elk niveau',
+      'specs.row1.desc': 'Fysiektransformatie-coaching voor beginners én ervaren wedstrijdatleten — de principes schalen mee, maar de uitvoering wordt voor geen van beide uitgehold.',
+      'specs.row2.tag': 'Programmering',
+      'specs.row2.h3': 'Gebouwd rond jou',
+      'specs.row2.desc': "Programmering wordt gebouwd rond jouw doelen én jouw beperkingen — oude blessures, agenda, materiaal, voorkeuren — niet in een template geperst die doet alsof die niet bestaan.",
+      'specs.row3.tag': 'Structuur',
+      'specs.row3.h3': 'Gebouwd om te blijven werken',
+      'specs.row3.desc': 'Programmering voor het hele jaar, met gestructureerde progressie, blok voor blok, zodat resultaten zich opstapelen in plaats van elke paar weken weer bij nul te beginnen.',
+      'process.eyebrow': 'Hoe het begint',
+      'process.h2': 'Drie stappen erin.',
+      'process.step1.h3': 'Intake',
+      'process.step1.p': 'Een volledig beeld van je doelen, trainingsgeschiedenis, beperkingen en agenda — voordat er ook maar één set geprogrammeerd wordt.',
+      'process.step2.h3': 'Programmering',
+      'process.step2.p': 'Een gestructureerd plan, specifiek gebouwd op wat uit de intake naar voren komt — niet aangepast vanuit een template.',
+      'process.step3.h3': 'Uitvoering & bijsturing',
+      'process.step3.p': 'Doorlopende coaching, bijgehouden voortgang, en programmering die blijft meebewegen met jou — blok voor blok, het hele jaar door.',
+      'pricing.eyebrow': 'Prijzen',
+      'pricing.h2': 'Drie niveaus van toegang.',
+      'pricing.sub': 'Dezelfde evidence-based aanpak op elk niveau — het verschil zit in contactfrequentie, flexibiliteit, en hoeveel dagelijkse bijsturing erbij zit.',
+      'pricing.featuredBadge': 'Meest gekozen',
+      'pricing.perMonth': '/ maand',
+      'pricing.note': '↳ Deze prijzen zijn een startpunt — pas ze aan naar je eigen markt. Elke knop hierboven logt de keuze voor de business tracker en gaat daarna direct naar de intake.',
+      'tier.basic.name': 'Basis',
+      'tier.basic.li1': '1 jaarprogramma, gebouwd rond jouw doel',
+      'tier.basic.li2': 'Wekelijkse video check-in voor voortgang',
+      'tier.basic.li3': 'Maandelijkse foto-analyse',
+      'tier.basic.li4': 'Eenmalige macro- en calorie-instelling',
+      'tier.basic.cta': 'Kies Basis',
+      'tier.medium.name': 'Medium',
+      'tier.medium.li1': 'Alles uit Basis',
+      'tier.medium.li2': 'Nieuw programma op aanvraag (ander doel of blessure)',
+      'tier.medium.li3': '2x per week video check-in',
+      'tier.medium.li4': 'Meerdere foto-checks per week',
+      'tier.medium.li5': 'Doorlopende dieetaanpassingen op basis van je voortgang',
+      'tier.medium.cta': 'Kies Medium',
+      'tier.premium.name': 'Premium',
+      'tier.premium.li1': 'Alles uit Medium',
+      'tier.premium.li2': "Flexibele toegang tot meerdere programma's tegelijk",
+      'tier.premium.li3': 'Piekweek- en wedstrijdbegeleiding',
+      'tier.premium.li4': 'Dagelijkse foto- en voedingscheck-ups',
+      'tier.premium.li5': 'Kennisoverdracht om uiteindelijk zelfstandig door te gaan',
+      'tier.premium.cta': 'Kies Premium',
+      'cta.eyebrow': 'Aan de slag',
+      'cta.h2': 'Klaar om erachter te komen wat je écht kan?',
+      'cta.p': 'De eerste stap is een korte intake — je doelen, je geschiedenis, je beperkingen. Geen verplichting daarna.',
+      'cta.btn': 'Start je intake',
+      'footer.rights': 'Arman Bahali. Alle rechten voorbehouden.',
+      'footer.tagline': 'Evidence-based fysiek coaching',
+    },
+    es: {
+      'meta.title': 'Arman Bahali — Coaching Físico Basado en Evidencia',
+      'meta.description': 'Transformaciones físicas basadas en evidencia para todos los niveles y objetivos. Programación construida en torno a lo que quieres y puedes hacer, estructurada para seguir funcionando todo el año.',
+      'nav.tag': 'Coaching Físico',
+      'nav.aanpak': 'Enfoque',
+      'nav.specs': 'Lo que obtienes',
+      'nav.proces': 'Proceso',
+      'nav.prijzen': 'Precios',
+      'nav.startIntake': 'Iniciar admisión',
+      'taal.label': 'Idioma',
+      'hero.eyebrow': 'Coaching físico basado en evidencia',
+      'hero.h1': 'El potencial solo<br>cuenta cuando<br><span class="hl">se logra el resultado</span>',
+      'hero.sub': 'Transformaciones físicas basadas en evidencia para todos los niveles y objetivos — construidas sobre una programación realmente estructurada para llevarte allí, no solo para las próximas cuatro semanas.',
+      'hero.actionPrimary': 'Comienza tu admisión',
+      'hero.actionSecondary': 'Mira cómo funciona →',
+      'pg.label1': 'Estructura del programa',
+      'pg.label2': 'Bloque por bloque',
+      'pg.block1': 'Bloque 1',
+      'pg.block2': 'Bloque 2',
+      'pg.block3': 'Bloque 3',
+      'pg.caption': 'No hay dos bloques iguales — cada uno se construye según cómo fue realmente el anterior.',
+      'pg.tooltipPeak': ' — semana pico',
+      'pg.tooltipWeek': ' — semana ',
+      'approach.eyebrow': 'El enfoque',
+      'approach.h2': 'Coaching, no suposiciones.',
+      'approach.p1': 'La mayoría del coaching es una plantilla reciclada o suposiciones de gimnasio disfrazadas de experiencia. Esto no es ninguna de las dos. Cada programa se basa en investigación actual sobre hipertrofia, periodización y recuperación — y luego se adapta a cómo respondes realmente, no a lo que dice un libro que deberías hacer.',
+      'approach.p2': 'Principiante o competidor, el método no cambia: definir el objetivo, construir la estructura en torno a él, y ajustar según lo que realmente indican los datos — y tu cuerpo. Transformación física basada en evidencia, para todos los niveles y objetivos.',
+      'specs.eyebrow': 'Cómo se ve esto en la práctica',
+      'specs.h2': 'Tres cosas que no cambian.',
+      'specs.row1.tag': 'Nivel',
+      'specs.row1.h3': 'Para todos los niveles',
+      'specs.row1.desc': 'Coaching de transformación física tanto para principiantes como para competidores experimentados — los principios se adaptan, pero la ejecución nunca se diluye para ninguno de los dos.',
+      'specs.row2.tag': 'Programación',
+      'specs.row2.h3': 'Construido en torno a ti',
+      'specs.row2.desc': 'La programación se construye en torno a tus objetivos y tus limitaciones — lesiones antiguas, agenda, equipamiento, preferencias — sin forzarla en una plantilla que finge que no existen.',
+      'specs.row3.tag': 'Estructura',
+      'specs.row3.h3': 'Construido para durar',
+      'specs.row3.desc': 'Programación durante todo el año con progresión estructurada, bloque por bloque, para que los resultados se acumulen durante un año en lugar de reiniciarse cada pocas semanas.',
+      'process.eyebrow': 'Cómo empieza',
+      'process.h2': 'Tres pasos para entrar.',
+      'process.step1.h3': 'Admisión',
+      'process.step1.p': 'Una mirada completa a tus objetivos, historial de entrenamiento, limitaciones y agenda — antes de programar una sola serie.',
+      'process.step2.h3': 'Programación',
+      'process.step2.p': 'Un plan estructurado, construido específicamente en base a lo que surgió de la admisión — no ajustado desde una plantilla.',
+      'process.step3.h3': 'Ejecución y ajuste',
+      'process.step3.p': 'Coaching continuo, progreso registrado, y programación que sigue adaptándose contigo — bloque por bloque, todo el año.',
+      'pricing.eyebrow': 'Precios',
+      'pricing.h2': 'Tres niveles de acceso.',
+      'pricing.sub': 'El mismo enfoque basado en evidencia en cada nivel — la diferencia está en la frecuencia de contacto, la flexibilidad, y cuánto ajuste diario está incluido.',
+      'pricing.featuredBadge': 'Más elegido',
+      'pricing.perMonth': '/ mes',
+      'pricing.note': '↳ Estos precios son un punto de partida — ajústalos a tu propio mercado. Cada botón de arriba registra la elección para el business tracker y luego va directo a la admisión.',
+      'tier.basic.name': 'Básico',
+      'tier.basic.li1': '1 programa anual, construido en torno a tu objetivo',
+      'tier.basic.li2': 'Videollamada semanal de seguimiento',
+      'tier.basic.li3': 'Análisis de fotos mensual',
+      'tier.basic.li4': 'Configuración única de macros y calorías',
+      'tier.basic.cta': 'Elegir Básico',
+      'tier.medium.name': 'Medium',
+      'tier.medium.li1': 'Todo lo del plan Básico',
+      'tier.medium.li2': 'Programa nuevo bajo petición (otro objetivo o lesión)',
+      'tier.medium.li3': 'Videollamada 2 veces por semana',
+      'tier.medium.li4': 'Varios controles de fotos por semana',
+      'tier.medium.li5': 'Ajustes de dieta continuos según tu progreso',
+      'tier.medium.cta': 'Elegir Medium',
+      'tier.premium.name': 'Premium',
+      'tier.premium.li1': 'Todo lo del plan Medium',
+      'tier.premium.li2': 'Acceso flexible a varios programas a la vez',
+      'tier.premium.li3': 'Guía para semana pico y competiciones',
+      'tier.premium.li4': 'Controles diarios de foto y nutrición',
+      'tier.premium.li5': 'Transferencia de conocimiento para que puedas ser autónomo',
+      'tier.premium.cta': 'Elegir Premium',
+      'cta.eyebrow': 'Empieza ya',
+      'cta.h2': '¿Listo para descubrir de qué eres realmente capaz?',
+      'cta.p': 'El primer paso es una breve admisión — tus objetivos, tu historial, tus limitaciones. Sin compromiso después.',
+      'cta.btn': 'Comienza tu admisión',
+      'footer.rights': 'Arman Bahali. Todos los derechos reservados.',
+      'footer.tagline': 'Coaching físico basado en evidencia',
+    },
+    pt: {
+      'meta.title': 'Arman Bahali — Coaching Físico Baseado em Evidências',
+      'meta.description': 'Transformações físicas baseadas em evidências para todos os níveis e objetivos. Programação construída em torno do que você quer e pode fazer, estruturada para continuar funcionando o ano todo.',
+      'nav.tag': 'Coaching Físico',
+      'nav.aanpak': 'Abordagem',
+      'nav.specs': 'O que você recebe',
+      'nav.proces': 'Processo',
+      'nav.prijzen': 'Preços',
+      'nav.startIntake': 'Iniciar admissão',
+      'taal.label': 'Idioma',
+      'hero.eyebrow': 'Coaching físico baseado em evidências',
+      'hero.h1': 'O potencial só<br>conta quando<br><span class="hl">o resultado é alcançado</span>',
+      'hero.sub': 'Transformações físicas baseadas em evidências para todos os níveis e objetivos — construídas sobre uma programação realmente estruturada para te levar lá, não apenas pelas próximas quatro semanas.',
+      'hero.actionPrimary': 'Comece sua admissão',
+      'hero.actionSecondary': 'Veja como funciona →',
+      'pg.label1': 'Estrutura do programa',
+      'pg.label2': 'Bloco por bloco',
+      'pg.block1': 'Bloco 1',
+      'pg.block2': 'Bloco 2',
+      'pg.block3': 'Bloco 3',
+      'pg.caption': 'Nenhum bloco é igual ao outro — cada um é construído com base em como o anterior realmente foi.',
+      'pg.tooltipPeak': ' — semana de pico',
+      'pg.tooltipWeek': ' — semana ',
+      'approach.eyebrow': 'A abordagem',
+      'approach.h2': 'Coaching, não achismo.',
+      'approach.p1': 'A maioria do coaching é um modelo reciclado ou achismo de academia disfarçado de expertise. Isto não é nenhum dos dois. Todo programa é construído com base em pesquisas atuais sobre hipertrofia, periodização e recuperação — e depois adaptado a como você realmente responde, não ao que um livro diz que você deveria fazer.',
+      'approach.p2': 'Iniciante ou competidor, o método não muda: definir o objetivo, construir a estrutura em torno dele, e ajustar com base no que os dados — e o seu corpo — realmente dizem. Transformação física baseada em evidências, para todos os níveis e objetivos.',
+      'specs.eyebrow': 'Como isso funciona na prática',
+      'specs.h2': 'Três coisas que não mudam.',
+      'specs.row1.tag': 'Nível',
+      'specs.row1.h3': 'Para todos os níveis',
+      'specs.row1.desc': 'Coaching de transformação física tanto para iniciantes quanto para competidores experientes — os princípios se ajustam, mas a execução nunca é diluída para nenhum dos dois.',
+      'specs.row2.tag': 'Programação',
+      'specs.row2.h3': 'Construído em torno de você',
+      'specs.row2.desc': 'A programação é construída em torno dos seus objetivos e das suas limitações — lesões antigas, agenda, equipamento, preferências — sem forçá-la em um modelo que finge que elas não existem.',
+      'specs.row3.tag': 'Estrutura',
+      'specs.row3.h3': 'Construído para durar',
+      'specs.row3.desc': 'Programação para o ano todo, com progressão estruturada, bloco por bloco, para que os resultados se acumulem ao longo de um ano em vez de reiniciar a cada poucas semanas.',
+      'process.eyebrow': 'Como começa',
+      'process.h2': 'Três passos para entrar.',
+      'process.step1.h3': 'Admissão',
+      'process.step1.p': 'Um panorama completo dos seus objetivos, histórico de treino, limitações e agenda — antes de uma única série ser programada.',
+      'process.step2.h3': 'Programação',
+      'process.step2.p': 'Um plano estruturado, construído especificamente com base no que surgiu da admissão — não ajustado a partir de um modelo.',
+      'process.step3.h3': 'Execução e ajuste',
+      'process.step3.p': 'Coaching contínuo, progresso acompanhado, e programação que continua se adaptando junto com você — bloco por bloco, o ano todo.',
+      'pricing.eyebrow': 'Preços',
+      'pricing.h2': 'Três níveis de acesso.',
+      'pricing.sub': 'A mesma abordagem baseada em evidências em cada nível — a diferença está na frequência de contato, flexibilidade, e quanto ajuste do dia a dia está incluído.',
+      'pricing.featuredBadge': 'Mais escolhido',
+      'pricing.perMonth': '/ mês',
+      'pricing.note': '↳ Estes preços são um ponto de partida — ajuste-os ao seu próprio mercado. Cada botão acima registra a escolha para o business tracker e depois vai direto para a admissão.',
+      'tier.basic.name': 'Básico',
+      'tier.basic.li1': '1 programa anual, construído em torno do seu objetivo',
+      'tier.basic.li2': 'Videochamada semanal de acompanhamento',
+      'tier.basic.li3': 'Análise de fotos mensal',
+      'tier.basic.li4': 'Configuração única de macros e calorias',
+      'tier.basic.cta': 'Escolher Básico',
+      'tier.medium.name': 'Medium',
+      'tier.medium.li1': 'Tudo do plano Básico',
+      'tier.medium.li2': 'Novo programa sob pedido (outro objetivo ou lesão)',
+      'tier.medium.li3': 'Videochamada 2 vezes por semana',
+      'tier.medium.li4': 'Vários checks de fotos por semana',
+      'tier.medium.li5': 'Ajustes de dieta contínuos com base no seu progresso',
+      'tier.medium.cta': 'Escolher Medium',
+      'tier.premium.name': 'Premium',
+      'tier.premium.li1': 'Tudo do plano Medium',
+      'tier.premium.li2': 'Acesso flexível a vários programas ao mesmo tempo',
+      'tier.premium.li3': 'Orientação para semana de pico e competições',
+      'tier.premium.li4': 'Checks diários de foto e nutrição',
+      'tier.premium.li5': 'Transferência de conhecimento para você seguir sozinho no futuro',
+      'tier.premium.cta': 'Escolher Premium',
+      'cta.eyebrow': 'Comece agora',
+      'cta.h2': 'Pronto para descobrir do que você é realmente capaz?',
+      'cta.p': 'O primeiro passo é uma breve admissão — seus objetivos, seu histórico, suas limitações. Sem compromisso depois disso.',
+      'cta.btn': 'Comece sua admissão',
+      'footer.rights': 'Arman Bahali. Todos os direitos reservados.',
+      'footer.tagline': 'Coaching físico baseado em evidências',
+    },
+  };
+
+  function bepaalStartTaal() {
+    const opgeslagen = localStorage.getItem(TAAL_KEY);
+    if (opgeslagen && TALEN.includes(opgeslagen)) return opgeslagen;
+    const browserTaal = (navigator.language || 'en').slice(0, 2).toLowerCase();
+    return TALEN.includes(browserTaal) ? browserTaal : 'en';
+  }
+
+  let huidigeTaal = 'en';
+
+  function pasVertalingToe(taal) {
+    huidigeTaal = taal;
+    const dict = VERTALINGEN[taal] || VERTALINGEN.en;
+    document.documentElement.lang = taal;
+
+    document.querySelectorAll('[data-i18n]').forEach((el) => {
+      const key = el.dataset.i18n;
+      if (dict[key] != null) el.textContent = dict[key];
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach((el) => {
+      const key = el.dataset.i18nHtml;
+      if (dict[key] != null) el.innerHTML = dict[key];
+    });
+
+    document.title = dict['meta.title'];
+    document.querySelector('meta[name="description"]').setAttribute('content', dict['meta.description']);
+    document.querySelector('.price-card.featured').setAttribute('data-featured-label', dict['pricing.featuredBadge']);
+
+    document.getElementById('taal-keuze').value = taal;
+    localStorage.setItem(TAAL_KEY, taal);
+  }
+
+  document.getElementById('taal-keuze').addEventListener('change', (e) => pasVertalingToe(e.target.value));
+  pasVertalingToe(bepaalStartTaal());
 
   // Mobile nav toggle
   const navToggle = document.getElementById('navToggle');
@@ -262,6 +631,8 @@
   // verschijnt. Werkt alleen als index.html en business.html vanaf dezelfde
   // origin bediend worden (bv. dezelfde GitHub Pages-site) — bij lokaal
   // openen via file:// is er geen gedeelde storage tussen de twee bestanden.
+  // De tier zelf (Basis/Medium/Premium, via data-tier) blijft altijd Nederlands
+  // — dat is een interne sleutel voor business.js, niet zichtbare tekst.
   const TRACKER_STORAGE_KEY = 'ptBusinessTracker_v1';
 
   function laadTrackerState() {
@@ -359,15 +730,18 @@
     });
 
     // Bar chart tooltips — hover een blok om te zien welk blok het is
-    // (geen verzonnen echte cijfers, puur relatieve opbouw).
+    // (geen verzonnen echte cijfers, puur relatieve opbouw). Volgt de
+    // actieve taal via VERTALINGEN/huidigeTaal.
     const tooltip = document.createElement('div');
     tooltip.className = 'bar-tooltip';
     document.body.appendChild(tooltip);
-    const blokNamen = ['Blok 1', 'Blok 1', 'Blok 1', 'Blok 1', 'Blok 2', 'Blok 2', 'Blok 2', 'Blok 2', 'Blok 3', 'Blok 3', 'Blok 3', 'Blok 3'];
     document.querySelectorAll('.bar').forEach((bar, i) => {
       bar.addEventListener('mouseenter', () => {
+        const dict = VERTALINGEN[huidigeTaal] || VERTALINGEN.en;
         const isPeak = bar.classList.contains('peak');
-        tooltip.textContent = (blokNamen[i] || '') + (isPeak ? ' — piekweek' : ' — week ' + ((i % 4) + 1));
+        const blokKey = 'pg.block' + (Math.floor(i / 4) + 1);
+        const blokNaam = dict[blokKey] || '';
+        tooltip.textContent = blokNaam + (isPeak ? dict['pg.tooltipPeak'] : dict['pg.tooltipWeek'] + ((i % 4) + 1));
         tooltip.classList.add('show');
       });
       bar.addEventListener('mousemove', (e) => {

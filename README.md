@@ -203,10 +203,18 @@ vertalen bewust **niet**:
   zichtbare tekst in de `<option>` verandert mee met de taal.
 
 `coach.html` en `business.html` zijn en blijven volledig Nederlandstalig — het
-zijn Armans eigen tools, geen cliëntgerichte pagina's. De marketinghomepage
-(`index.html`) is eveneens Nederlandstalig-only (geen `i18n.js`-koppeling) —
-zodra een cliënt doorklikt naar `intake.html` kan die daar wel zelf een taal
-kiezen.
+zijn Armans eigen tools, geen cliëntgerichte pagina's.
+
+De marketinghomepage (`index.html`) heeft zijn **eigen, losse taalwissel**
+rechtsboven in de nav — zelfde vier taalcodes (nl/en/es/pt) als hierboven,
+maar **Engels is hier de standaardtaal** (niet Nederlands), en de keuze wordt
+apart onthouden (`pt-intake:homepage-taal:v1` in `localStorage`, los van
+`intake.html`'s eigen `pt-intake:client-taal:v1`). Dit is bewust een eigen,
+zelfstandig vertaalwoordenboek binnen `index.html`'s eigen `<script>` — geen
+koppeling met `i18n.js`, want die pagina wordt alleen door `client.js`
+gebruikt en `index.html` blijft verder net zo zelfstandig als voorheen (geen
+losse module, alles in één bestand). Zodra een cliënt doorklikt naar
+`intake.html` kan die daar onafhankelijk zelf nog een taal kiezen.
 
 **Schema-wijziging om te weten:** `intake.materiaal.apparatuur` bevatte
 voorheen Nederlandse labels (bv. `"Squat rek"`) als waarde. Om dezelfde data

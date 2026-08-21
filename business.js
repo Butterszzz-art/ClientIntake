@@ -3,8 +3,8 @@
 // Armans eigen bedrijfscijfers, niet cliëntdata die tussen apparaten hoeft te
 // synchroniseren. Gated achter dezelfde Firebase-login als coach.html.
 
-import { escapeHtml, num, downloadJson } from './utils.js?v=8';
-import { initCoachGate, lockNow } from './coach-auth.js?v=8';
+import { escapeHtml, num, downloadJson } from './utils.js?v=9';
+import { initCoachGate, lockNow } from './coach-auth.js?v=9';
 
 const STORAGE_KEY = 'ptBusinessTracker_v1';
 

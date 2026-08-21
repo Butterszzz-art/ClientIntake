@@ -831,7 +831,10 @@ html { scroll-behavior: smooth; }
 .price-card.featured { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); position: relative; }
 
 .price-card.featured::before {
-  content: 'Meest gekozen';
+  /* Text comes from the data-featured-label attribute (set/translated in
+     index.html's JS) instead of a hardcoded string, so the badge switches
+     language along with everything else. */
+  content: attr(data-featured-label);
   position: absolute;
   top: -0.75rem;
   left: 1.6rem;
