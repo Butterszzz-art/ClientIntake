@@ -15,9 +15,12 @@ Firestore-database (voor cliëntdata), maar verder niets:
 
 - **`index.html` (root) — de publieke homepage.** Dit is de link die je
   overal deelt (social media, bio-link, etc.) — een korte marketingpagina
-  ("evidence-based fysiek coaching") die uitlegt wat de coaching inhoudt en
-  eindigt in een duidelijke **"Start intake"**-call-to-action. Bevat geen
-  enkel formulierveld en praat met geen enkele database; puur statische HTML.
+  ("evidence-based fysiek coaching") die uitlegt wat de coaching inhoudt,
+  toont een **prijzentabel met drie tiers** (Basis/Medium/Premium), en eindigt
+  in een duidelijke **"Start intake"**-call-to-action. Bevat geen enkel
+  formulierveld en praat met geen enkele database — behalve één ding: een
+  klik op een prijs-tier schrijft een "lead" naar dezelfde `localStorage`-
+  sleutel die `business.html` uitleest (zie "Prijzen & leads" hieronder).
 - **`intake.html` — het cliëntformulier zelf.** Waar de homepage's
   "Start intake"-knoppen naartoe linken. Bevat alléén de intake: geen
   cliëntenlijst, geen berekeningen, geen overzicht, geen data van andere
@@ -31,8 +34,9 @@ Firestore-database (voor cliëntdata), maar verder niets:
   intake verschijnt vanzelf, ook terwijl je ernaar kijkt. Bookmark deze URL
   voor jezelf; deel hem niet met cliënten.
 - **`business.html` — business tracker (coach-only).** Los van cliëntintakes:
-  bijhouden van acquisitiekosten, churn, CLV en doorverwijzingen. Achter
-  dezelfde Firebase-login als `coach.html` (bereikbaar via de
+  bijhouden van acquisitiekosten, churn, CLV, doorverwijzingen, en de
+  prijs-tier-funnel (leads binnen via de homepage → geconverteerd naar
+  cliënt). Achter dezelfde Firebase-login als `coach.html` (bereikbaar via de
   "Business tracker"-knop daar), maar bewaart zijn data alleen lokaal in de
   browser (`localStorage`, geen Firestore) — zie de sectie hieronder.
 
@@ -199,10 +203,18 @@ vertalen bewust **niet**:
   zichtbare tekst in de `<option>` verandert mee met de taal.
 
 `coach.html` en `business.html` zijn en blijven volledig Nederlandstalig — het
-zijn Armans eigen tools, geen cliëntgerichte pagina's. De marketinghomepage
-(`index.html`) is eveneens Nederlandstalig-only (geen `i18n.js`-koppeling) —
-zodra een cliënt doorklikt naar `intake.html` kan die daar wel zelf een taal
-kiezen.
+zijn Armans eigen tools, geen cliëntgerichte pagina's.
+
+De marketinghomepage (`index.html`) heeft zijn **eigen, losse taalwissel**
+rechtsboven in de nav — zelfde vier taalcodes (nl/en/es/pt) als hierboven,
+maar **Engels is hier de standaardtaal** (niet Nederlands), en de keuze wordt
+apart onthouden (`pt-intake:homepage-taal:v1` in `localStorage`, los van
+`intake.html`'s eigen `pt-intake:client-taal:v1`). Dit is bewust een eigen,
+zelfstandig vertaalwoordenboek binnen `index.html`'s eigen `<script>` — geen
+koppeling met `i18n.js`, want die pagina wordt alleen door `client.js`
+gebruikt en `index.html` blijft verder net zo zelfstandig als voorheen (geen
+losse module, alles in één bestand). Zodra een cliënt doorklikt naar
+`intake.html` kan die daar onafhankelijk zelf nog een taal kiezen.
 
 **Schema-wijziging om te weten:** `intake.materiaal.apparatuur` bevatte
 voorheen Nederlandse labels (bv. `"Squat rek"`) als waarde. Om dezelfde data
@@ -222,7 +234,7 @@ de rauwe oude labels in plaats van vertaalde labels.
 | `client.js` | Logica voor `intake.html`: concept-autosave, versturen (Firestore-write + Web3Forms-mail + JSON-download), bedankt-scherm |
 | `coach.html` | Coach-dashboard — cliëntenlijst (live uit Firestore), intake (handmatige invoer), berekeningen, overzicht |
 | `app.js` | Logica voor `coach.html`: rendering, Firestore CRUD + live `onSnapshot`-lijst, export/import |
-| `business.html` | Business tracker (coach-only) — acquisitiekosten, churn, CLV, doorverwijs-ranglijst |
+| `business.html` | Business tracker (coach-only) — acquisitiekosten, churn, CLV, doorverwijs-ranglijst, prijs-tier-funnel & leads |
 | `business.js` | Logica voor `business.html`: alleen `localStorage` (geen Firestore), gated via dezelfde `initCoachGate()` |
 | `coach-auth.js` | Echte login voor `coach.html` én `business.html` via Firebase Auth (e-mail + wachtwoord), zie hierboven |
 | `firebase.js` | Firebase-initialisatie (config + `db`/`auth`/`storage`-instanties), gedeeld door `client.js` en `app.js` |
@@ -239,6 +251,36 @@ fieldsets (zelfde element-`id`'s), zodat `intake-form.js` één keer geschreven
 kan worden en door beide pagina's hergebruikt wordt. Dat is bewust HTML-duplicatie
 in ruil voor JS-hergebruik — een normale afweging bij een statische multi-page
 site zonder build-stap/templating.
+
+### Prijzen & leads: hoe de homepage en de business tracker praten
+
+`index.html` toont drie prijs-tiers (**Basis** €150, **Medium** €260,
+**Premium** €385 per maand — pas aan naar je eigen markt).
+Een klik op een tier-knop doet twee dingen: hij schrijft een lead
+(`{ id, tier, datum, status: 'in_behandeling' }`) naar de `localStorage`-
+sleutel `ptBusinessTracker_v1`, en gaat daarna gewoon door naar `intake.html`
+zoals elke andere link — er wordt niets tegengehouden of afgevangen.
+
+`business.html` leest diezelfde sleutel en toont die leads onder **"Binnenkomende
+leads"**, met per lead **Converteer naar cliënt** (zet de tier vast in het
+"Cliënt toevoegen"-formulier en scrollt daarheen; de lead wordt pas
+`geconverteerd` zodra je het formulier daadwerkelijk verstuurt) of
+**Afwijzen**. **"Funnel per tier"** telt per tier leads, conversies,
+conversieratio, actieve cliënten en MRR bij elkaar op.
+
+Twee dingen om te weten:
+- Dit werkt alleen als `index.html` en `business.html` **vanaf dezelfde
+  origin** bediend worden (bv. dezelfde GitHub Pages-site) — `localStorage`
+  is per-origin. Lokaal elk bestand los openen via `file://` deelt geen
+  storage.
+- De tier-namen (`Basis`/`Medium`/`Premium`) staan letterlijk zowel in
+  `index.html` (als `data-tier` op elke prijs-knop) als in `business.js`
+  (de `TIERS`-constante) — wijzig je de namen of voeg je een tier toe, doe
+  dat op beide plekken.
+- Dit is bewust **niet** gekoppeld aan de Firestore-cliëntdata: een lead is
+  puur interesse-signaal, geen cliëntprofiel. Pas als je een lead conveert
+  vul je zelf de rest van het cliëntprofiel in (net als bij een cliënt die
+  je handmatig toevoegt).
 
 ## Waarom dit zo is opgezet (toekomstige integratie)
 
@@ -518,8 +560,12 @@ dat niet als vast veld wordt opgeslagen.
 
 1. Open de homepage-link (bv. vanuit een bio-link of social post) — een korte
    uitleg van de coaching-aanpak, wat je krijgt, en hoe het traject start.
-2. Klik op **"Start intake"** (in de nav, de hero, of de sluit-CTA onderaan) →
-   je komt op `intake.html` terecht, het daadwerkelijke formulier.
+2. **Prijzen**: drie tiers (Basis/Medium/Premium) met wat elk niveau inhoudt.
+   Een klik op een tier-knop logt die keuze als lead voor de business tracker
+   (zie "Prijzen & leads" hierboven) en gaat daarna gewoon door naar de intake.
+3. Klik op **"Start intake"** (in de nav, de hero, een tier-knop, of de
+   sluit-CTA onderaan) → je komt op `intake.html` terecht, het daadwerkelijke
+   formulier.
 
 ### Als cliënt (`intake.html`)
 
@@ -576,20 +622,26 @@ per cliënt als je dat wilt.
 1. Vanuit `coach.html`: klik **"Business tracker"** (naast "Werkcapaciteit").
    Zelfde login als het dashboard — eenmaal ingelogd hoef je niet opnieuw in
    te loggen.
-2. **Cliënt toevoegen**: naam, bron (doorverwijzing/social/website/...),
-   waarde per maand, startdatum, en optioneel wie de cliënt heeft
-   doorverwezen. Verschijnt meteen in de tabel en telt mee in de kerncijfers.
-3. Kerncijfers bovenaan: actieve cliënten, MRR, acquisitiekosten voor de
+2. **Binnenkomende leads**: klikken op een prijs-tier op de homepage
+   verschijnt hier automatisch. **Converteer naar cliënt** zet de tier alvast
+   klaar in het "Cliënt toevoegen"-formulier hieronder; **Afwijzen** sluit een
+   lead af zonder cliënt te worden. **Funnel per tier** telt leads, conversies
+   en MRR per tier bij elkaar op.
+3. **Cliënt toevoegen**: naam, tier (Basis/Medium/Premium), bron
+   (doorverwijzing/social/website/...), waarde per maand, startdatum, en
+   optioneel wie de cliënt heeft doorverwezen. Verschijnt meteen in de tabel
+   en telt mee in de kerncijfers.
+4. Kerncijfers bovenaan: actieve cliënten, MRR, acquisitiekosten voor de
    gekozen rapportagemaand (uitgaven ÷ nieuwe cliënten die maand),
    churn-percentage, en een geschatte CLV (customer lifetime value) — gebruikt
    je echte gemiddelde retentie zodra er minstens één gestopte cliënt is,
    anders de aangenomen retentie uit **Instellingen**.
-4. **Marketing / acquisitiekosten**: log per maand wat je aan marketing
+5. **Marketing / acquisitiekosten**: log per maand wat je aan marketing
    uitgeeft — nodig voor de acquisitiekosten-kerncijfer hierboven.
-5. **Doorverwijs-ranglijst**: automatisch opgebouwd uit het "doorverwezen
+6. **Doorverwijs-ranglijst**: automatisch opgebouwd uit het "doorverwezen
    door"-veld op cliënten — geen aparte invoer nodig.
-6. **Export/importeer back-up**: dezelfde soort `.json`-back-up als bij
-   cliëntprofielen, maar dan voor de hele tracker-state.
+7. **Export/importeer back-up**: dezelfde soort `.json`-back-up als bij
+   cliëntprofielen, maar dan óók de leads en de funnel-data.
 
 Let op: deze data staat **alleen lokaal** in de browser (`localStorage`,
 sleutel `ptBusinessTracker_v1`) — niet in Firestore, dus niet gesynchroniseerd

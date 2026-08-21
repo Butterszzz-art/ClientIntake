@@ -3,29 +3,39 @@
 // Armans eigen bedrijfscijfers, niet cliëntdata die tussen apparaten hoeft te
 // synchroniseren. Gated achter dezelfde Firebase-login als coach.html.
 
-import { escapeHtml, num, downloadJson } from './utils.js?v=6';
-import { initCoachGate, lockNow } from './coach-auth.js?v=6';
+import { escapeHtml, num, downloadJson } from './utils.js?v=9';
+import { initCoachGate, lockNow } from './coach-auth.js?v=9';
 
 const STORAGE_KEY = 'ptBusinessTracker_v1';
+
+// Zelfde drie namen als de prijzentabel op index.html (data-tier op de
+// .tier-cta-knoppen) — moet letterlijk overeenkomen, anders matcht een lead
+// niet meer met een tier hier.
+const TIERS = ['Basis', 'Medium', 'Premium'];
 
 function laadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { clients: [], spend: [], assumedRetentionMonths: 6 };
+    if (!raw) return { clients: [], spend: [], leads: [], assumedRetentionMonths: 6 };
     const parsed = JSON.parse(raw);
     return {
       clients: parsed.clients || [],
       spend: parsed.spend || [],
+      leads: parsed.leads || [],
       assumedRetentionMonths: parsed.assumedRetentionMonths || 6,
     };
   } catch (e) {
     console.error('Kon business-tracker data niet laden:', e);
-    return { clients: [], spend: [], assumedRetentionMonths: 6 };
+    return { clients: [], spend: [], leads: [], assumedRetentionMonths: 6 };
   }
 }
 
 let state = laadState();
 function bewaarState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+// Onthoudt welke lead we aan het converteren zijn zodat het "Cliënt
+// toevoegen"-formulier hem, na versturen, als geconverteerd kan markeren.
+let inBehandelingLeadId = null;
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function maandSleutelVanDatum(dateStr) { return dateStr ? dateStr.slice(0, 7) : null; }
@@ -91,6 +101,27 @@ function doorverwijsRanglijst() {
   return Object.entries(tellingen).sort((a, b) => b[1] - a[1]);
 }
 
+function tierTagClass(tier) {
+  return `tag--tier-${(tier || 'basis').toLowerCase()}`;
+}
+
+function funnelPerTier() {
+  return TIERS.map((tier) => {
+    const leads = state.leads.filter((l) => l.tier === tier);
+    const geconverteerd = leads.filter((l) => l.status === 'geconverteerd');
+    const tierClienten = actieveClienten().filter((c) => c.tier === tier);
+    const tierMrr = tierClienten.reduce((s, c) => s + Number(c.waarde || 0), 0);
+    return {
+      tier,
+      aantalLeads: leads.length,
+      aantalGeconverteerd: geconverteerd.length,
+      conversieRatio: leads.length ? geconverteerd.length / leads.length : null,
+      aantalActief: tierClienten.length,
+      mrr: tierMrr,
+    };
+  });
+}
+
 function fmtEuro(n) {
   if (n === null || n === undefined || Number.isNaN(n)) return '—';
   return '€' + Number(n).toLocaleString('nl-NL', { maximumFractionDigits: 0 });
@@ -149,6 +180,7 @@ function renderClients() {
       if (c.churnDatum) tr.classList.add('rij-gestopt');
       tr.innerHTML = `
         <td>${escapeHtml(c.naam)}</td>
+        <td><span class="tag ${tierTagClass(c.tier)}">${escapeHtml(c.tier || 'Basis')}</span></td>
         <td>${escapeHtml(c.bron)}</td>
         <td>${fmtEuro(c.waarde)}</td>
         <td>${c.start}</td>
@@ -200,8 +232,55 @@ function renderRanglijst() {
   });
 }
 
+function renderFunnel() {
+  const tbody = document.getElementById('funnel-tabel-body');
+  tbody.innerHTML = funnelPerTier().map((r) => `
+    <tr>
+      <td><span class="tag ${tierTagClass(r.tier)}">${r.tier}</span></td>
+      <td>${r.aantalLeads}</td>
+      <td>${r.aantalGeconverteerd}</td>
+      <td>${r.conversieRatio === null ? '—' : fmtPct(r.conversieRatio)}</td>
+      <td>${r.aantalActief}</td>
+      <td>${fmtEuro(r.mrr)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderLeads() {
+  const tbody = document.getElementById('leads-tabel-body');
+  const leeg = document.getElementById('leads-leeg');
+  tbody.innerHTML = '';
+  if (state.leads.length === 0) { leeg.hidden = false; return; }
+  leeg.hidden = true;
+  state.leads
+    .slice()
+    .sort((a, b) => new Date(b.datum) - new Date(a.datum))
+    .forEach((lead) => {
+      const tr = document.createElement('tr');
+      const statusTag = lead.status === 'geconverteerd'
+        ? '<span class="tag tag--lead-geconverteerd">Geconverteerd</span>'
+        : lead.status === 'afgewezen'
+          ? '<span class="tag tag--lead-afgewezen">Afgewezen</span>'
+          : '<span class="tag tag--lead-in-behandeling">In behandeling</span>';
+      tr.innerHTML = `
+        <td><span class="tag ${tierTagClass(lead.tier)}">${escapeHtml(lead.tier)}</span></td>
+        <td>${lead.datum}</td>
+        <td>${statusTag}</td>
+        <td class="rij-acties">
+          ${lead.status === 'in_behandeling'
+            ? `<button class="btn btn--ghost btn--small" data-actie="converteer-lead" data-id="${lead.id}">Converteer naar cliënt</button>
+               <button class="btn btn--danger btn--small" data-actie="wijs-lead-af" data-id="${lead.id}">Afwijzen</button>`
+            : ''}
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+}
+
 function renderAlles() {
   renderMetrics();
+  renderFunnel();
+  renderLeads();
   renderClients();
   renderSpend();
   renderRanglijst();
@@ -218,12 +297,18 @@ function wireEvents() {
     state.clients.push({
       id: uid(),
       naam: document.getElementById('c-naam').value.trim(),
+      tier: document.getElementById('c-tier').value,
       bron: document.getElementById('c-bron').value,
       waarde: num(document.getElementById('c-waarde').value, 0),
       start: document.getElementById('c-start').value,
       churnDatum: null,
       doorverwezenDoor: document.getElementById('c-doorverwezen').value.trim() || null,
     });
+    if (inBehandelingLeadId) {
+      const lead = state.leads.find((l) => l.id === inBehandelingLeadId);
+      if (lead) lead.status = 'geconverteerd';
+      inBehandelingLeadId = null;
+    }
     bewaarState();
     e.target.reset();
     renderAlles();
@@ -279,6 +364,27 @@ function wireEvents() {
     }
   });
 
+  document.getElementById('leads-tabel-body').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const actie = btn.dataset.actie;
+    if (actie === 'converteer-lead') {
+      const lead = state.leads.find((l) => l.id === id);
+      if (!lead) return;
+      // Zet het "Cliënt toevoegen"-formulier klaar met de juiste tier alvast
+      // ingevuld; de lead wordt pas als "geconverteerd" gemarkeerd zodra de
+      // coach het formulier daadwerkelijk verstuurt (zie client-form hierboven).
+      inBehandelingLeadId = id;
+      document.getElementById('c-tier').value = lead.tier;
+      document.getElementById('c-naam').focus();
+      document.getElementById('client-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (actie === 'wijs-lead-af') {
+      const lead = state.leads.find((l) => l.id === id);
+      if (lead) { lead.status = 'afgewezen'; bewaarState(); renderAlles(); }
+    }
+  });
+
   monthSelect.addEventListener('change', renderMetrics);
 
   document.getElementById('btn-export').addEventListener('click', () => {
@@ -296,6 +402,7 @@ function wireEvents() {
           state = {
             clients: geimporteerd.clients || [],
             spend: geimporteerd.spend || [],
+            leads: geimporteerd.leads || [],
             assumedRetentionMonths: geimporteerd.assumedRetentionMonths || 6,
           };
           bewaarState();

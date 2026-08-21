@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=6">
+<link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
 
@@ -38,10 +38,37 @@
   <div class="kerncijfers" id="metrics-grid"></div>
 
   <section class="card">
+    <h3>Funnel per tier</h3>
+    <table class="data-tabel">
+      <thead><tr><th>Tier</th><th>Leads</th><th>Geconverteerd</th><th>Conversieratio</th><th>Actieve cliënten</th><th>MRR</th></tr></thead>
+      <tbody id="funnel-tabel-body"></tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h3>Binnenkomende leads</h3>
+    <p class="hint" style="margin-top:-0.5rem;">Wordt automatisch gevuld zodra iemand op een prijs-tier klikt op de
+      homepage (vereist dat <code>index.html</code> en deze pagina vanaf dezelfde site draaien). Converteer een lead
+      pas nadat iemand daadwerkelijk via het intakeformulier is aangemeld.</p>
+    <table class="data-tabel">
+      <thead><tr><th>Tier</th><th>Datum</th><th>Status</th><th></th></tr></thead>
+      <tbody id="leads-tabel-body"></tbody>
+    </table>
+    <div class="empty-state" id="leads-leeg" hidden>Nog geen leads binnengekomen.</div>
+  </section>
+
+  <section class="card">
     <h3>Cliënt toevoegen</h3>
     <form class="form-grid" id="client-form">
       <label>Naam
         <input type="text" id="c-naam" required>
+      </label>
+      <label>Tier
+        <select id="c-tier">
+          <option value="Basis">Basis</option>
+          <option value="Medium">Medium</option>
+          <option value="Premium">Premium</option>
+        </select>
       </label>
       <label>Bron
         <select id="c-bron">
@@ -66,7 +93,7 @@
     <button type="submit" form="client-form" class="btn btn--accent">Cliënt toevoegen</button>
 
     <table class="data-tabel" id="client-tabel" style="margin-top:1rem;">
-      <thead><tr><th>Naam</th><th>Bron</th><th>Waarde/mnd</th><th>Start</th><th>Status</th><th>Doorverwezen door</th><th></th></tr></thead>
+      <thead><tr><th>Naam</th><th>Tier</th><th>Bron</th><th>Waarde/mnd</th><th>Start</th><th>Status</th><th>Doorverwezen door</th><th></th></tr></thead>
       <tbody id="client-tabel-body"></tbody>
     </table>
     <div class="empty-state" id="client-leeg" hidden>Nog geen cliënten geregistreerd.</div>
@@ -119,6 +146,6 @@
   </section>
 </main>
 
-<script type="module" src="business.js?v=6"></script>
+<script type="module" src="business.js?v=9"></script>
 </body>
 </html>
