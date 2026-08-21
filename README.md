@@ -246,8 +246,8 @@ site zonder build-stap/templating.
 
 ### Prijzen & leads: hoe de homepage en de business tracker praten
 
-`index.html` toont drie prijs-tiers (**Basis** €175, **Medium** €275,
-**Premium** €425 per maand — puur startpunten, pas aan naar je eigen markt).
+`index.html` toont drie prijs-tiers (**Basis** €150, **Medium** €260,
+**Premium** €385 per maand — pas aan naar je eigen markt).
 Een klik op een tier-knop doet twee dingen: hij schrijft een lead
 (`{ id, tier, datum, status: 'in_behandeling' }`) naar de `localStorage`-
 sleutel `ptBusinessTracker_v1`, en gaat daarna gewoon door naar `intake.html`
