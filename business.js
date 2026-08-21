@@ -1,0 +1,320 @@
+// Coach-only business tracker: acquisitiekosten, churn, CLV, doorverwijzingen.
+// Deliberately kept local-only (localStorage, geen Firestore) — dit zijn
+// Armans eigen bedrijfscijfers, niet cliëntdata die tussen apparaten hoeft te
+// synchroniseren. Gated achter dezelfde Firebase-login als coach.html.
+
+import { escapeHtml, num, downloadJson } from './utils.js?v=6';
+import { initCoachGate, lockNow } from './coach-auth.js?v=6';
+
+const STORAGE_KEY = 'ptBusinessTracker_v1';
+
+function laadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { clients: [], spend: [], assumedRetentionMonths: 6 };
+    const parsed = JSON.parse(raw);
+    return {
+      clients: parsed.clients || [],
+      spend: parsed.spend || [],
+      assumedRetentionMonths: parsed.assumedRetentionMonths || 6,
+    };
+  } catch (e) {
+    console.error('Kon business-tracker data niet laden:', e);
+    return { clients: [], spend: [], assumedRetentionMonths: 6 };
+  }
+}
+
+let state = laadState();
+function bewaarState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function maandSleutelVanDatum(dateStr) { return dateStr ? dateStr.slice(0, 7) : null; }
+function eersteVanMaand(maandSleutel) {
+  const [j, m] = maandSleutel.split('-').map(Number);
+  return new Date(j, m - 1, 1);
+}
+function datumInMaand(dateStr, maandSleutel) {
+  return dateStr ? maandSleutelVanDatum(dateStr) === maandSleutel : false;
+}
+function naarDatum(dateStr) { return new Date(dateStr + 'T00:00:00'); }
+function maandenTussen(startStr, eindStr) {
+  const start = naarDatum(startStr);
+  const eind = naarDatum(eindStr);
+  const maanden = (eind.getFullYear() - start.getFullYear()) * 12 + (eind.getMonth() - start.getMonth());
+  return Math.max(maanden, 0.5);
+}
+
+function actiefBijStartVanMaand(maandSleutel) {
+  const start = eersteVanMaand(maandSleutel);
+  return state.clients.filter((c) => {
+    const clientStart = naarDatum(c.start);
+    if (clientStart >= start) return false;
+    if (!c.churnDatum) return true;
+    return naarDatum(c.churnDatum) >= start;
+  }).length;
+}
+function nieuweClientenInMaand(maandSleutel) {
+  return state.clients.filter((c) => datumInMaand(c.start, maandSleutel)).length;
+}
+function gestoptInMaand(maandSleutel) {
+  return state.clients.filter((c) => c.churnDatum && datumInMaand(c.churnDatum, maandSleutel)).length;
+}
+function uitgaveInMaand(maandSleutel) {
+  return state.spend.filter((s) => s.maand === maandSleutel).reduce((som, s) => som + Number(s.bedrag || 0), 0);
+}
+function acquisitiekostenVoorMaand(maandSleutel) {
+  const uitgave = uitgaveInMaand(maandSleutel);
+  const nieuw = nieuweClientenInMaand(maandSleutel);
+  return nieuw === 0 ? null : uitgave / nieuw;
+}
+function churnPercentageVoorMaand(maandSleutel) {
+  const actiefStart = actiefBijStartVanMaand(maandSleutel);
+  return actiefStart === 0 ? null : gestoptInMaand(maandSleutel) / actiefStart;
+}
+function actieveClienten() { return state.clients.filter((c) => !c.churnDatum); }
+function mrr() { return actieveClienten().reduce((s, c) => s + Number(c.waarde || 0), 0); }
+function geschatteCLV() {
+  const gestopt = state.clients.filter((c) => c.churnDatum);
+  if (gestopt.length === 0) {
+    const gemWaarde = state.clients.length
+      ? state.clients.reduce((s, c) => s + Number(c.waarde || 0), 0) / state.clients.length
+      : 0;
+    return { waarde: gemWaarde * state.assumedRetentionMonths, basis: 'aangenomen' };
+  }
+  const gemDuur = gestopt.reduce((s, c) => s + maandenTussen(c.start, c.churnDatum), 0) / gestopt.length;
+  const gemWaarde = gestopt.reduce((s, c) => s + Number(c.waarde || 0), 0) / gestopt.length;
+  return { waarde: gemWaarde * gemDuur, basis: 'echt' };
+}
+function doorverwijsRanglijst() {
+  const tellingen = {};
+  state.clients.forEach((c) => { if (c.doorverwezenDoor) tellingen[c.doorverwezenDoor] = (tellingen[c.doorverwezenDoor] || 0) + 1; });
+  return Object.entries(tellingen).sort((a, b) => b[1] - a[1]);
+}
+
+function fmtEuro(n) {
+  if (n === null || n === undefined || Number.isNaN(n)) return '—';
+  return '€' + Number(n).toLocaleString('nl-NL', { maximumFractionDigits: 0 });
+}
+function fmtPct(n) {
+  if (n === null || n === undefined || Number.isNaN(n)) return '—';
+  return (n * 100).toFixed(1) + '%';
+}
+
+// ---------- Rendering ----------
+
+const monthSelect = document.getElementById('monthSelect');
+function huidigeMaandSleutel() {
+  const nu = new Date();
+  return nu.getFullYear() + '-' + String(nu.getMonth() + 1).padStart(2, '0');
+}
+
+function kerncijferHtml(label, waarde, toelichting, accent) {
+  return `
+    <div class="kerncijfer">
+      <span class="kerncijfer__label">${escapeHtml(label)}</span>
+      <span class="kerncijfer__waarde"${accent ? ' style="color:var(--accent)"' : ''}>${waarde}</span>
+      ${toelichting ? `<span class="kerncijfer__toelichting">${escapeHtml(toelichting)}</span>` : ''}
+    </div>
+  `;
+}
+
+function renderMetrics() {
+  const mk = monthSelect.value || huidigeMaandSleutel();
+  const acqKosten = acquisitiekostenVoorMaand(mk);
+  const churn = churnPercentageVoorMaand(mk);
+  const clv = geschatteCLV();
+  document.getElementById('metrics-grid').innerHTML = [
+    kerncijferHtml('Actieve cliënten', actieveClienten().length),
+    kerncijferHtml('MRR', fmtEuro(mrr()), null, true),
+    kerncijferHtml(`Acquisitiekosten (${mk})`, acqKosten === null ? '—' : fmtEuro(acqKosten),
+      `${nieuweClientenInMaand(mk)} nieuwe cliënt(en) deze maand`),
+    kerncijferHtml(`Churn-percentage (${mk})`, fmtPct(churn),
+      `${gestoptInMaand(mk)} verloren / ${actiefBijStartVanMaand(mk)} actief bij start maand`),
+    kerncijferHtml('Geschatte CLV', fmtEuro(clv.waarde),
+      clv.basis === 'echt' ? 'gebaseerd op echte gestopte-cliëntdata' : 'gebaseerd op aangenomen retentie — nog geen churn-data', true),
+  ].join('');
+}
+
+function renderClients() {
+  const tbody = document.getElementById('client-tabel-body');
+  const leeg = document.getElementById('client-leeg');
+  tbody.innerHTML = '';
+  if (state.clients.length === 0) { leeg.hidden = false; return; }
+  leeg.hidden = true;
+  state.clients
+    .slice()
+    .sort((a, b) => new Date(b.start) - new Date(a.start))
+    .forEach((c) => {
+      const tr = document.createElement('tr');
+      if (c.churnDatum) tr.classList.add('rij-gestopt');
+      tr.innerHTML = `
+        <td>${escapeHtml(c.naam)}</td>
+        <td>${escapeHtml(c.bron)}</td>
+        <td>${fmtEuro(c.waarde)}</td>
+        <td>${c.start}</td>
+        <td>${c.churnDatum ? `<span class="tag tag--gestopt">Gestopt ${c.churnDatum}</span>` : '<span class="tag tag--actief">Actief</span>'}</td>
+        <td>${c.doorverwezenDoor ? escapeHtml(c.doorverwezenDoor) : '—'}</td>
+        <td class="rij-acties">
+          ${c.churnDatum
+            ? `<button class="btn btn--ghost btn--small" data-actie="heractiveer" data-id="${c.id}">Heractiveer</button>`
+            : `<button class="btn btn--ghost btn--small" data-actie="stop" data-id="${c.id}">Markeer gestopt</button>`}
+          <button class="btn btn--danger btn--small" data-actie="verwijder" data-id="${c.id}">Verwijder</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+}
+
+function renderSpend() {
+  const tbody = document.getElementById('spend-tabel-body');
+  const leeg = document.getElementById('spend-leeg');
+  tbody.innerHTML = '';
+  if (state.spend.length === 0) { leeg.hidden = false; return; }
+  leeg.hidden = true;
+  state.spend
+    .slice()
+    .sort((a, b) => b.maand.localeCompare(a.maand))
+    .forEach((s) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${s.maand}</td>
+        <td>${fmtEuro(s.bedrag)}</td>
+        <td><button class="btn btn--danger btn--small" data-actie="verwijder-uitgave" data-id="${s.id}">Verwijder</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+}
+
+function renderRanglijst() {
+  const ranglijst = doorverwijsRanglijst();
+  const container = document.getElementById('ranglijst');
+  const leeg = document.getElementById('ranglijst-leeg');
+  container.innerHTML = '';
+  if (ranglijst.length === 0) { leeg.hidden = false; return; }
+  leeg.hidden = true;
+  ranglijst.forEach(([naam, aantal]) => {
+    const div = document.createElement('div');
+    div.className = 'ranglijst-item';
+    div.innerHTML = `<span>${escapeHtml(naam)}</span><span>${aantal} doorverwijzing${aantal > 1 ? 'en' : ''}</span>`;
+    container.appendChild(div);
+  });
+}
+
+function renderAlles() {
+  renderMetrics();
+  renderClients();
+  renderSpend();
+  renderRanglijst();
+  document.getElementById('i-retentie').value = state.assumedRetentionMonths;
+}
+
+// ---------- Event wiring ----------
+
+function wireEvents() {
+  monthSelect.value = huidigeMaandSleutel();
+
+  document.getElementById('client-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    state.clients.push({
+      id: uid(),
+      naam: document.getElementById('c-naam').value.trim(),
+      bron: document.getElementById('c-bron').value,
+      waarde: num(document.getElementById('c-waarde').value, 0),
+      start: document.getElementById('c-start').value,
+      churnDatum: null,
+      doorverwezenDoor: document.getElementById('c-doorverwezen').value.trim() || null,
+    });
+    bewaarState();
+    e.target.reset();
+    renderAlles();
+  });
+
+  document.getElementById('spend-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    state.spend.push({
+      id: uid(),
+      maand: document.getElementById('s-maand').value,
+      bedrag: num(document.getElementById('s-bedrag').value, 0),
+    });
+    bewaarState();
+    e.target.reset();
+    renderAlles();
+  });
+
+  document.getElementById('instellingen-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    state.assumedRetentionMonths = num(document.getElementById('i-retentie').value, 6);
+    bewaarState();
+    renderAlles();
+  });
+
+  document.getElementById('client-tabel-body').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const actie = btn.dataset.actie;
+    if (actie === 'stop') {
+      const churnDatum = prompt('Stopdatum (JJJJ-MM-DD)?', new Date().toISOString().slice(0, 10));
+      if (churnDatum) {
+        const c = state.clients.find((c) => c.id === id);
+        if (c) { c.churnDatum = churnDatum; bewaarState(); renderAlles(); }
+      }
+    } else if (actie === 'heractiveer') {
+      const c = state.clients.find((c) => c.id === id);
+      if (c) { c.churnDatum = null; bewaarState(); renderAlles(); }
+    } else if (actie === 'verwijder') {
+      if (confirm('Deze cliënt permanent verwijderen?')) {
+        state.clients = state.clients.filter((c) => c.id !== id);
+        bewaarState(); renderAlles();
+      }
+    }
+  });
+
+  document.getElementById('spend-tabel-body').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    if (btn.dataset.actie === 'verwijder-uitgave') {
+      state.spend = state.spend.filter((s) => s.id !== btn.dataset.id);
+      bewaarState(); renderAlles();
+    }
+  });
+
+  monthSelect.addEventListener('change', renderMetrics);
+
+  document.getElementById('btn-export').addEventListener('click', () => {
+    downloadJson(`business-tracker-backup-${huidigeMaandSleutel()}.json`, state);
+  });
+
+  document.getElementById('import-file').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const geimporteerd = JSON.parse(reader.result);
+        if (confirm('Dit vervangt alle huidige data met de geïmporteerde back-up. Doorgaan?')) {
+          state = {
+            clients: geimporteerd.clients || [],
+            spend: geimporteerd.spend || [],
+            assumedRetentionMonths: geimporteerd.assumedRetentionMonths || 6,
+          };
+          bewaarState();
+          renderAlles();
+        }
+      } catch {
+        alert('Kon dit bestand niet lezen — controleer of het een back-up is die uit deze tool geëxporteerd is.');
+      }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  document.getElementById('btn-vergrendel').addEventListener('click', lockNow);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initCoachGate(() => {
+    wireEvents();
+    renderAlles();
+  });
+});
