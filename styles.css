@@ -663,7 +663,7 @@ html { scroll-behavior: smooth; }
 
 /* ---- Section shared ---- */
 .marketing-section { padding: 5.5rem 0; }
-.marketing-section.alt { background: var(--bg-raised); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.marketing-section.alt, .marketing-cta.alt { background: var(--bg-raised); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .marketing-section-head { max-width: 40rem; margin-bottom: 3rem; }
 .marketing-section-head h2 { font-size: clamp(1.6rem, 3.2vw, 2.3rem); }
 .marketing-section-head p { margin-top: 0.9rem; color: var(--text-dim); font-size: 1rem; }
@@ -692,6 +692,61 @@ html { scroll-behavior: smooth; }
 .process-item .num { font-family: var(--font-data); font-size: 0.8rem; color: var(--accent); margin-bottom: 0.9rem; display: block; }
 .process-item h3 { font-size: 1.15rem; margin-bottom: 0.6rem; }
 .process-item p { color: var(--text-dim); font-size: 0.9rem; margin: 0; }
+
+/* ---- Pricing ---- */
+.pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; align-items: stretch; }
+
+.price-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 2rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.price-card.featured { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); position: relative; }
+
+.price-card.featured::before {
+  content: 'Meest gekozen';
+  position: absolute;
+  top: -0.75rem;
+  left: 1.6rem;
+  background: var(--accent);
+  color: var(--bg);
+  font-family: var(--font-data);
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.25em 0.6em;
+  border-radius: var(--radius);
+}
+
+.price-card h3 { font-size: 1.35rem; margin-bottom: 0.4rem; }
+
+.price-card .prijs { font-family: var(--font-data); color: var(--accent); font-size: 0.95rem; margin: 0 0 1.25rem; }
+.price-card .prijs .bedrag { font-size: 1.6rem; font-weight: 600; }
+
+.price-card ul { list-style: none; margin: 0 0 1.75rem; padding: 0; flex: 1; }
+
+.price-card li {
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  padding: 0.55em 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 0.6rem;
+}
+.price-card li:last-child { border-bottom: none; }
+.price-card li::before { content: '+'; color: var(--accent); font-family: var(--font-data); flex-shrink: 0; }
+
+.price-card .btn { width: 100%; justify-content: center; text-align: center; }
+
+.pricing-note { margin-top: 1.5rem; font-family: var(--font-data); font-size: 0.72rem; color: var(--text-dim); }
+
+@media (max-width: 860px) {
+  .pricing-grid { grid-template-columns: 1fr; }
+}
 
 /* ---- CTA ---- */
 .marketing-cta { text-align: center; padding: 6rem 0; }
@@ -743,6 +798,14 @@ html { scroll-behavior: smooth; }
 
 .tag--actief { background: rgba(34, 197, 94, 0.15); color: var(--groen); border-color: transparent; }
 .tag--gestopt { background: rgba(239, 68, 68, 0.15); color: var(--rood); border-color: transparent; }
+
+.tag--tier-basis { background: rgba(139, 163, 150, 0.15); color: var(--text-dim); border-color: transparent; }
+.tag--tier-medium { background: rgba(245, 158, 11, 0.15); color: var(--oranje); border-color: transparent; }
+.tag--tier-premium { background: rgba(74, 222, 128, 0.18); color: var(--accent); border-color: transparent; }
+
+.tag--lead-in-behandeling { background: rgba(74, 222, 128, 0.15); color: var(--accent); border-color: transparent; }
+.tag--lead-geconverteerd { background: rgba(34, 197, 94, 0.15); color: var(--groen); border-color: transparent; }
+.tag--lead-afgewezen { background: rgba(139, 163, 150, 0.15); color: var(--text-dim); border-color: transparent; }
 
 tr.rij-gestopt { opacity: 0.5; }
 

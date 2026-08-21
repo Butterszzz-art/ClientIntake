@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=6">
+<link rel="stylesheet" href="styles.css?v=7">
 </head>
 <body>
 
@@ -25,6 +25,7 @@
       <a class="marketing-nav-link" href="#aanpak">Aanpak</a>
       <a class="marketing-nav-link" href="#specs">Wat je krijgt</a>
       <a class="marketing-nav-link" href="#proces">Proces</a>
+      <a class="marketing-nav-link" href="#prijzen">Prijzen</a>
       <a class="btn btn--accent" href="intake.html">Start intake</a>
     </div>
     <button class="marketing-nav-toggle" id="navToggle" aria-label="Menu openen/sluiten" aria-expanded="false">☰</button>
@@ -137,7 +138,56 @@
   </div>
 </section>
 
-<section class="marketing-cta alt">
+<section id="prijzen" class="marketing-section alt">
+  <div class="marketing-container">
+    <div class="marketing-section-head">
+      <span class="marketing-eyebrow">Prijzen</span>
+      <h2>Drie niveaus van toegang.</h2>
+      <p>Dezelfde evidence-based aanpak op elk niveau — het verschil zit in contactfrequentie, flexibiliteit, en hoeveel dagelijkse bijsturing erbij zit.</p>
+    </div>
+    <div class="pricing-grid reveal">
+      <div class="price-card" data-tier="Basis">
+        <h3>Basis</h3>
+        <p class="prijs"><span class="bedrag">€175</span> / maand</p>
+        <ul>
+          <li>1 jaarprogramma, gebouwd rond jouw doel</li>
+          <li>Wekelijkse video check-in voor voortgang</li>
+          <li>Maandelijkse foto-analyse</li>
+          <li>Eenmalige macro- en calorie-instelling</li>
+        </ul>
+        <a class="btn btn--ghost tier-cta" href="intake.html" data-tier="Basis">Kies Basis</a>
+      </div>
+      <div class="price-card featured" data-tier="Medium">
+        <h3>Medium</h3>
+        <p class="prijs"><span class="bedrag">€275</span> / maand</p>
+        <ul>
+          <li>Alles uit Basis</li>
+          <li>Nieuw programma op aanvraag (ander doel of blessure)</li>
+          <li>2x per week video check-in</li>
+          <li>Meerdere foto-checks per week</li>
+          <li>Doorlopende dieetaanpassingen op basis van je voortgang</li>
+        </ul>
+        <a class="btn btn--accent tier-cta" href="intake.html" data-tier="Medium">Kies Medium</a>
+      </div>
+      <div class="price-card" data-tier="Premium">
+        <h3>Premium</h3>
+        <p class="prijs"><span class="bedrag">€425</span> / maand</p>
+        <ul>
+          <li>Alles uit Medium</li>
+          <li>Flexibele toegang tot meerdere programma's tegelijk</li>
+          <li>Piekweek- en wedstrijdbegeleiding</li>
+          <li>Dagelijkse foto- en voedingscheck-ups</li>
+          <li>Kennisoverdracht om uiteindelijk zelfstandig door te gaan</li>
+        </ul>
+        <a class="btn btn--ghost tier-cta" href="intake.html" data-tier="Premium">Kies Premium</a>
+      </div>
+    </div>
+    <p class="pricing-note">↳ Deze prijzen zijn een startpunt — pas ze aan naar je eigen markt. Elke knop hierboven
+      logt de keuze voor de business tracker en gaat daarna direct naar de intake.</p>
+  </div>
+</section>
+
+<section class="marketing-cta">
   <div class="marketing-container">
     <span class="marketing-eyebrow">Aan de slag</span>
     <h2>Klaar om erachter te komen wat je écht kan?</h2>
@@ -196,6 +246,52 @@
     revealEls.forEach(el => el.classList.add('in-view'));
     growBars();
   }
+
+  // ---- Tier-lead capture ----
+  // Schrijft naar dezelfde localStorage-sleutel/vorm als business.js, zodat
+  // een klik op een prijs-tier meteen als lead in de business tracker
+  // verschijnt. Werkt alleen als index.html en business.html vanaf dezelfde
+  // origin bediend worden (bv. dezelfde GitHub Pages-site) — bij lokaal
+  // openen via file:// is er geen gedeelde storage tussen de twee bestanden.
+  const TRACKER_STORAGE_KEY = 'ptBusinessTracker_v1';
+
+  function laadTrackerState() {
+    try {
+      const raw = localStorage.getItem(TRACKER_STORAGE_KEY);
+      if (!raw) return { clients: [], spend: [], leads: [], assumedRetentionMonths: 6 };
+      const parsed = JSON.parse(raw);
+      return {
+        clients: parsed.clients || [],
+        spend: parsed.spend || [],
+        leads: parsed.leads || [],
+        assumedRetentionMonths: parsed.assumedRetentionMonths || 6,
+      };
+    } catch (e) {
+      console.error('Kon tracker-data niet lezen', e);
+      return { clients: [], spend: [], leads: [], assumedRetentionMonths: 6 };
+    }
+  }
+
+  function logTierLead(tier) {
+    try {
+      const state = laadTrackerState();
+      state.leads.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+        tier: tier,
+        datum: new Date().toISOString().slice(0, 10),
+        status: 'in_behandeling',
+      });
+      localStorage.setItem(TRACKER_STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.error('Kon lead niet loggen', e);
+    }
+  }
+
+  document.querySelectorAll('.tier-cta').forEach((btn) => {
+    // Gewone <a href="intake.html">-link: alleen de lead loggen, de browser
+    // handelt de navigatie zelf af (werkt dus ook als deze JS ooit faalt).
+    btn.addEventListener('click', () => logTierLead(btn.dataset.tier));
+  });
 })();
 </script>
 </body>
