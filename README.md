@@ -7,37 +7,52 @@ Pages), maar de data zelf leeft in **Firebase** (Firestore + Authentication)
 in plaats van alleen in de browser van elke gebruiker — zo verschijnt een
 cliënt-intake automatisch in het coach-dashboard, zonder handmatige stap.
 
-## Twee aparte pagina's — cliënt ziet nooit het coach-dashboard
+## Vier losstaande pagina's — cliënt ziet nooit het coach-dashboard
 
-Dit project bestaat uit **twee losstaande HTML-pagina's** die dezelfde
-Firestore-database delen, maar verder niets:
+Dit project bestaat uit **vier losstaande HTML-pagina's**. De twee
+cliëntgerichte pagina's en de twee coach-pagina's delen dezelfde
+Firestore-database (voor cliëntdata), maar verder niets:
 
-- **`index.html` (root) — het cliëntformulier.** Dit is de link die je naar
-  cliënten stuurt. Hij bevat alléén de intake: geen cliëntenlijst, geen
-  berekeningen, geen overzicht, geen data van andere cliënten. Het formulier
-  spreekt de cliënt aan als **Arman Bahali persoonlijk** (ik-vorm), niet als
-  een team of bedrijf. Na het versturen wordt de intake automatisch naar
-  Firestore geschreven (zie hieronder) én gedownload als `.json`-bestand voor
-  de cliënt zelf.
+- **`index.html` (root) — de publieke homepage.** Dit is de link die je
+  overal deelt (social media, bio-link, etc.) — een korte marketingpagina
+  ("evidence-based fysiek coaching") die uitlegt wat de coaching inhoudt en
+  eindigt in een duidelijke **"Start intake"**-call-to-action. Bevat geen
+  enkel formulierveld en praat met geen enkele database; puur statische HTML.
+- **`intake.html` — het cliëntformulier zelf.** Waar de homepage's
+  "Start intake"-knoppen naartoe linken. Bevat alléén de intake: geen
+  cliëntenlijst, geen berekeningen, geen overzicht, geen data van andere
+  cliënten. Het formulier spreekt de cliënt aan als **Arman Bahali persoonlijk**
+  (ik-vorm), niet als een team of bedrijf. Na het versturen wordt de intake
+  automatisch naar Firestore geschreven (zie hieronder) én gedownload als
+  `.json`-bestand voor de cliënt zelf. Dit is dezelfde pagina die vroeger op
+  `index.html` stond — enkel hernoemd toen de marketinghomepage ervoor kwam.
 - **`coach.html` — jouw dashboard.** Log in met je coach-account (e-mail +
   wachtwoord) en de cliëntenlijst laadt live uit Firestore — een nieuwe
   intake verschijnt vanzelf, ook terwijl je ernaar kijkt. Bookmark deze URL
   voor jezelf; deel hem niet met cliënten.
+- **`business.html` — business tracker (coach-only).** Los van cliëntintakes:
+  bijhouden van acquisitiekosten, churn, CLV en doorverwijzingen. Achter
+  dezelfde Firebase-login als `coach.html` (bereikbaar via de
+  "Business tracker"-knop daar), maar bewaart zijn data alleen lokaal in de
+  browser (`localStorage`, geen Firestore) — zie de sectie hieronder.
 
-Cliënten kunnen `coach.html` in theorie gewoon openen (het is een publieke
-URL, net als elke pagina op een statische site), maar zonder in te loggen
-zien ze niets — geen enkele cliëntgegeven wordt getoond of zelfs maar
-opgehaald voordat Firebase bevestigt dat er een geldige sessie is. Dat is
+Cliënten kunnen `coach.html` of `business.html` in theorie gewoon openen (het
+zijn publieke URL's, net als elke pagina op een statische site), maar zonder
+in te loggen zien ze niets — geen enkele cliëntgegeven wordt getoond of zelfs
+maar opgehaald voordat Firebase bevestigt dat er een geldige sessie is. Dat is
 *echte* toegangscontrole (afgedwongen door Firestore's security rules op de
 server, niet alleen verborgen in de UI), in tegenstelling tot de oude lokale
 pincode-gate uit een eerdere versie van dit project.
 
 ### Handoff-workflow: automatisch, via Firestore
 
-1. Coach deelt de link naar `index.html` met een (nieuwe) cliënt.
-2. Cliënt vult het formulier in op zijn/haar eigen apparaat. Tussentijds wordt
-   een concept lokaal in die browser bewaard (`pt-intake:client-draft:v1`),
-   zodat een per ongeluk gesloten tabblad niets kost.
+1. Coach deelt de link naar `index.html` (de homepage) — bv. in een bio-link
+   of social post. Wil je meteen naar het formulier linken zonder de
+   marketingpagina ertussen, deel dan rechtstreeks `intake.html`.
+2. Cliënt klikt door naar **"Start intake"** en vult het formulier in op
+   zijn/haar eigen apparaat. Tussentijds wordt een concept lokaal in die
+   browser bewaard (`pt-intake:client-draft:v1`), zodat een per ongeluk
+   gesloten tabblad niets kost.
 3. Cliënt klikt **Versturen**. Er gebeuren dan drie dingen tegelijk:
    - `client.js` schrijft het cliëntprofiel rechtstreeks naar de
      `clients`-collectie in Firestore — dit is de **primaire, gezaghebbende**
@@ -151,10 +166,12 @@ regelt de sessie-persistentie zelf, dus dit werkt ook na een volledige
 herstart van de browser.
 
 Omdat Firebase's sessie-opslag gedeeld is tussen alle pagina's op hetzelfde
-origin, hoeft `index.html`'s kleine **"Coach"**-linkje (onderaan, bewust
+origin, hoeft `intake.html`'s kleine **"Coach"**-linkje (onderaan, bewust
 onopvallend gestyled) niets zelf te verifiëren — het is een simpele link naar
 `coach.html`. Ben je daar al ingelogd, dan zie je meteen het dashboard; zo
-niet, dan toont `coach.html` zijn eigen inlogscherm.
+niet, dan toont `coach.html` zijn eigen inlogscherm. `business.html` gebruikt
+exact dezelfde `initCoachGate()` uit `coach-auth.js` — een sessie die je op
+`coach.html` opent werkt dus automatisch ook daar, en andersom.
 
 ### Configuratie
 
@@ -167,7 +184,7 @@ Firebase-tutorial zo gedocumenteerd).
 
 ## Taal — nl / en / es / pt (alleen op het cliëntformulier)
 
-`index.html` heeft een taalkeuze rechtsboven (Nederlands/English/Español/Português).
+`intake.html` heeft een taalkeuze rechtsboven (Nederlands/English/Español/Português).
 Bij het eerste bezoek wordt de browsertaal gebruikt als die een van de vier is,
 anders Nederlands; de keuze van de cliënt wordt daarna onthouden
 (`pt-intake:client-taal:v1` in `localStorage`) voor een volgend bezoek.
@@ -181,8 +198,11 @@ vertalen bewust **niet**:
   Nederlandse enum-strings uit het schema (bv. `"vetverlies"`); alleen de
   zichtbare tekst in de `<option>` verandert mee met de taal.
 
-`coach.html` is en blijft volledig Nederlandstalig — het is Armans eigen tool,
-geen cliëntgerichte pagina.
+`coach.html` en `business.html` zijn en blijven volledig Nederlandstalig — het
+zijn Armans eigen tools, geen cliëntgerichte pagina's. De marketinghomepage
+(`index.html`) is eveneens Nederlandstalig-only (geen `i18n.js`-koppeling) —
+zodra een cliënt doorklikt naar `intake.html` kan die daar wel zelf een taal
+kiezen.
 
 **Schema-wijziging om te weten:** `intake.materiaal.apparatuur` bevatte
 voorheen Nederlandse labels (bv. `"Squat rek"`) als waarde. Om dezelfde data
@@ -197,21 +217,24 @@ de rauwe oude labels in plaats van vertaalde labels.
 
 | Bestand | Rol |
 |---|---|
-| `index.html` | Cliëntformulier — het enige wat cliënten te zien krijgen |
-| `client.js` | Logica voor `index.html`: concept-autosave, versturen (Firestore-write + Web3Forms-mail + JSON-download), bedankt-scherm |
+| `index.html` | Publieke marketinghomepage (root) — statisch, geen database-koppeling, eindigt in een "Start intake"-link naar `intake.html` |
+| `intake.html` | Cliëntformulier — het enige wat cliënten *daadwerkelijk invullen* |
+| `client.js` | Logica voor `intake.html`: concept-autosave, versturen (Firestore-write + Web3Forms-mail + JSON-download), bedankt-scherm |
 | `coach.html` | Coach-dashboard — cliëntenlijst (live uit Firestore), intake (handmatige invoer), berekeningen, overzicht |
 | `app.js` | Logica voor `coach.html`: rendering, Firestore CRUD + live `onSnapshot`-lijst, export/import |
-| `coach-auth.js` | Echte login voor `coach.html` via Firebase Auth (e-mail + wachtwoord), zie hierboven |
-| `firebase.js` | Firebase-initialisatie (config + `db`/`auth`-instanties), gedeeld door `client.js` en `app.js` |
+| `business.html` | Business tracker (coach-only) — acquisitiekosten, churn, CLV, doorverwijs-ranglijst |
+| `business.js` | Logica voor `business.html`: alleen `localStorage` (geen Firestore), gated via dezelfde `initCoachGate()` |
+| `coach-auth.js` | Echte login voor `coach.html` én `business.html` via Firebase Auth (e-mail + wachtwoord), zie hierboven |
+| `firebase.js` | Firebase-initialisatie (config + `db`/`auth`/`storage`-instanties), gedeeld door `client.js` en `app.js` |
 | `intake-form.js` | Gedeeld tussen `client.js` en `app.js`: schema-factory, formulier lezen/invullen, tag-input/kracht-tabel/apparatuur-widgets |
-| `i18n.js` | Vertaalwoordenboek (nl/en/es/pt) en helpers, alleen gebruikt door `client.js` — `coach.html` blijft Nederlandstalig |
+| `i18n.js` | Vertaalwoordenboek (nl/en/es/pt) en helpers, alleen gebruikt door `client.js` — `coach.html`/`business.html` blijven Nederlandstalig |
 | `utils.js` | Kleine gedeelde helpers: `escapeHtml`, `fmt`, `num`, `downloadJson` |
 | `calculations.js` | Pure rekenfuncties (geen DOM, geen side-effects) — het herbruikbare contract, alleen gebruikt door `app.js` |
-| `styles.css` | Donker thema (zwart/donkergroen/lichtgroen), responsive, print-stylesheet |
+| `styles.css` | Donker thema (zwart/donkergroen/lichtgroen), responsive, print-stylesheet — inclusief de marketinghomepage- en business-tracker-secties |
 | `data/werkcapaciteit-referentie.json` | Referentiedata voor het Werkcapaciteit-tabblad (Task 4) — zie "Werkcapaciteit-referentiedata" hierboven |
 | `README.md` | Dit bestand |
 
-`index.html` en `coach.html` renderen dezelfde `<form id="intake-form">`
+`intake.html` en `coach.html` renderen dezelfde `<form id="intake-form">`
 fieldsets (zelfde element-`id`'s), zodat `intake-form.js` één keer geschreven
 kan worden en door beide pagina's hergebruikt wordt. Dat is bewust HTML-duplicatie
 in ruil voor JS-hergebruik — een normale afweging bij een statische multi-page
@@ -491,9 +514,17 @@ dat niet als vast veld wordt opgeslagen.
 
 ## Gebruik
 
-### Als cliënt (`index.html`)
+### Als bezoeker (`index.html`)
 
-1. Open de link die je van Arman hebt gekregen.
+1. Open de homepage-link (bv. vanuit een bio-link of social post) — een korte
+   uitleg van de coaching-aanpak, wat je krijgt, en hoe het traject start.
+2. Klik op **"Start intake"** (in de nav, de hero, of de sluit-CTA onderaan) →
+   je komt op `intake.html` terecht, het daadwerkelijke formulier.
+
+### Als cliënt (`intake.html`)
+
+1. Open de link die je van Arman hebt gekregen (rechtstreeks, of via de
+   homepage's "Start intake"-knop).
 2. Vul het formulier in het Nederlands in — inclusief wat je motiveert en hoe
    je mentaal in elkaar zit, zodat hij je als persoon leert kennen, niet
    alleen als cijfers. Tussentijds opslaan gebeurt automatisch (lokaal,
@@ -540,6 +571,32 @@ Alle cliënten staan in de `clients`-collectie in Firestore — niet meer lokaal
 in de browser. Exporteer regelmatig via **Export JSON** als portable back-up
 per cliënt als je dat wilt.
 
+### Als coach — business tracker (`business.html`)
+
+1. Vanuit `coach.html`: klik **"Business tracker"** (naast "Werkcapaciteit").
+   Zelfde login als het dashboard — eenmaal ingelogd hoef je niet opnieuw in
+   te loggen.
+2. **Cliënt toevoegen**: naam, bron (doorverwijzing/social/website/...),
+   waarde per maand, startdatum, en optioneel wie de cliënt heeft
+   doorverwezen. Verschijnt meteen in de tabel en telt mee in de kerncijfers.
+3. Kerncijfers bovenaan: actieve cliënten, MRR, acquisitiekosten voor de
+   gekozen rapportagemaand (uitgaven ÷ nieuwe cliënten die maand),
+   churn-percentage, en een geschatte CLV (customer lifetime value) — gebruikt
+   je echte gemiddelde retentie zodra er minstens één gestopte cliënt is,
+   anders de aangenomen retentie uit **Instellingen**.
+4. **Marketing / acquisitiekosten**: log per maand wat je aan marketing
+   uitgeeft — nodig voor de acquisitiekosten-kerncijfer hierboven.
+5. **Doorverwijs-ranglijst**: automatisch opgebouwd uit het "doorverwezen
+   door"-veld op cliënten — geen aparte invoer nodig.
+6. **Export/importeer back-up**: dezelfde soort `.json`-back-up als bij
+   cliëntprofielen, maar dan voor de hele tracker-state.
+
+Let op: deze data staat **alleen lokaal** in de browser (`localStorage`,
+sleutel `ptBusinessTracker_v1`) — niet in Firestore, dus niet gesynchroniseerd
+tussen apparaten. Dat is bewust: dit zijn Armans eigen bedrijfscijfers, geen
+cliëntdata die tussen meerdere gebruikers hoeft te synchroniseren. Gebruik
+**Exporteer back-up** als je van apparaat wisselt of een reservekopie wilt.
+
 ## Deployen naar GitHub Pages
 
 1. Zorg dat het Firestore-project + security rules + coach-account staan zoals
@@ -548,7 +605,7 @@ per cliënt als je dat wilt.
 2. Maak een nieuwe (of gebruik deze) GitHub-repository en push de bestanden:
    ```bash
    git init
-   git add index.html client.js coach.html app.js coach-auth.js firebase.js intake-form.js utils.js calculations.js i18n.js styles.css README.md
+   git add index.html intake.html client.js coach.html app.js business.html business.js coach-auth.js firebase.js intake-form.js utils.js calculations.js i18n.js styles.css data/werkcapaciteit-referentie.json README.md
    git commit -m "Initial commit: PT intake app"
    git branch -M main
    git remote add origin <jouw-repo-url>
@@ -557,9 +614,13 @@ per cliënt als je dat wilt.
 3. Ga naar **Settings → Pages** in de GitHub-repo.
 4. Kies bij **Source**: branch `main`, map `/ (root)`.
 5. Na een minuut is de app live:
-   - Cliëntformulier: `https://<gebruikersnaam>.github.io/<repo-naam>/`
+   - Homepage (deel deze): `https://<gebruikersnaam>.github.io/<repo-naam>/`
+   - Cliëntformulier (rechtstreekse link, indien gewenst):
+     `https://<gebruikersnaam>.github.io/<repo-naam>/intake.html`
    - Coach-dashboard: `https://<gebruikersnaam>.github.io/<repo-naam>/coach.html`
      (bookmark deze zelf — deel hem niet met cliënten)
+   - Business tracker: `https://<gebruikersnaam>.github.io/<repo-naam>/business.html`
+     (ook alleen voor jezelf — bereikbaar via de knop in `coach.html`)
 
 Voor lokaal testen: gebruik een lokale server (bv. `npx serve .` of
 `python -m http.server`) in plaats van het bestand direct te openen — sommige
@@ -575,9 +636,10 @@ van een bestand blijft gebruiken (dit gebeurde echt: een knop werkte niet meer
 na een wijziging, puur omdat de browser nog de oude `client.js` in cache had).
 
 **Verhoog dit versienummer overal tegelijk (alle `?v=N` in `index.html`,
-`coach.html`, `client.js`, `app.js`, `coach-auth.js`, `intake-form.js`,
-`firebase.js`) telkens wanneer je een van de `.js`- of `.css`-bestanden
-wijzigt en opnieuw deployt.** Vergeet je dit,
+`intake.html`, `coach.html`, `business.html`, `client.js`, `app.js`,
+`business.js`, `coach-auth.js`, `intake-form.js`, `firebase.js`) telkens
+wanneer je een van de `.js`- of `.css`-bestanden wijzigt en opnieuw
+deployt.** Vergeet je dit,
 dan is het risico dat jij (niet je cliënten — zij laden alles voor het eerst)
 een oude versie blijft zien totdat je handmatig een hard refresh doet
 (Ctrl/Cmd+Shift+R) of de site-data van je browser wist.

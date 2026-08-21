@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Business tracker — Coach dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=6">
+</head>
+<body>
+
+<div id="lock-overlay" class="lock-overlay"></div>
+
+<header class="app-header" hidden>
+  <div class="app-header__brand">
+    <span class="app-header__mark">PT</span>
+    <h1>Business tracker</h1>
+  </div>
+  <div class="app-header__acties">
+    <a href="coach.html" class="btn btn--ghost btn--small">&larr; Coach dashboard</a>
+    <button type="button" class="btn btn--ghost btn--small" id="btn-vergrendel">Vergrendel</button>
+  </div>
+</header>
+
+<main id="app" hidden>
+  <div class="view-header">
+    <h2>Cliënten &amp; omzet</h2>
+    <div class="view-header__actions">
+      <label class="hint" for="monthSelect" style="align-self:center;">Rapportagemaand</label>
+      <input type="month" id="monthSelect">
+    </div>
+  </div>
+  <p class="hint">Los bijhouden van je business-cijfers (acquisitie, churn, CLV) — dit staat los van cliëntintakes en
+    wordt alleen lokaal in deze browser bewaard, niet gesynchroniseerd via Firestore.</p>
+
+  <div class="kerncijfers" id="metrics-grid"></div>
+
+  <section class="card">
+    <h3>Cliënt toevoegen</h3>
+    <form class="form-grid" id="client-form">
+      <label>Naam
+        <input type="text" id="c-naam" required>
+      </label>
+      <label>Bron
+        <select id="c-bron">
+          <option value="Doorverwijzing">Doorverwijzing</option>
+          <option value="Social media">Social media</option>
+          <option value="Website">Website</option>
+          <option value="Gymvloer">Gymvloer</option>
+          <option value="Evenement">Evenement</option>
+          <option value="Overig">Overig</option>
+        </select>
+      </label>
+      <label>Waarde per maand (€)
+        <input type="number" id="c-waarde" min="0" step="1" required>
+      </label>
+      <label>Startdatum
+        <input type="date" id="c-start" required>
+      </label>
+      <label>Doorverwezen door (optioneel)
+        <input type="text" id="c-doorverwezen" placeholder="Naam bestaande cliënt">
+      </label>
+    </form>
+    <button type="submit" form="client-form" class="btn btn--accent">Cliënt toevoegen</button>
+
+    <table class="data-tabel" id="client-tabel" style="margin-top:1rem;">
+      <thead><tr><th>Naam</th><th>Bron</th><th>Waarde/mnd</th><th>Start</th><th>Status</th><th>Doorverwezen door</th><th></th></tr></thead>
+      <tbody id="client-tabel-body"></tbody>
+    </table>
+    <div class="empty-state" id="client-leeg" hidden>Nog geen cliënten geregistreerd.</div>
+  </section>
+
+  <section class="card">
+    <h3>Marketing / acquisitiekosten</h3>
+    <form class="form-grid" id="spend-form">
+      <label>Maand
+        <input type="month" id="s-maand" required>
+      </label>
+      <label>Uitgegeven bedrag (€)
+        <input type="number" id="s-bedrag" min="0" step="1" required>
+      </label>
+    </form>
+    <button type="submit" form="spend-form" class="btn btn--accent">Uitgave loggen</button>
+    <table class="data-tabel" id="spend-tabel" style="margin-top:1rem;">
+      <thead><tr><th>Maand</th><th>Bedrag</th><th></th></tr></thead>
+      <tbody id="spend-tabel-body"></tbody>
+    </table>
+    <div class="empty-state" id="spend-leeg" hidden>Nog geen uitgaves gelogd.</div>
+  </section>
+
+  <section class="card">
+    <h3>Doorverwijs-ranglijst</h3>
+    <div id="ranglijst"></div>
+    <div class="empty-state" id="ranglijst-leeg" hidden>Nog geen doorverwijzingen geregistreerd — vul bij een
+      cliënt "doorverwezen door" in om dit te gaan bijhouden.</div>
+  </section>
+
+  <section class="card">
+    <h3>Instellingen</h3>
+    <form class="form-grid" id="instellingen-form">
+      <label>Aangenomen gem. retentie (maanden)
+        <input type="number" id="i-retentie" min="1" step="1">
+      </label>
+    </form>
+    <button type="submit" form="instellingen-form" class="btn btn--accent">Opslaan</button>
+    <p class="instellingen-voetnoot">Wordt alleen gebruikt voor de CLV-schatting totdat je minimaal één gestopte
+      cliënt hebt om de echte gemiddelde retentie uit te berekenen. Zodra dat zo is, neemt het echte cijfer het
+      automatisch over.</p>
+    <div class="footer-acties">
+      <span class="hint">Data wordt alleen lokaal in deze browser bewaard (geen server, geen Firestore-sync).</span>
+      <div style="display:flex; gap:0.5rem;">
+        <button type="button" class="btn btn--ghost btn--small" id="btn-export">Exporteer back-up (.json)</button>
+        <label class="btn btn--ghost btn--small" for="import-file">Importeer back-up</label>
+        <input type="file" id="import-file" accept="application/json" hidden>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="business.js?v=6"></script>
+</body>
+</html>
