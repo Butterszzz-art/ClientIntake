@@ -1,11 +1,11 @@
-import * as calc from './calculations.js?v=9';
-import { escapeHtml, fmt, num, downloadJson } from './utils.js?v=9';
+import * as calc from './calculations.js?v=10';
+import { escapeHtml, fmt, num, downloadJson } from './utils.js?v=10';
 import {
   maakLeegClient, initTagInputs, initFileInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij,
   toggleePedsDisclaimer,
-} from './intake-form.js?v=9';
-import { initCoachGate, lockNow } from './coach-auth.js?v=9';
-import { db, storage } from './firebase.js?v=9';
+} from './intake-form.js?v=10';
+import { initCoachGate, lockNow } from './coach-auth.js?v=10';
+import { db, storage } from './firebase.js?v=10';
 import {
   collection, doc, setDoc, getDoc, deleteDoc, query, orderBy, onSnapshot,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
