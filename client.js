@@ -1,10 +1,10 @@
-import { downloadJson } from './utils.js?v=7';
+import { downloadJson } from './utils.js?v=8';
 import {
   maakLeegClient, initTagInputs, initFileInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij, renderApparatuurChecklist,
   toggleePedsDisclaimer,
-} from './intake-form.js?v=7';
-import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=7';
-import { db, storage } from './firebase.js?v=7';
+} from './intake-form.js?v=8';
+import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=8';
+import { db, storage } from './firebase.js?v=8';
 import { doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 

@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=7">
+<link rel="stylesheet" href="styles.css?v=8">
 </head>
-<body>
+<body class="marketing-page">
 
 <nav class="marketing-nav">
   <div class="marketing-container marketing-nav-inner">
@@ -33,6 +33,15 @@
 </nav>
 
 <header class="marketing-hero">
+  <div class="marketing-hero-bg" aria-hidden="true">
+    <!-- Voeg hier je eigen fysiek-foto's toe zodra je ze hebt, bv.:
+         <img src="foto1.jpg" alt="">
+         <img src="foto2.jpg" alt="">
+         Elke <img> vult een gelijk deel van de hero-breedte (object-fit: cover),
+         en de donkere overlay (styles.css, .marketing-hero-bg::after) zorgt dat
+         de tekst erboven leesbaar blijft. Zonder foto's blijft dit gewoon leeg
+         en zie je de huidige effen achtergrond. -->
+  </div>
   <div class="marketing-container marketing-hero-grid">
     <div>
       <span class="marketing-eyebrow">Evidence-based fysiek coaching</span>
@@ -43,7 +52,7 @@
         <a class="secondary" href="#proces">Bekijk hoe het werkt →</a>
       </div>
     </div>
-    <div class="progress-graphic reveal" aria-hidden="true">
+    <div class="progress-graphic tilt-card reveal" aria-hidden="true">
       <div class="pg-label"><span>Programma-opbouw</span><span>Blok voor blok</span></div>
       <div class="bars" id="barsContainer">
         <div class="bar-group">
@@ -119,17 +128,17 @@
       <h2>Drie stappen erin.</h2>
     </div>
     <div class="process-list reveal">
-      <div class="process-item">
+      <div class="process-item tilt-card">
         <span class="num mono">01</span>
         <h3>Intake</h3>
         <p>Een volledig beeld van je doelen, trainingsgeschiedenis, beperkingen en agenda — voordat er ook maar één set geprogrammeerd wordt.</p>
       </div>
-      <div class="process-item">
+      <div class="process-item tilt-card">
         <span class="num mono">02</span>
         <h3>Programmering</h3>
         <p>Een gestructureerd plan, specifiek gebouwd op wat uit de intake naar voren komt — niet aangepast vanuit een template.</p>
       </div>
-      <div class="process-item">
+      <div class="process-item tilt-card">
         <span class="num mono">03</span>
         <h3>Uitvoering &amp; bijsturing</h3>
         <p>Doorlopende coaching, bijgehouden voortgang, en programmering die blijft meebewegen met jou — blok voor blok, het hele jaar door.</p>
@@ -146,7 +155,7 @@
       <p>Dezelfde evidence-based aanpak op elk niveau — het verschil zit in contactfrequentie, flexibiliteit, en hoeveel dagelijkse bijsturing erbij zit.</p>
     </div>
     <div class="pricing-grid reveal">
-      <div class="price-card" data-tier="Basis">
+      <div class="price-card tilt-card" data-tier="Basis">
         <h3>Basis</h3>
         <p class="prijs"><span class="bedrag">€150</span> / maand</p>
         <ul>
@@ -157,7 +166,7 @@
         </ul>
         <a class="btn btn--ghost tier-cta" href="intake.html" data-tier="Basis">Kies Basis</a>
       </div>
-      <div class="price-card featured" data-tier="Medium">
+      <div class="price-card featured tilt-card" data-tier="Medium">
         <h3>Medium</h3>
         <p class="prijs"><span class="bedrag">€260</span> / maand</p>
         <ul>
@@ -169,7 +178,7 @@
         </ul>
         <a class="btn btn--accent tier-cta" href="intake.html" data-tier="Medium">Kies Medium</a>
       </div>
-      <div class="price-card" data-tier="Premium">
+      <div class="price-card tilt-card" data-tier="Premium">
         <h3>Premium</h3>
         <p class="prijs"><span class="bedrag">€385</span> / maand</p>
         <ul>
@@ -292,6 +301,84 @@
     // handelt de navigatie zelf af (werkt dus ook als deze JS ooit faalt).
     btn.addEventListener('click', () => logTierLead(btn.dataset.tier));
   });
+
+  // ---- 3D-interactiviteit (helemaal overgeslagen bij prefers-reduced-motion) ----
+  if (!reduceMotion) {
+
+    // Tilt-cards: prijskaarten + processtappen + de progress-graphic kantelen
+    // mee met de cursor, met een glare-highlight die dezelfde positie volgt.
+    function attachTilt(el, maxDeg) {
+      el.addEventListener('mousemove', (e) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+        const px = (e.clientX - rect.left) / rect.width; // 0..1
+        const py = (e.clientY - rect.top) / rect.height; // 0..1
+        const tiltY = (px - 0.5) * (maxDeg * 2);
+        const tiltX = (0.5 - py) * (maxDeg * 2);
+        el.style.setProperty('--tiltX', tiltX.toFixed(2) + 'deg');
+        el.style.setProperty('--tiltY', tiltY.toFixed(2) + 'deg');
+        el.style.setProperty('--glareX', (px * 100).toFixed(1) + '%');
+        el.style.setProperty('--glareY', (py * 100).toFixed(1) + '%');
+      });
+      el.addEventListener('mouseleave', () => {
+        el.style.setProperty('--tiltX', '0deg');
+        el.style.setProperty('--tiltY', '0deg');
+        el.style.setProperty('--glareX', '50%');
+        el.style.setProperty('--glareY', '50%');
+      });
+    }
+    document.querySelectorAll('.tilt-card').forEach((card) => attachTilt(card, 7));
+
+    // Hero cursor-spotlight
+    const heroEl = document.querySelector('.marketing-hero');
+    if (heroEl) {
+      heroEl.addEventListener('mousemove', (e) => {
+        const rect = heroEl.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+        const mx = ((e.clientX - rect.left) / rect.width * 100).toFixed(1) + '%';
+        const my = ((e.clientY - rect.top) / rect.height * 100).toFixed(1) + '%';
+        heroEl.style.setProperty('--mx', mx);
+        heroEl.style.setProperty('--my', my);
+      });
+    }
+
+    // Magnetic buttons: nudge lichtjes richting de cursor
+    document.querySelectorAll('.btn').forEach((btn) => {
+      btn.addEventListener('mousemove', (e) => {
+        const rect = btn.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+        const relX = (e.clientX - rect.left) / rect.width - 0.5;
+        const relY = (e.clientY - rect.top) / rect.height - 0.5;
+        btn.style.setProperty('--btnX', (relX * 10).toFixed(1) + 'px');
+        btn.style.setProperty('--btnY', (relY * 8).toFixed(1) + 'px');
+      });
+      btn.addEventListener('mouseleave', () => {
+        btn.style.setProperty('--btnX', '0px');
+        btn.style.setProperty('--btnY', '0px');
+      });
+    });
+
+    // Bar chart tooltips — hover een blok om te zien welk blok het is
+    // (geen verzonnen echte cijfers, puur relatieve opbouw).
+    const tooltip = document.createElement('div');
+    tooltip.className = 'bar-tooltip';
+    document.body.appendChild(tooltip);
+    const blokNamen = ['Blok 1', 'Blok 1', 'Blok 1', 'Blok 1', 'Blok 2', 'Blok 2', 'Blok 2', 'Blok 2', 'Blok 3', 'Blok 3', 'Blok 3', 'Blok 3'];
+    document.querySelectorAll('.bar').forEach((bar, i) => {
+      bar.addEventListener('mouseenter', () => {
+        const isPeak = bar.classList.contains('peak');
+        tooltip.textContent = (blokNamen[i] || '') + (isPeak ? ' — piekweek' : ' — week ' + ((i % 4) + 1));
+        tooltip.classList.add('show');
+      });
+      bar.addEventListener('mousemove', (e) => {
+        tooltip.style.left = e.clientX + 'px';
+        tooltip.style.top = (e.clientY - 14) + 'px';
+      });
+      bar.addEventListener('mouseleave', () => {
+        tooltip.classList.remove('show');
+      });
+    });
+  }
 })();
 </script>
 </body>

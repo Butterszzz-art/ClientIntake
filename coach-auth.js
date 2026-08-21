@@ -3,7 +3,7 @@
 // actually enforced by Firestore security rules checking `request.auth !=
 // null` on the server side, not just hidden behind client-side JS.
 
-import { auth } from './firebase.js?v=7';
+import { auth } from './firebase.js?v=8';
 import {
   signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';

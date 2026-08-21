@@ -7,6 +7,8 @@
   --text-dim: #8ba396;
   --accent: #4ade80;
   --accent-dim: #16a34a;
+  --accent-soft: rgba(74, 222, 128, 0.12);
+  --accent-glow: rgba(74, 222, 128, 0.4);
   --rood: #ef4444;
   --oranje: #f59e0b;
   --groen: #22c55e;
@@ -543,7 +545,7 @@ td.post-training { color: var(--accent); }
    reads as the same brand, not a bolted-on separate site.
    ========================================================================== */
 
-.marketing-container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+.marketing-container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; perspective: 1400px; }
 
 html { scroll-behavior: smooth; }
 
@@ -585,8 +587,46 @@ html { scroll-behavior: smooth; }
   border-radius: var(--radius);
 }
 
+/* Magnetic buttons: nudge toward the cursor within a small range (JS sets
+   --btnX/--btnY). Scoped to .marketing-page so this never touches buttons on
+   the coach/business/intake pages, which also use the shared .btn class. */
+.marketing-page .btn {
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+    transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  transform: translate(var(--btnX, 0), var(--btnY, 0));
+}
+.marketing-page .btn:hover { box-shadow: 0 0.5rem 1.5rem -0.375rem var(--accent-glow); }
+
 /* ---- Hero ---- */
-.marketing-hero { padding: 5rem 0 4.5rem; border-bottom: 1px solid var(--border); }
+.marketing-hero { position: relative; overflow: hidden; padding: 5rem 0 4.5rem; border-bottom: 1px solid var(--border); }
+
+/* Cursor-tracking spotlight — --mx/--my are set by JS on mousemove. */
+.marketing-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(500px circle at var(--mx, 50%) var(--my, 20%), var(--accent-soft), transparent 65%);
+  transition: background 0.2s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.marketing-hero > .marketing-container { position: relative; z-index: 1; }
+
+/* Optional background photos (empty by default — see index.html for how to
+   drop images in). A dark top/bottom gradient keeps hero text readable over
+   whatever gets placed here. */
+.marketing-hero-bg { position: absolute; inset: 0; z-index: 0; display: flex; }
+.marketing-hero-bg img { flex: 1; width: 100%; height: 100%; object-fit: cover; filter: grayscale(0.25) brightness(0.5); }
+/* :has(img) so the dark overlay — and the space it'd otherwise dim — only
+   appears once real photos are actually dropped in; an empty div here does
+   nothing, so the plain background + spotlight look exactly as before. */
+.marketing-hero-bg:has(img)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--bg) 0%, rgba(6, 9, 7, 0.7) 45%, var(--bg) 100%);
+}
 
 .marketing-hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 3rem; align-items: center; }
 
@@ -618,6 +658,34 @@ html { scroll-behavior: smooth; }
 
 .marketing-hero-actions .secondary:hover { color: var(--text); border-color: var(--text-dim); }
 
+/* 3D tilt: rotates toward the cursor with a glare highlight that tracks it.
+   Applied via class="tilt-card" — JS sets --tiltX/--tiltY/--glareX/--glareY
+   on mousemove. Needs an ancestor with `perspective` set (.marketing-container
+   above) to actually look 3D rather than just skewed. */
+.tilt-card {
+  --tiltX: 0deg;
+  --tiltY: 0deg;
+  --glareX: 50%;
+  --glareY: 50%;
+  transform: rotateX(var(--tiltX)) rotateY(var(--tiltY));
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+  position: relative;
+  will-change: transform;
+}
+.tilt-card:hover { box-shadow: 0 1.25rem 2.5rem -0.75rem rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border); }
+.tilt-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(320px circle at var(--glareX) var(--glareY), rgba(255, 255, 255, 0.06), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.tilt-card:hover::after { opacity: 1; }
+
 /* Signature graphic: structured progression bars */
 .progress-graphic { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.75rem 1.5rem 1.25rem; }
 
@@ -642,10 +710,30 @@ html { scroll-behavior: smooth; }
   background: linear-gradient(180deg, var(--bg-raised), var(--border));
   border-radius: 2px 2px 0 0;
   height: 0;
-  transition: height 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  transition: height 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s ease, filter 0.15s ease;
 }
+.bar:hover { transform: translateY(-0.2rem) scaleX(1.06); filter: brightness(1.2); }
 
 .bar.peak { background: linear-gradient(180deg, var(--accent), var(--accent-dim)); }
+
+.bar-tooltip {
+  position: fixed;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  padding: 0.3em 0.6em;
+  border-radius: var(--radius);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -0.5rem);
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+  z-index: 5;
+}
+.bar-tooltip.show { opacity: 1; }
 
 .pg-blocks { display: flex; margin-top: 0.6rem; }
 .pg-blocks span { flex: 1; text-align: center; font-family: var(--font-data); font-size: 0.65rem; color: var(--text-dim); letter-spacing: 0.06em; }
@@ -654,12 +742,47 @@ html { scroll-behavior: smooth; }
 
 @media (prefers-reduced-motion: reduce) {
   .bar { transition: none; }
-  .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .reveal,
+  .spec-list.reveal .spec-row,
+  .process-list.reveal .process-item,
+  .pricing-grid.reveal .price-card {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .tilt-card, .marketing-hero::before { transition: none !important; }
+  .tilt-card::after { display: none !important; }
 }
 
 /* ---- Reveal on scroll ---- */
-.reveal { opacity: 0; transform: translateY(1rem); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal { opacity: 0; transform: translateY(1.6rem) rotateX(-10deg); transform-origin: top center; transition: opacity 0.7s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
 .reveal.in-view { opacity: 1; transform: none; }
+
+/* Cascading children within a revealed group: each row/card fades+tilts in
+   with a slight stagger instead of the whole group appearing at once. */
+.spec-list.reveal .spec-row,
+.process-list.reveal .process-item,
+.pricing-grid.reveal .price-card {
+  opacity: 0;
+  transform: translateY(1.4rem) rotateX(-8deg);
+  transform-origin: top center;
+  transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.spec-list.reveal.in-view .spec-row,
+.process-list.reveal.in-view .process-item,
+.pricing-grid.reveal.in-view .price-card {
+  opacity: 1;
+  transform: none;
+}
+.spec-list.reveal.in-view .spec-row:nth-child(1),
+.process-list.reveal.in-view .process-item:nth-child(1),
+.pricing-grid.reveal.in-view .price-card:nth-child(1) { transition-delay: 0s; }
+.spec-list.reveal.in-view .spec-row:nth-child(2),
+.process-list.reveal.in-view .process-item:nth-child(2),
+.pricing-grid.reveal.in-view .price-card:nth-child(2) { transition-delay: 0.12s; }
+.spec-list.reveal.in-view .spec-row:nth-child(3),
+.process-list.reveal.in-view .process-item:nth-child(3),
+.pricing-grid.reveal.in-view .price-card:nth-child(3) { transition-delay: 0.24s; }
 
 /* ---- Section shared ---- */
 .marketing-section { padding: 5.5rem 0; }
