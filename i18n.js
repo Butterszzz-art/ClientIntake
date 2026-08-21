@@ -183,8 +183,6 @@ export const VERTALINGEN = {
 
     'confirm.eerderFormulier': 'We vonden een eerder gestart formulier op dit apparaat. Wil je daarmee verdergaan?\n\nAnnuleren = opnieuw beginnen.',
     'taal.label': 'Taal',
-
-    'coach.link': 'Coach',
   },
 
   en: {
@@ -356,8 +354,6 @@ export const VERTALINGEN = {
 
     'confirm.eerderFormulier': 'We found a form you started earlier on this device. Do you want to continue with it?\n\nCancel = start over.',
     'taal.label': 'Language',
-
-    'coach.link': 'Coach',
   },
 
   es: {
@@ -529,8 +525,6 @@ export const VERTALINGEN = {
 
     'confirm.eerderFormulier': 'Encontramos un formulario que empezaste antes en este dispositivo. ¿Quieres continuar con él?\n\nCancelar = empezar de nuevo.',
     'taal.label': 'Idioma',
-
-    'coach.link': 'Coach',
   },
 
   pt: {
@@ -702,8 +696,6 @@ export const VERTALINGEN = {
 
     'confirm.eerderFormulier': 'Encontramos um formulário que você começou antes neste dispositivo. Deseja continuar com ele?\n\nCancelar = começar de novo.',
     'taal.label': 'Idioma',
-
-    'coach.link': 'Coach',
   },
 };
 

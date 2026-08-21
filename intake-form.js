@@ -4,7 +4,7 @@
 // dashboard. Both pages render the same fieldset markup (same element IDs)
 // and import this module so the reading/writing logic exists exactly once.
 
-import { escapeHtml, num } from './utils.js?v=9';
+import { escapeHtml, num } from './utils.js?v=10';
 
 // Stable canonical keys (not translated) — these are the values actually
 // stored in intake.materiaal.apparatuur, so the schema stays consistent no

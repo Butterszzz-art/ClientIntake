@@ -169,13 +169,13 @@ klikt (roept `signOut` aan) of het wachtwoord ergens anders wijzigt — Firebase
 regelt de sessie-persistentie zelf, dus dit werkt ook na een volledige
 herstart van de browser.
 
-Omdat Firebase's sessie-opslag gedeeld is tussen alle pagina's op hetzelfde
-origin, hoeft `intake.html`'s kleine **"Coach"**-linkje (onderaan, bewust
-onopvallend gestyled) niets zelf te verifiëren — het is een simpele link naar
-`coach.html`. Ben je daar al ingelogd, dan zie je meteen het dashboard; zo
-niet, dan toont `coach.html` zijn eigen inlogscherm. `business.html` gebruikt
-exact dezelfde `initCoachGate()` uit `coach-auth.js` — een sessie die je op
-`coach.html` opent werkt dus automatisch ook daar, en andersom.
+`intake.html` bevat bewust geen link naar `coach.html` (verwijderd — Arman
+gebruikt daarvoor zijn eigen bookmark). Firebase's sessie-opslag is sowieso
+gedeeld tussen alle pagina's op hetzelfde origin: ben je al ingelogd, dan zie
+je meteen het dashboard bij het openen van `coach.html`; zo niet, dan toont
+die pagina zijn eigen inlogscherm. `business.html` gebruikt exact dezelfde
+`initCoachGate()` uit `coach-auth.js` — een sessie die je op `coach.html`
+opent werkt dus automatisch ook daar, en andersom.
 
 ### Configuratie
 
