@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=10">
+<link rel="stylesheet" href="styles.css?v=11">
 </head>
 <body class="marketing-page">
 
@@ -163,10 +163,18 @@
       <h2 data-i18n="pricing.h2">Three levels of access.</h2>
       <p data-i18n="pricing.sub">Same evidence-based approach at every level — the difference is contact frequency, flexibility, and how much day-to-day adjustment is included.</p>
     </div>
+
+    <div class="billing-toggle" id="billingToggle">
+      <div class="toggle-highlight"></div>
+      <button type="button" class="active" data-billing="maandelijks" data-i18n="pricing.billingMonthly">Monthly</button>
+      <button type="button" data-billing="kwartaal" data-i18n="pricing.billingQuarterly">Per 3 months</button>
+    </div>
+
     <div class="pricing-grid reveal">
-      <div class="price-card tilt-card" data-tier="Basis">
+      <div class="price-card tilt-card" data-tier="Basis" data-price-monthly="150" data-price-quarter="405">
         <h3 data-i18n="tier.basic.name">Basic</h3>
-        <p class="prijs"><span class="bedrag">€150</span> <span data-i18n="pricing.perMonth">/ month</span></p>
+        <p class="prijs"><span class="bedrag" data-role="amount">€150</span> <span data-role="period" data-i18n="pricing.perMonth">/ month</span></p>
+        <p class="prijs-sub" data-role="sub"></p>
         <ul>
           <li data-i18n="tier.basic.li1">1 yearly program, built around your goal</li>
           <li data-i18n="tier.basic.li2">Weekly video check-in on progress</li>
@@ -175,9 +183,10 @@
         </ul>
         <a class="btn btn--ghost tier-cta" href="intake.html" data-tier="Basis" data-i18n="tier.basic.cta">Choose Basic</a>
       </div>
-      <div class="price-card featured tilt-card" data-tier="Medium" data-featured-label="Most chosen">
+      <div class="price-card featured tilt-card" data-tier="Medium" data-featured-label="Most chosen" data-price-monthly="260" data-price-quarter="700">
         <h3 data-i18n="tier.medium.name">Medium</h3>
-        <p class="prijs"><span class="bedrag">€260</span> <span data-i18n="pricing.perMonth">/ month</span></p>
+        <p class="prijs"><span class="bedrag" data-role="amount">€260</span> <span data-role="period" data-i18n="pricing.perMonth">/ month</span></p>
+        <p class="prijs-sub" data-role="sub"></p>
         <ul>
           <li data-i18n="tier.medium.li1">Everything in Basic</li>
           <li data-i18n="tier.medium.li2">New program on request (different goal or injury)</li>
@@ -187,9 +196,10 @@
         </ul>
         <a class="btn btn--accent tier-cta" href="intake.html" data-tier="Medium" data-i18n="tier.medium.cta">Choose Medium</a>
       </div>
-      <div class="price-card tilt-card" data-tier="Premium">
+      <div class="price-card tilt-card" data-tier="Premium" data-price-monthly="385" data-price-quarter="1040">
         <h3 data-i18n="tier.premium.name">Premium</h3>
-        <p class="prijs"><span class="bedrag">€385</span> <span data-i18n="pricing.perMonth">/ month</span></p>
+        <p class="prijs"><span class="bedrag" data-role="amount">€385</span> <span data-role="period" data-i18n="pricing.perMonth">/ month</span></p>
+        <p class="prijs-sub" data-role="sub"></p>
         <ul>
           <li data-i18n="tier.premium.li1">Everything in Medium</li>
           <li data-i18n="tier.premium.li2">Flexible access to multiple programs at once</li>
@@ -200,7 +210,7 @@
         <a class="btn btn--ghost tier-cta" href="intake.html" data-tier="Premium" data-i18n="tier.premium.cta">Choose Premium</a>
       </div>
     </div>
-    <p class="pricing-note" data-i18n="pricing.note">↳ These prices are a starting point — adjust them to your own market. Every button above logs the choice for the business tracker and then goes straight to the intake.</p>
+    <p class="pricing-note" data-i18n="pricing.note">↳ These prices are a starting point — adjust them to your own market. Every button above logs the choice for the business tracker and then goes straight to the intake. Check your right-of-withdrawal obligations before offering a 3-month prepay.</p>
   </div>
 </section>
 
@@ -284,7 +294,12 @@
       'pricing.sub': 'Same evidence-based approach at every level — the difference is contact frequency, flexibility, and how much day-to-day adjustment is included.',
       'pricing.featuredBadge': 'Most chosen',
       'pricing.perMonth': '/ month',
-      'pricing.note': '↳ These prices are a starting point — adjust them to your own market. Every button above logs the choice for the business tracker and then goes straight to the intake.',
+      'pricing.billingMonthly': 'Monthly',
+      'pricing.billingQuarterly': 'Per 3 months',
+      'pricing.perQuarter': '/ 3 months',
+      'pricing.quarterlySub': '≈ {amount}/month · paid upfront',
+      'pricing.monthlySub': 'Or per 3 months: save {pct}%',
+      'pricing.note': '↳ These prices are a starting point — adjust them to your own market. Every button above logs the choice for the business tracker and then goes straight to the intake. Check your right-of-withdrawal obligations before offering a 3-month prepay.',
       'tier.basic.name': 'Basic',
       'tier.basic.li1': '1 yearly program, built around your goal',
       'tier.basic.li2': 'Weekly video check-in on progress',
@@ -363,7 +378,12 @@
       'pricing.sub': 'Dezelfde evidence-based aanpak op elk niveau — het verschil zit in contactfrequentie, flexibiliteit, en hoeveel dagelijkse bijsturing erbij zit.',
       'pricing.featuredBadge': 'Meest gekozen',
       'pricing.perMonth': '/ maand',
-      'pricing.note': '↳ Deze prijzen zijn een startpunt — pas ze aan naar je eigen markt. Elke knop hierboven logt de keuze voor de business tracker en gaat daarna direct naar de intake.',
+      'pricing.billingMonthly': 'Maandelijks',
+      'pricing.billingQuarterly': 'Per 3 maanden',
+      'pricing.perQuarter': '/ 3 maanden',
+      'pricing.quarterlySub': '≈ {amount}/maand · in één keer voldaan',
+      'pricing.monthlySub': 'Of per 3 maanden: bespaar {pct}%',
+      'pricing.note': '↳ Deze prijzen zijn een startpunt — pas ze aan naar je eigen markt. Elke knop hierboven logt de keuze voor de business tracker en gaat daarna direct naar de intake. Check je herroepingsrecht-verplichtingen voordat je een 3-maands vooruitbetaling live zet.',
       'tier.basic.name': 'Basis',
       'tier.basic.li1': '1 jaarprogramma, gebouwd rond jouw doel',
       'tier.basic.li2': 'Wekelijkse video check-in voor voortgang',
@@ -442,7 +462,12 @@
       'pricing.sub': 'El mismo enfoque basado en evidencia en cada nivel — la diferencia está en la frecuencia de contacto, la flexibilidad, y cuánto ajuste diario está incluido.',
       'pricing.featuredBadge': 'Más elegido',
       'pricing.perMonth': '/ mes',
-      'pricing.note': '↳ Estos precios son un punto de partida — ajústalos a tu propio mercado. Cada botón de arriba registra la elección para el business tracker y luego va directo a la admisión.',
+      'pricing.billingMonthly': 'Mensual',
+      'pricing.billingQuarterly': 'Cada 3 meses',
+      'pricing.perQuarter': '/ 3 meses',
+      'pricing.quarterlySub': '≈ {amount}/mes · pagado por adelantado',
+      'pricing.monthlySub': 'O cada 3 meses: ahorra {pct}%',
+      'pricing.note': '↳ Estos precios son un punto de partida — ajústalos a tu propio mercado. Cada botón de arriba registra la elección para el business tracker y luego va directo a la admisión. Revisa tus obligaciones de derecho de desistimiento antes de ofrecer un prepago de 3 meses.',
       'tier.basic.name': 'Básico',
       'tier.basic.li1': '1 programa anual, construido en torno a tu objetivo',
       'tier.basic.li2': 'Videollamada semanal de seguimiento',
@@ -521,7 +546,12 @@
       'pricing.sub': 'A mesma abordagem baseada em evidências em cada nível — a diferença está na frequência de contato, flexibilidade, e quanto ajuste do dia a dia está incluído.',
       'pricing.featuredBadge': 'Mais escolhido',
       'pricing.perMonth': '/ mês',
-      'pricing.note': '↳ Estes preços são um ponto de partida — ajuste-os ao seu próprio mercado. Cada botão acima registra a escolha para o business tracker e depois vai direto para a admissão.',
+      'pricing.billingMonthly': 'Mensal',
+      'pricing.billingQuarterly': 'A cada 3 meses',
+      'pricing.perQuarter': '/ 3 meses',
+      'pricing.quarterlySub': '≈ {amount}/mês · pago antecipadamente',
+      'pricing.monthlySub': 'Ou a cada 3 meses: economize {pct}%',
+      'pricing.note': '↳ Estes preços são um ponto de partida — ajuste-os ao seu próprio mercado. Cada botão acima registra a escolha para o business tracker e depois vai direto para a admissão. Verifique suas obrigações de direito de arrependimento antes de oferecer um pré-pagamento de 3 meses.',
       'tier.basic.name': 'Básico',
       'tier.basic.li1': '1 programa anual, construído em torno do seu objetivo',
       'tier.basic.li2': 'Videochamada semanal de acompanhamento',
@@ -580,6 +610,52 @@
 
     document.getElementById('taal-keuze').value = taal;
     localStorage.setItem(TAAL_KEY, taal);
+
+    // Prijzen zijn geen [data-i18n]-tekst (het bedrag/de sub-regel worden
+    // berekend), maar de sub-regel bevat wel vertaalde tekst — dus opnieuw
+    // renderen bij elke taalwissel.
+    renderPrices(currentBilling);
+  }
+
+  // ---- Prijzen: maandelijks vs. per kwartaal (3 maanden vooruitbetaald) ----
+  function fmtEuro(n) {
+    return '€' + Math.round(n).toLocaleString('nl-NL');
+  }
+
+  let currentBilling = 'maandelijks';
+
+  function renderPrices(billing) {
+    const dict = VERTALINGEN[huidigeTaal] || VERTALINGEN.en;
+    document.querySelectorAll('.price-card').forEach((card) => {
+      const maandelijks = Number(card.dataset.priceMonthly);
+      const kwartaal = Number(card.dataset.priceQuarter);
+      const amountEl = card.querySelector('[data-role="amount"]');
+      const periodEl = card.querySelector('[data-role="period"]');
+      const subEl = card.querySelector('[data-role="sub"]');
+      if (!maandelijks || !kwartaal) return;
+      const besparingPct = Math.round((1 - kwartaal / (maandelijks * 3)) * 100);
+      if (billing === 'kwartaal') {
+        amountEl.textContent = fmtEuro(kwartaal);
+        periodEl.textContent = dict['pricing.perQuarter'];
+        subEl.textContent = dict['pricing.quarterlySub'].replace('{amount}', fmtEuro(kwartaal / 3));
+      } else {
+        amountEl.textContent = fmtEuro(maandelijks);
+        periodEl.textContent = dict['pricing.perMonth'];
+        subEl.textContent = dict['pricing.monthlySub'].replace('{pct}', besparingPct);
+      }
+    });
+  }
+
+  const billingToggle = document.getElementById('billingToggle');
+  if (billingToggle) {
+    billingToggle.querySelectorAll('button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        currentBilling = btn.dataset.billing;
+        billingToggle.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b === btn));
+        billingToggle.classList.toggle('is-kwartaal', currentBilling === 'kwartaal');
+        renderPrices(currentBilling);
+      });
+    });
   }
 
   document.getElementById('taal-keuze').addEventListener('change', (e) => pasVertalingToe(e.target.value));
@@ -652,12 +728,13 @@
     }
   }
 
-  function logTierLead(tier) {
+  function logTierLead(tier, billing) {
     try {
       const state = laadTrackerState();
       state.leads.push({
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
         tier: tier,
+        billing: billing || 'maandelijks',
         datum: new Date().toISOString().slice(0, 10),
         status: 'in_behandeling',
       });
@@ -670,7 +747,7 @@
   document.querySelectorAll('.tier-cta').forEach((btn) => {
     // Gewone <a href="intake.html">-link: alleen de lead loggen, de browser
     // handelt de navigatie zelf af (werkt dus ook als deze JS ooit faalt).
-    btn.addEventListener('click', () => logTierLead(btn.dataset.tier));
+    btn.addEventListener('click', () => logTierLead(btn.dataset.tier, currentBilling));
   });
 
   // ---- 3D-interactiviteit (helemaal overgeslagen bij prefers-reduced-motion) ----

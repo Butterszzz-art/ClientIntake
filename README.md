@@ -255,20 +255,34 @@ site zonder build-stap/templating.
 ### Prijzen & leads: hoe de homepage en de business tracker praten
 
 `index.html` toont drie prijs-tiers (**Basis** €150, **Medium** €260,
-**Premium** €385 per maand — pas aan naar je eigen markt).
+**Premium** €385 per maand — pas aan naar je eigen markt) met een
+**facturatie-toggle** erboven: **Maandelijks** of **Per 3 maanden**
+(vooruitbetaald, met korting — `data-price-monthly`/`data-price-quarter` op
+elke kaart, standaard zo'n 10% korting). De toggle herschrijft live het
+bedrag, de periode-tekst, en een sub-regel per kaart (bij maandelijks: "bespaar
+X% per 3 maanden"; bij per-3-maanden: "≈ €X/maand · in één keer voldaan").
 Een klik op een tier-knop doet twee dingen: hij schrijft een lead
-(`{ id, tier, datum, status: 'in_behandeling' }`) naar de `localStorage`-
-sleutel `ptBusinessTracker_v1`, en gaat daarna gewoon door naar `intake.html`
-zoals elke andere link — er wordt niets tegengehouden of afgevangen.
+(`{ id, tier, billing, datum, status: 'in_behandeling' }`, met
+`billing: 'maandelijks' | 'kwartaal'` naar wat de toggle op dat moment
+stond) naar de `localStorage`-sleutel `ptBusinessTracker_v1`, en gaat daarna
+gewoon door naar `intake.html` zoals elke andere link — er wordt niets
+tegengehouden of afgevangen.
 
-`business.html` leest diezelfde sleutel en toont die leads onder **"Binnenkomende
-leads"**, met per lead **Converteer naar cliënt** (zet de tier vast in het
-"Cliënt toevoegen"-formulier en scrollt daarheen; de lead wordt pas
-`geconverteerd` zodra je het formulier daadwerkelijk verstuurt) of
-**Afwijzen**. **"Funnel per tier"** telt per tier leads, conversies,
-conversieratio, actieve cliënten en MRR bij elkaar op.
+`business.html` leest diezelfde sleutel en toont die leads (incl. facturatie)
+onder **"Binnenkomende leads"**, met per lead **Converteer naar cliënt** (zet
+de tier én facturatie vast in het "Cliënt toevoegen"-formulier en scrollt
+daarheen; de lead wordt pas `geconverteerd` zodra je het formulier
+daadwerkelijk verstuurt) of **Afwijzen**. **"Funnel per tier"** telt per tier
+leads, conversies, conversieratio, actieve cliënten en MRR bij elkaar op.
 
-Twee dingen om te weten:
+Bij **"Cliënt toevoegen"** kies je ook zelf een facturatie
+(Maandelijks/Per 3 maanden) — bij "per 3 maanden" vraagt het formulier om
+het **totaal vooruitbetaalde bedrag**, en rekent dat zelf om naar een
+maand-equivalent (`waarde = totaal / 3`) zodat MRR/CLV/funnel-cijfers overal
+vergelijkbaar blijven tussen tiers en facturatiewijzes. Het rauwe totaalbedrag
+blijft zichtbaar als toelichting in de cliëntentabel.
+
+Een paar dingen om te weten:
 - Dit werkt alleen als `index.html` en `business.html` **vanaf dezelfde
   origin** bediend worden (bv. dezelfde GitHub Pages-site) — `localStorage`
   is per-origin. Lokaal elk bestand los openen via `file://` deelt geen
@@ -276,11 +290,17 @@ Twee dingen om te weten:
 - De tier-namen (`Basis`/`Medium`/`Premium`) staan letterlijk zowel in
   `index.html` (als `data-tier` op elke prijs-knop) als in `business.js`
   (de `TIERS`-constante) — wijzig je de namen of voeg je een tier toe, doe
-  dat op beide plekken.
+  dat op beide plekken. Hetzelfde geldt voor de facturatiewaarden
+  (`maandelijks`/`kwartaal`).
 - Dit is bewust **niet** gekoppeld aan de Firestore-cliëntdata: een lead is
   puur interesse-signaal, geen cliëntprofiel. Pas als je een lead conveert
   vul je zelf de rest van het cliëntprofiel in (net als bij een cliënt die
   je handmatig toevoegt).
+- **Geen juridisch advies:** de prijzentekst herinnert je eraan om je
+  herroepingsrecht-verplichtingen te checken voordat je een 3-maands
+  vooruitbetaling live zet (in Nederland/EU geldt normaal een
+  bedenktermijn bij diensten op afstand) — controleer dit zelf of met een
+  jurist voordat je dit gebruikt.
 
 ## Waarom dit zo is opgezet (toekomstige integratie)
 
@@ -560,9 +580,12 @@ dat niet als vast veld wordt opgeslagen.
 
 1. Open de homepage-link (bv. vanuit een bio-link of social post) — een korte
    uitleg van de coaching-aanpak, wat je krijgt, en hoe het traject start.
-2. **Prijzen**: drie tiers (Basis/Medium/Premium) met wat elk niveau inhoudt.
-   Een klik op een tier-knop logt die keuze als lead voor de business tracker
-   (zie "Prijzen & leads" hierboven) en gaat daarna gewoon door naar de intake.
+2. **Prijzen**: drie tiers (Basis/Medium/Premium) met wat elk niveau inhoudt,
+   en een toggle bovenaan om te wisselen tussen maandelijks en per-3-maanden
+   (met korting) — de bedragen op de kaarten passen zich live aan. Een klik
+   op een tier-knop logt die keuze (incl. gekozen facturatie) als lead voor
+   de business tracker (zie "Prijzen & leads" hierboven) en gaat daarna
+   gewoon door naar de intake.
 3. Klik op **"Start intake"** (in de nav, de hero, een tier-knop, of de
    sluit-CTA onderaan) → je komt op `intake.html` terecht, het daadwerkelijke
    formulier.
@@ -623,14 +646,17 @@ per cliënt als je dat wilt.
    Zelfde login als het dashboard — eenmaal ingelogd hoef je niet opnieuw in
    te loggen.
 2. **Binnenkomende leads**: klikken op een prijs-tier op de homepage
-   verschijnt hier automatisch. **Converteer naar cliënt** zet de tier alvast
-   klaar in het "Cliënt toevoegen"-formulier hieronder; **Afwijzen** sluit een
-   lead af zonder cliënt te worden. **Funnel per tier** telt leads, conversies
-   en MRR per tier bij elkaar op.
-3. **Cliënt toevoegen**: naam, tier (Basis/Medium/Premium), bron
-   (doorverwijzing/social/website/...), waarde per maand, startdatum, en
-   optioneel wie de cliënt heeft doorverwezen. Verschijnt meteen in de tabel
-   en telt mee in de kerncijfers.
+   verschijnt hier automatisch, inclusief welke facturatie (maandelijks/per 3
+   maanden) de bezoeker had aanstaan. **Converteer naar cliënt** zet de tier
+   én facturatie alvast klaar in het "Cliënt toevoegen"-formulier hieronder;
+   **Afwijzen** sluit een lead af zonder cliënt te worden. **Funnel per tier**
+   telt leads, conversies en MRR per tier bij elkaar op.
+3. **Cliënt toevoegen**: naam, tier (Basis/Medium/Premium), facturatie
+   (maandelijks, of per 3 maanden vooruitbetaald — bij dat laatste vraagt het
+   formulier om het totaalbedrag en rekent zelf om naar een maand-equivalent),
+   bron (doorverwijzing/social/website/...), waarde, startdatum, en optioneel
+   wie de cliënt heeft doorverwezen. Verschijnt meteen in de tabel en telt mee
+   in de kerncijfers.
 4. Kerncijfers bovenaan: actieve cliënten, MRR, acquisitiekosten voor de
    gekozen rapportagemaand (uitgaven ÷ nieuwe cliënten die maand),
    churn-percentage, en een geschatte CLV (customer lifetime value) — gebruikt
