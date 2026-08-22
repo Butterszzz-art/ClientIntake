@@ -3,8 +3,8 @@
 // Armans eigen bedrijfscijfers, niet cliëntdata die tussen apparaten hoeft te
 // synchroniseren. Gated achter dezelfde Firebase-login als coach.html.
 
-import { escapeHtml, num, downloadJson } from './utils.js?v=10';
-import { initCoachGate, lockNow } from './coach-auth.js?v=10';
+import { escapeHtml, num, downloadJson } from './utils.js?v=11';
+import { initCoachGate, lockNow } from './coach-auth.js?v=11';
 
 const STORAGE_KEY = 'ptBusinessTracker_v1';
 
@@ -105,6 +105,10 @@ function tierTagClass(tier) {
   return `tag--tier-${(tier || 'basis').toLowerCase()}`;
 }
 
+function facturatieLabel(billing) {
+  return billing === 'kwartaal' ? 'Per 3 maanden' : 'Maandelijks';
+}
+
 function funnelPerTier() {
   return TIERS.map((tier) => {
     const leads = state.leads.filter((l) => l.tier === tier);
@@ -178,9 +182,13 @@ function renderClients() {
     .forEach((c) => {
       const tr = document.createElement('tr');
       if (c.churnDatum) tr.classList.add('rij-gestopt');
+      const facturatieCel = c.billing === 'kwartaal' && c.totaalBetaald
+        ? `${facturatieLabel(c.billing)} <span class="hint">(${fmtEuro(c.totaalBetaald)} totaal)</span>`
+        : facturatieLabel(c.billing);
       tr.innerHTML = `
         <td>${escapeHtml(c.naam)}</td>
         <td><span class="tag ${tierTagClass(c.tier)}">${escapeHtml(c.tier || 'Basis')}</span></td>
+        <td>${facturatieCel}</td>
         <td>${escapeHtml(c.bron)}</td>
         <td>${fmtEuro(c.waarde)}</td>
         <td>${c.start}</td>
@@ -264,6 +272,7 @@ function renderLeads() {
           : '<span class="tag tag--lead-in-behandeling">In behandeling</span>';
       tr.innerHTML = `
         <td><span class="tag ${tierTagClass(lead.tier)}">${escapeHtml(lead.tier)}</span></td>
+        <td>${facturatieLabel(lead.billing)}</td>
         <td>${lead.datum}</td>
         <td>${statusTag}</td>
         <td class="rij-acties">
@@ -289,17 +298,42 @@ function renderAlles() {
 
 // ---------- Event wiring ----------
 
+// Bij "per 3 maanden" vult de coach het totaal vooruitbetaalde bedrag in
+// (bv. €700), maar MRR/CLV/funnel-cijfers verwachten overal een
+// maand-equivalent — dat wordt hier omgerekend en apart bewaard als
+// `totaalBetaald` zodat de rauwe factuur nog zichtbaar blijft in de tabel.
+function updateWaardeVeldVoorFacturatie() {
+  const facturatie = document.getElementById('c-facturatie').value;
+  const label = document.getElementById('c-waarde-label');
+  const hint = document.getElementById('c-waarde-hint');
+  if (facturatie === 'kwartaal') {
+    label.textContent = 'Totaal betaald voor 3 maanden (€)';
+    hint.textContent = 'Wordt intern als maand-equivalent bewaard, zodat MRR/CLV vergelijkbaar blijven tussen tiers.';
+  } else {
+    label.textContent = 'Waarde per maand (€)';
+    hint.textContent = '';
+  }
+}
+
 function wireEvents() {
   monthSelect.value = huidigeMaandSleutel();
 
+  document.getElementById('c-facturatie').addEventListener('change', updateWaardeVeldVoorFacturatie);
+  updateWaardeVeldVoorFacturatie();
+
   document.getElementById('client-form').addEventListener('submit', (e) => {
     e.preventDefault();
+    const facturatie = document.getElementById('c-facturatie').value;
+    const ruweWaarde = num(document.getElementById('c-waarde').value, 0);
+    const maandEquivalent = facturatie === 'kwartaal' ? ruweWaarde / 3 : ruweWaarde;
     state.clients.push({
       id: uid(),
       naam: document.getElementById('c-naam').value.trim(),
       tier: document.getElementById('c-tier').value,
+      billing: facturatie,
+      totaalBetaald: facturatie === 'kwartaal' ? ruweWaarde : null,
       bron: document.getElementById('c-bron').value,
-      waarde: num(document.getElementById('c-waarde').value, 0),
+      waarde: maandEquivalent,
       start: document.getElementById('c-start').value,
       churnDatum: null,
       doorverwezenDoor: document.getElementById('c-doorverwezen').value.trim() || null,
@@ -311,6 +345,7 @@ function wireEvents() {
     }
     bewaarState();
     e.target.reset();
+    updateWaardeVeldVoorFacturatie();
     renderAlles();
   });
 
@@ -377,6 +412,8 @@ function wireEvents() {
       // coach het formulier daadwerkelijk verstuurt (zie client-form hierboven).
       inBehandelingLeadId = id;
       document.getElementById('c-tier').value = lead.tier;
+      document.getElementById('c-facturatie').value = lead.billing === 'kwartaal' ? 'kwartaal' : 'maandelijks';
+      updateWaardeVeldVoorFacturatie();
       document.getElementById('c-naam').focus();
       document.getElementById('client-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else if (actie === 'wijs-lead-af') {
