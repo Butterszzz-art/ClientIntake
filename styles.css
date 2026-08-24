@@ -872,9 +872,9 @@ html { scroll-behavior: smooth; }
 
 .price-card h3 { font-size: 1.35rem; margin-bottom: 0.4rem; }
 
-.price-card .prijs { font-family: var(--font-data); color: var(--accent); font-size: 0.95rem; margin: 0; }
+.price-card .prijs { font-family: var(--font-data); color: var(--accent); font-size: 0.95rem; margin: 0; line-height: 1.5; }
 .price-card .prijs .bedrag { font-size: 1.6rem; font-weight: 600; }
-.price-card .prijs-sub { font-family: var(--font-data); font-size: 0.72rem; color: var(--text-dim); margin: -0.85rem 0 1.25rem; min-height: 1em; }
+.price-card .prijs-sub { font-family: var(--font-data); font-size: 0.72rem; color: var(--text-dim); margin: 0.35rem 0 1.25rem; min-height: 1em; }
 
 .price-card ul { list-style: none; margin: 0 0 1.75rem; padding: 0; flex: 1; }
 
