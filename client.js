@@ -1,10 +1,10 @@
-import { downloadJson } from './utils.js?v=11';
+import { downloadJson } from './utils.js?v=13';
 import {
   maakLeegClient, initTagInputs, initFileInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij, renderApparatuurChecklist,
   toggleePedsDisclaimer,
-} from './intake-form.js?v=11';
-import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=11';
-import { db, storage } from './firebase.js?v=11';
+} from './intake-form.js?v=13';
+import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=13';
+import { db, storage } from './firebase.js?v=13';
 import { doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 
@@ -18,6 +18,20 @@ const TAAL_KEY = 'pt-intake:client-taal:v1';
 // client-side code (Web3Forms rate-limits by key, no secret is involved).
 const WEB3FORMS_ACCESS_KEY = '4e27ae27-18e9-4a54-bdc7-bd8c4e316a48';
 const WEB3FORMS_ENDPOINT = 'https://api.web3forms.com/submit';
+
+// Pocket Coach's real backend — dual-write target alongside this app's own
+// Firestore project. Public, unauthenticated, rate-limited server-side
+// (POST /api/intake in traininglog-backend-sync). Fire-and-forget, same as
+// the Web3Forms email below: this app's own `clients` Firestore write
+// (further down in verstuur()) stays the source of truth for THIS app's own
+// coach.html dashboard and for the status shown to the client on this page.
+//
+// Deployed as a Firebase Cloud Function (Render was retired) — the base URL
+// is https://us-central1-pocketcoach-280c4.cloudfunctions.net/api because
+// the function itself is named "api"; server.js's own /api/intake route
+// then appends on top of that, hence the doubled /api/api/intake below.
+// That's correct, not a typo.
+const POCKET_COACH_API = 'https://us-central1-pocketcoach-280c4.cloudfunctions.net/api/api/intake';
 
 let huidigClient = null;
 let huidigeTaal = 'nl';
@@ -197,6 +211,18 @@ async function verstuurNaarArman(client) {
   return result.success === true;
 }
 
+// Best-effort dual-write to Pocket Coach's backend. Silently swallows any
+// failure (network error, 503 if INTAKE_COACH_USERNAME isn't configured
+// server-side, rate limit, ...) — this app's own Firestore write is still
+// what determines the status shown to the client, exactly like verstuurNaarArman.
+async function verstuurNaarPocketCoach(client) {
+  await fetch(POCKET_COACH_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ intake: client.intake, instellingen: client.instellingen || {} }),
+  });
+}
+
 // Independent of Web3Forms entirely — a real client submission once showed
 // "sent successfully" here but never arrived by email, so this always-visible
 // mailto link gives a second channel that doesn't depend on that service at all.
@@ -232,6 +258,11 @@ async function verstuur() {
   // Fire-and-forget heads-up email — independent of the Firestore write
   // below, which is the actual source of truth for the coach dashboard.
   verstuurNaarArman(huidigClient).catch(() => {});
+
+  // Fire-and-forget dual-write to Pocket Coach's own backend (see
+  // POCKET_COACH_API above) — likewise independent of this app's own
+  // Firestore write below.
+  verstuurNaarPocketCoach(huidigClient).catch(() => {});
 
   try {
     await setDoc(doc(db, 'clients', huidigClient.id), huidigClient);
