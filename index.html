@@ -12,6 +12,12 @@
 </head>
 <body class="marketing-page">
 
+<div class="intro-overlay" id="introOverlay" aria-hidden="true">
+  <div class="intro-mark">AB</div>
+  <div class="intro-line"></div>
+  <div class="intro-tag" data-i18n="hero.eyebrow">Evidence-based physique coaching</div>
+</div>
+
 <nav class="marketing-nav">
   <div class="marketing-container marketing-nav-inner">
     <a class="marketing-brand" href="index.html">
@@ -53,11 +59,11 @@
   </div>
   <div class="marketing-container marketing-hero-grid">
     <div>
-      <span class="marketing-eyebrow" data-i18n="hero.eyebrow">Evidence-based physique coaching</span>
-      <h1 data-i18n-html="hero.h1">Potential is only<br>defined once the<br><span class="hl">result is achieved</span></h1>
-      <p class="marketing-hero-sub" data-i18n="hero.sub">Evidence-based physique transformations for all levels and goals — built on programming that's actually structured to get you there, not just through the next four weeks.</p>
-      <div class="marketing-hero-actions">
-        <a class="btn btn--accent" href="intake.html" data-i18n="hero.actionPrimary">Start your intake</a>
+      <span class="marketing-eyebrow intro-reveal intro-reveal--1" data-i18n="hero.eyebrow">Evidence-based physique coaching</span>
+      <h1 class="intro-reveal-clip intro-reveal--2" data-i18n-html="hero.h1">Potential is only<br>defined once the<br><span class="hl">result is achieved</span></h1>
+      <p class="marketing-hero-sub intro-reveal intro-reveal--3" data-i18n="hero.sub">Evidence-based physique transformations for all levels and goals — built on programming that's actually structured to get you there, not just through the next four weeks.</p>
+      <div class="marketing-hero-actions intro-reveal intro-reveal--4">
+        <a class="btn btn--accent hero-cta-pulse" href="intake.html" data-i18n="hero.actionPrimary">Start your intake</a>
         <a class="secondary" href="#proces" data-i18n="hero.actionSecondary">See how it works →</a>
       </div>
     </div>
@@ -91,11 +97,27 @@
   </div>
 </header>
 
+<div class="marketing-ticker" aria-hidden="true">
+  <div class="marketing-ticker-track">
+    <span data-i18n="ticker.item1">Hypertrophy research</span><span class="marketing-ticker-dot">/</span>
+    <span data-i18n="ticker.item2">Periodization</span><span class="marketing-ticker-dot">/</span>
+    <span data-i18n="ticker.item3">Recovery</span><span class="marketing-ticker-dot">/</span>
+    <span data-i18n="ticker.item4">Block progression</span><span class="marketing-ticker-dot">/</span>
+    <span data-i18n="ticker.item5">Year-round structure</span><span class="marketing-ticker-dot">/</span>
+    <span data-i18n="ticker.item1">Hypertrophy research</span><span class="marketing-ticker-dot">/</span>
+    <span data-i18n="ticker.item2">Periodization</span><span class="marketing-ticker-dot">/</span>
+    <span data-i18n="ticker.item3">Recovery</span><span class="marketing-ticker-dot">/</span>
+    <span data-i18n="ticker.item4">Block progression</span><span class="marketing-ticker-dot">/</span>
+    <span data-i18n="ticker.item5">Year-round structure</span><span class="marketing-ticker-dot">/</span>
+  </div>
+</div>
+
 <section id="aanpak" class="marketing-section">
   <div class="marketing-container">
-    <div class="marketing-section-head">
+    <div class="marketing-section-head reveal">
       <span class="marketing-eyebrow" data-i18n="approach.eyebrow">The approach</span>
       <h2 data-i18n="approach.h2">Coaching, not guesswork.</h2>
+      <span class="section-head-bar" aria-hidden="true"></span>
     </div>
     <div class="approach-body reveal">
       <p data-i18n="approach.p1">Most coaching is either a recycled template or gym-floor guesswork dressed up as expertise. This is neither. Every program is built on current research in hypertrophy, periodization, and recovery — then adapted to how you actually respond, not what a textbook says you should.</p>
@@ -106,7 +128,7 @@
 
 <section id="specs" class="marketing-section alt">
   <div class="marketing-container">
-    <div class="marketing-section-head">
+    <div class="marketing-section-head reveal">
       <span class="marketing-eyebrow" data-i18n="specs.eyebrow">What this looks like in practice</span>
       <h2 data-i18n="specs.h2">Three things that don't change.</h2>
     </div>
@@ -115,16 +137,19 @@
         <span class="spec-tag" data-i18n="specs.row1.tag">Level</span>
         <h3 data-i18n="specs.row1.h3">For all levels</h3>
         <p class="spec-desc" data-i18n="specs.row1.desc">Physique transformation coaching for first-timers and seasoned competitors alike — the principles scale, but the execution never gets diluted for either end.</p>
+        <div class="spec-bar"><div class="spec-bar-track"><div class="spec-bar-fill"></div></div><span class="spec-bar-label" data-i18n="specs.row1.barLabel">Scales 1:1</span></div>
       </div>
       <div class="spec-row">
         <span class="spec-tag" data-i18n="specs.row2.tag">Programming</span>
         <h3 data-i18n="specs.row2.h3">Built around you</h3>
         <p class="spec-desc" data-i18n="specs.row2.desc">Programming is built around your goals and your limitations — old injuries, schedule, equipment, preferences — not forced into a template that pretends they don't exist.</p>
+        <div class="spec-bar"><div class="spec-bar-track"><div class="spec-bar-fill"></div></div><span class="spec-bar-label" data-i18n="specs.row2.barLabel">No templates</span></div>
       </div>
       <div class="spec-row">
         <span class="spec-tag" data-i18n="specs.row3.tag">Structure</span>
         <h3 data-i18n="specs.row3.h3">Built to last</h3>
         <p class="spec-desc" data-i18n="specs.row3.desc">Year-round programming with structured progression, block by block, so results compound over a year instead of resetting every few weeks.</p>
+        <div class="spec-bar"><div class="spec-bar-track"><div class="spec-bar-fill"></div></div><span class="spec-bar-label" data-i18n="specs.row3.barLabel">52 weeks</span></div>
       </div>
     </div>
   </div>
@@ -132,22 +157,25 @@
 
 <section id="proces" class="marketing-section">
   <div class="marketing-container">
-    <div class="marketing-section-head">
+    <div class="marketing-section-head reveal">
       <span class="marketing-eyebrow" data-i18n="process.eyebrow">How it starts</span>
       <h2 data-i18n="process.h2">Three steps in.</h2>
     </div>
     <div class="process-list reveal">
       <div class="process-item tilt-card">
+        <span class="process-item-accent" aria-hidden="true"></span>
         <span class="num mono">01</span>
         <h3 data-i18n="process.step1.h3">Intake</h3>
         <p data-i18n="process.step1.p">A full look at your goals, training history, limitations, and schedule — before a single set is programmed.</p>
       </div>
       <div class="process-item tilt-card">
+        <span class="process-item-accent" aria-hidden="true"></span>
         <span class="num mono">02</span>
         <h3 data-i18n="process.step2.h3">Programming</h3>
         <p data-i18n="process.step2.p">A structured plan built specifically around what came out of the intake — not adjusted from a template.</p>
       </div>
       <div class="process-item tilt-card">
+        <span class="process-item-accent" aria-hidden="true"></span>
         <span class="num mono">03</span>
         <h3 data-i18n="process.step3.h3">Execution &amp; adjustment</h3>
         <p data-i18n="process.step3.p">Ongoing coaching, tracked progress, and programming that keeps adapting as you do — block by block, year-round.</p>
@@ -158,7 +186,7 @@
 
 <section id="prijzen" class="marketing-section alt">
   <div class="marketing-container">
-    <div class="marketing-section-head">
+    <div class="marketing-section-head reveal">
       <span class="marketing-eyebrow" data-i18n="pricing.eyebrow">Pricing</span>
       <h2 data-i18n="pricing.h2">Three levels of access.</h2>
       <p data-i18n="pricing.sub">Same evidence-based approach at every level — the difference is contact frequency, flexibility, and how much day-to-day adjustment is included.</p>
@@ -215,7 +243,7 @@
 </section>
 
 <section class="marketing-cta">
-  <div class="marketing-container">
+  <div class="marketing-container reveal">
     <span class="marketing-eyebrow" data-i18n="cta.eyebrow">Get started</span>
     <h2 data-i18n="cta.h2">Let's define your potential.</h2>
     <p data-i18n="cta.p">The first step is a short intake — your goals, your history, your limitations. No commitment beyond that.</p>
@@ -233,6 +261,24 @@
 <script>
 (function () {
   document.getElementById('year').textContent = new Date().getFullYear();
+
+  const reduceMotion = window.matchMedia
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    : false;
+
+  // Intro splash: pure CSS handles hiding it (animation `forwards` leaves it
+  // opacity:0/visibility:hidden), this just also flips on [hidden] afterwards
+  // so it stops painting/blocking entirely. Falls back to an immediate hide
+  // if animationend never fires (reduced motion, older browsers).
+  const introOverlay = document.getElementById('introOverlay');
+  if (introOverlay) {
+    if (reduceMotion) {
+      introOverlay.hidden = true;
+    } else {
+      introOverlay.addEventListener('animationend', () => { introOverlay.hidden = true; });
+      setTimeout(() => { introOverlay.hidden = true; }, 3000);
+    }
+  }
 
   // ---- Taal (i18n) ----
   // Zelfstandig woordenboek voor deze pagina — index.html deelt geen module
@@ -266,6 +312,11 @@
       'pg.caption': 'No two blocks are identical — every one is built on how the last one actually went.',
       'pg.tooltipPeak': ' — peak week',
       'pg.tooltipWeek': ' — week ',
+      'ticker.item1': 'Hypertrophy research',
+      'ticker.item2': 'Periodization',
+      'ticker.item3': 'Recovery',
+      'ticker.item4': 'Block progression',
+      'ticker.item5': 'Year-round structure',
       'approach.eyebrow': 'The approach',
       'approach.h2': 'Coaching, not guesswork.',
       'approach.p1': 'Most coaching is either a recycled template or gym-floor guesswork dressed up as expertise. This is neither. Every program is built on current research in hypertrophy, periodization, and recovery — then adapted to how you actually respond, not what a textbook says you should.',
@@ -275,12 +326,15 @@
       'specs.row1.tag': 'Level',
       'specs.row1.h3': 'For all levels',
       'specs.row1.desc': 'Physique transformation coaching for first-timers and seasoned competitors alike — the principles scale, but the execution never gets diluted for either end.',
+      'specs.row1.barLabel': 'Scales 1:1',
       'specs.row2.tag': 'Programming',
       'specs.row2.h3': 'Built around you',
       'specs.row2.desc': "Programming is built around your goals and your limitations — old injuries, schedule, equipment, preferences — not forced into a template that pretends they don't exist.",
+      'specs.row2.barLabel': 'No templates',
       'specs.row3.tag': 'Structure',
       'specs.row3.h3': 'Built to last',
       'specs.row3.desc': 'Year-round programming with structured progression, block by block, so results compound over a year instead of resetting every few weeks.',
+      'specs.row3.barLabel': '52 weeks',
       'process.eyebrow': 'How it starts',
       'process.h2': 'Three steps in.',
       'process.step1.h3': 'Intake',
@@ -350,6 +404,11 @@
       'pg.caption': 'Geen twee blokken zijn identiek — elk blok is gebouwd op hoe het vorige daadwerkelijk ging.',
       'pg.tooltipPeak': ' — piekweek',
       'pg.tooltipWeek': ' — week ',
+      'ticker.item1': 'Hypertrofie-onderzoek',
+      'ticker.item2': 'Periodisering',
+      'ticker.item3': 'Herstel',
+      'ticker.item4': 'Blokopbouw',
+      'ticker.item5': 'Structuur het hele jaar door',
       'approach.eyebrow': 'De aanpak',
       'approach.h2': 'Coaching, geen giswerk.',
       'approach.p1': 'De meeste coaching is óf een gerecycled template, óf giswerk op de gym-vloer verpakt als expertise. Dit is geen van beide. Elk programma is gebouwd op actueel onderzoek naar hypertrofie, periodisering en herstel — en wordt daarna aangepast aan hoe jij daadwerkelijk reageert, niet aan wat een boek zegt dat zou moeten.',
@@ -359,12 +418,15 @@
       'specs.row1.tag': 'Niveau',
       'specs.row1.h3': 'Voor elk niveau',
       'specs.row1.desc': 'Fysiektransformatie-coaching voor beginners én ervaren wedstrijdatleten — de principes schalen mee, maar de uitvoering wordt voor geen van beide uitgehold.',
+      'specs.row1.barLabel': 'Schaalt 1:1',
       'specs.row2.tag': 'Programmering',
       'specs.row2.h3': 'Gebouwd rond jou',
       'specs.row2.desc': "Programmering wordt gebouwd rond jouw doelen én jouw beperkingen — oude blessures, agenda, materiaal, voorkeuren — niet in een template geperst die doet alsof die niet bestaan.",
+      'specs.row2.barLabel': 'Geen templates',
       'specs.row3.tag': 'Structuur',
       'specs.row3.h3': 'Gebouwd om te blijven werken',
       'specs.row3.desc': 'Programmering voor het hele jaar, met gestructureerde progressie, blok voor blok, zodat resultaten zich opstapelen in plaats van elke paar weken weer bij nul te beginnen.',
+      'specs.row3.barLabel': '52 weken',
       'process.eyebrow': 'Hoe het begint',
       'process.h2': 'Drie stappen erin.',
       'process.step1.h3': 'Intake',
@@ -434,6 +496,11 @@
       'pg.caption': 'No hay dos bloques iguales — cada uno se construye según cómo fue realmente el anterior.',
       'pg.tooltipPeak': ' — semana pico',
       'pg.tooltipWeek': ' — semana ',
+      'ticker.item1': 'Investigación en hipertrofia',
+      'ticker.item2': 'Periodización',
+      'ticker.item3': 'Recuperación',
+      'ticker.item4': 'Progresión por bloques',
+      'ticker.item5': 'Estructura todo el año',
       'approach.eyebrow': 'El enfoque',
       'approach.h2': 'Coaching, no suposiciones.',
       'approach.p1': 'La mayoría del coaching es una plantilla reciclada o suposiciones de gimnasio disfrazadas de experiencia. Esto no es ninguna de las dos. Cada programa se basa en investigación actual sobre hipertrofia, periodización y recuperación — y luego se adapta a cómo respondes realmente, no a lo que dice un libro que deberías hacer.',
@@ -443,12 +510,15 @@
       'specs.row1.tag': 'Nivel',
       'specs.row1.h3': 'Para todos los niveles',
       'specs.row1.desc': 'Coaching de transformación física tanto para principiantes como para competidores experimentados — los principios se adaptan, pero la ejecución nunca se diluye para ninguno de los dos.',
+      'specs.row1.barLabel': 'Escala 1:1',
       'specs.row2.tag': 'Programación',
       'specs.row2.h3': 'Construido en torno a ti',
       'specs.row2.desc': 'La programación se construye en torno a tus objetivos y tus limitaciones — lesiones antiguas, agenda, equipamiento, preferencias — sin forzarla en una plantilla que finge que no existen.',
+      'specs.row2.barLabel': 'Sin plantillas',
       'specs.row3.tag': 'Estructura',
       'specs.row3.h3': 'Construido para durar',
       'specs.row3.desc': 'Programación durante todo el año con progresión estructurada, bloque por bloque, para que los resultados se acumulen durante un año en lugar de reiniciarse cada pocas semanas.',
+      'specs.row3.barLabel': '52 semanas',
       'process.eyebrow': 'Cómo empieza',
       'process.h2': 'Tres pasos para entrar.',
       'process.step1.h3': 'Admisión',
@@ -518,6 +588,11 @@
       'pg.caption': 'Nenhum bloco é igual ao outro — cada um é construído com base em como o anterior realmente foi.',
       'pg.tooltipPeak': ' — semana de pico',
       'pg.tooltipWeek': ' — semana ',
+      'ticker.item1': 'Pesquisa em hipertrofia',
+      'ticker.item2': 'Periodização',
+      'ticker.item3': 'Recuperação',
+      'ticker.item4': 'Progressão por blocos',
+      'ticker.item5': 'Estrutura o ano todo',
       'approach.eyebrow': 'A abordagem',
       'approach.h2': 'Coaching, não achismo.',
       'approach.p1': 'A maioria do coaching é um modelo reciclado ou achismo de academia disfarçado de expertise. Isto não é nenhum dos dois. Todo programa é construído com base em pesquisas atuais sobre hipertrofia, periodização e recuperação — e depois adaptado a como você realmente responde, não ao que um livro diz que você deveria fazer.',
@@ -527,12 +602,15 @@
       'specs.row1.tag': 'Nível',
       'specs.row1.h3': 'Para todos os níveis',
       'specs.row1.desc': 'Coaching de transformação física tanto para iniciantes quanto para competidores experientes — os princípios se ajustam, mas a execução nunca é diluída para nenhum dos dois.',
+      'specs.row1.barLabel': 'Escala 1:1',
       'specs.row2.tag': 'Programação',
       'specs.row2.h3': 'Construído em torno de você',
       'specs.row2.desc': 'A programação é construída em torno dos seus objetivos e das suas limitações — lesões antigas, agenda, equipamento, preferências — sem forçá-la em um modelo que finge que elas não existem.',
+      'specs.row2.barLabel': 'Sem modelos prontos',
       'specs.row3.tag': 'Estrutura',
       'specs.row3.h3': 'Construído para durar',
       'specs.row3.desc': 'Programação para o ano todo, com progressão estruturada, bloco por bloco, para que os resultados se acumulem ao longo de um ano em vez de reiniciar a cada poucas semanas.',
+      'specs.row3.barLabel': '52 semanas',
       'process.eyebrow': 'Como começa',
       'process.h2': 'Três passos para entrar.',
       'process.step1.h3': 'Admissão',
@@ -622,6 +700,26 @@
     return '€' + Math.round(n).toLocaleString('nl-NL');
   }
 
+  // Counts the displayed amount up/down to the new value instead of just
+  // swapping the text, so toggling billing reads as a change rather than a
+  // page-flash. Skipped entirely under prefers-reduced-motion.
+  function animateAmount(el, target) {
+    if (!el) return;
+    if (reduceMotion) { el.textContent = fmtEuro(target); return; }
+    const from = Number(String(el.textContent).replace(/[^0-9]/g, ''));
+    if (!Number.isFinite(from)) { el.textContent = fmtEuro(target); return; }
+    const dur = 500;
+    const t0 = performance.now();
+    if (el._raf) cancelAnimationFrame(el._raf);
+    const tick = (now) => {
+      const p = Math.min(1, (now - t0) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmtEuro(from + (target - from) * eased);
+      if (p < 1) el._raf = requestAnimationFrame(tick);
+    };
+    el._raf = requestAnimationFrame(tick);
+  }
+
   let currentBilling = 'maandelijks';
 
   function renderPrices(billing) {
@@ -635,11 +733,11 @@
       if (!maandelijks || !kwartaal) return;
       const besparingPct = Math.round((1 - kwartaal / (maandelijks * 3)) * 100);
       if (billing === 'kwartaal') {
-        amountEl.textContent = fmtEuro(kwartaal);
+        animateAmount(amountEl, kwartaal);
         periodEl.textContent = dict['pricing.perQuarter'];
         subEl.textContent = dict['pricing.quarterlySub'].replace('{amount}', fmtEuro(kwartaal / 3));
       } else {
-        amountEl.textContent = fmtEuro(maandelijks);
+        animateAmount(amountEl, maandelijks);
         periodEl.textContent = dict['pricing.perMonth'];
         subEl.textContent = dict['pricing.monthlySub'].replace('{pct}', besparingPct);
       }
@@ -669,13 +767,11 @@
     navToggle.setAttribute('aria-expanded', String(isOpen));
   });
 
-  const reduceMotion = window.matchMedia
-    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    : false;
-
-  // Animate bars to their data-h height once in view
+  // Animate bars to their data-h height once in view, cascading left to
+  // right/bottom to top instead of all growing in lockstep.
   function growBars() {
-    document.querySelectorAll('.bar').forEach(bar => {
+    document.querySelectorAll('.bar').forEach((bar, i) => {
+      bar.style.transitionDelay = reduceMotion ? '0s' : (i * 0.045) + 's';
       bar.style.height = bar.dataset.h + '%';
     });
   }
