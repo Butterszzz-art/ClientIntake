@@ -49,9 +49,9 @@ const POCKET_COACH_API = 'https://us-central1-pocketcoach-280c4.cloudfunctions.n
 // (EmailJS)" voor de stappen. Vul hieronder je eigen IDs/sleutel in; zonder
 // geldige waarden slaat verstuurBetaalinstructies() de verzending gewoon over
 // (de betaalgegevens blijven dan alsnog zichtbaar op het bedankt-scherm).
-const EMAILJS_PUBLIC_KEY = 'VUL_HIER_JE_EMAILJS_PUBLIC_KEY_IN';
-const EMAILJS_SERVICE_ID = 'VUL_HIER_JE_EMAILJS_SERVICE_ID_IN';
-const EMAILJS_TEMPLATE_ID = 'VUL_HIER_JE_EMAILJS_TEMPLATE_ID_IN';
+const EMAILJS_PUBLIC_KEY = 'W1jJV_fEgRyTSV_K4';
+const EMAILJS_SERVICE_ID = 'service_dm9j8sm';
+const EMAILJS_TEMPLATE_ID = 'template_romgynv';
 
 // Jouw bankgegevens — komen letterlijk op het bedankt-scherm en in de e-mail
 // naar de cliënt te staan. Dit is normale, publieke informatie om te delen
