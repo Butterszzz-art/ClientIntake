@@ -7,7 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=14">
+<link rel="stylesheet" href="styles.css?v=17">
+<!-- EmailJS: sends the payment-instructions email to the client after submit
+     (see BANKGEGEVENS / EMAILJS_* config at the top of client.js). No secret
+     key involved — the public key only identifies the account, same as
+     Firebase's apiKey (see README.md, "Betaalinstructies e-mail"). -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -40,6 +45,12 @@
     <p class="hint" data-i18n="form.intro">Hoi, ik ben Arman Bahali — dit formulier komt rechtstreeks bij mij persoonlijk binnen,
       niet bij een team. Vul het zo volledig en eerlijk mogelijk in zodat ik je goed kan leren kennen voordat we beginnen.
       Na het versturen wordt je intake automatisch naar mij gemaild; je krijgt daarnaast ook een bestand als eigen back-up.</p>
+
+    <!-- Alleen zichtbaar als er via een prijs-tier op de homepage is doorgeklikt
+         (?tier=...&billing=...&amount=... in de URL) — zie leesGekozenPakket() in client.js. -->
+    <div class="card pakket-banner" id="pakket-banner" hidden>
+      <p id="pakket-banner-tekst"></p>
+    </div>
 
     <form id="intake-form">
 
@@ -334,6 +345,24 @@
       <p><span data-i18n="bedankt.kopieVoor">Er is ook een kopie gedownload als</span> <code id="bedankt-bestandsnaam"></code> <span data-i18n="bedankt.kopieNa">— bewaar die zelf als back-up.</span></p>
       <p class="hint" data-i18n="bedankt.hint">Lukt het versturen onverhoopt niet? Stuur dat bestand dan even naar mij (Arman) via WhatsApp of
         e-mail. Het bevat persoonlijke gegevens (o.a. gewicht en blessures) — stuur het daarom alleen rechtstreeks naar mij.</p>
+
+      <!-- Alleen zichtbaar als er een pakket gekozen is (zie pakket-banner
+           hierboven) — toont dezelfde betaalgegevens die ook per e-mail gaan
+           (via EmailJS, zie client.js), zodat dit niet van die e-mail afhangt. -->
+      <div class="card betaal-instructies" id="betaal-instructies" hidden>
+        <h3 data-i18n="betaal.titel">Rond je inschrijving af</h3>
+        <p data-i18n="betaal.intro">Maak het onderstaande bedrag over om je plek te bevestigen. Zodra ik de betaling zie, ben je officieel ingeschreven.</p>
+        <dl class="betaal-gegevens">
+          <div><dt data-i18n="betaal.pakket">Pakket</dt><dd id="betaal-pakket"></dd></div>
+          <div><dt data-i18n="betaal.bedrag">Bedrag</dt><dd id="betaal-bedrag"></dd></div>
+          <div><dt data-i18n="betaal.rekeninghouder">Rekeninghouder</dt><dd id="betaal-rekeninghouder"></dd></div>
+          <div><dt>IBAN</dt><dd id="betaal-iban"></dd></div>
+          <div><dt>BIC</dt><dd id="betaal-bic"></dd></div>
+          <div><dt data-i18n="betaal.referentie">Omschrijving (graag vermelden)</dt><dd id="betaal-referentie"></dd></div>
+        </dl>
+        <p class="hint" data-i18n="betaal.emailHint">Je ontvangt deze gegevens ook per e-mail, samen met een bevestiging dat je aanmelding is ontvangen.</p>
+      </div>
+
       <div class="bedankt-acties">
         <a class="btn btn--accent" id="btn-mail-backup" href="#" data-i18n="btn.mailBackup">Mail dit bestand naar Arman</a>
         <button type="button" class="btn btn--ghost" id="btn-opnieuw-downloaden" data-i18n="btn.opnieuwDownloaden">Bestand opnieuw downloaden</button>
@@ -344,6 +373,6 @@
 
 </main>
 
-<script type="module" src="client.js?v=14"></script>
+<script type="module" src="client.js?v=15"></script>
 </body>
 </html>

@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=16">
+<link rel="stylesheet" href="styles.css?v=17">
 </head>
 <body class="marketing-page">
 
@@ -846,9 +846,22 @@
   }
 
   document.querySelectorAll('.tier-cta').forEach((btn) => {
-    // Gewone <a href="intake.html">-link: alleen de lead loggen, de browser
-    // handelt de navigatie zelf af (werkt dus ook als deze JS ooit faalt).
-    btn.addEventListener('click', () => logTierLead(btn.dataset.tier, currentBilling));
+    // Gewone <a href="intake.html">-link: de browser handelt de navigatie
+    // zelf af (werkt dus ook als deze JS ooit faalt) — we loggen de lead en
+    // hangen vóór die navigatie nog ?tier=...&billing=...&amount=... aan de
+    // href, zodat intake.html weet welk pakket gekozen is (zie
+    // leesGekozenPakket() in client.js, voor de betaalinstructies-e-mail).
+    btn.addEventListener('click', () => {
+      logTierLead(btn.dataset.tier, currentBilling);
+      const card = btn.closest('.price-card');
+      const bedrag = card
+        ? (currentBilling === 'kwartaal' ? card.dataset.priceQuarter : card.dataset.priceMonthly)
+        : null;
+      if (bedrag) {
+        const params = new URLSearchParams({ tier: btn.dataset.tier, billing: currentBilling, amount: bedrag });
+        btn.href = `intake.html?${params.toString()}`;
+      }
+    });
   });
 
   // ---- 3D-interactiviteit (helemaal overgeslagen bij prefers-reduced-motion) ----
