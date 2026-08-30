@@ -13,13 +13,39 @@ const STORAGE_KEY = 'ptBusinessTracker_v1';
 // niet meer met een tier hier.
 const TIERS = ['Basis', 'Medium', 'Premium'];
 
+// Aantal ad-hoc dieet-/programma-aanpassingen dat per kalendermaand is
+// inbegrepen, per tier (zie de prijzentabel: Medium heeft er 2/maand
+// inbegrepen, Premium onbeperkt, Basis geen). Dit telt alleen substantiële
+// aanpassingsverzoeken (een programma of dieet herzien) — echte
+// veiligheids-/welzijnsberichten worden bij elke tier altijd gehoord en
+// vallen hier dus buiten.
+const AANPASSING_CAPS = { Basis: 0, Medium: 2, Premium: Infinity };
+
+// Aantal dagen na de startdatum waarna een cliënt zonder app-toegang en/of
+// zonder ebook nog als "recent gestart, nog niet afgehandeld" telt in plaats
+// van als iets dat écht is blijven liggen.
+const ONBOARDING_WAARSCHUWING_DAGEN = 3;
+
+// Vult per cliënt ontbrekende velden aan met hun default, zodat oudere
+// back-ups (van vóór aanpassing-tracking / de onboarding-checklist) zonder
+// fouten laden. Gedeeld door laadState() en de import-back-up-handler
+// hieronder, zodat beide dezelfde defaults toepassen.
+function normaliseerClienten(clients) {
+  return (clients || []).map((c) => ({
+    aanpassingen: [],
+    appAccessGranted: false,
+    ebookSent: false,
+    ...c,
+  }));
+}
+
 function laadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { clients: [], spend: [], leads: [], assumedRetentionMonths: 6 };
     const parsed = JSON.parse(raw);
     return {
-      clients: parsed.clients || [],
+      clients: normaliseerClienten(parsed.clients),
       spend: parsed.spend || [],
       leads: parsed.leads || [],
       assumedRetentionMonths: parsed.assumedRetentionMonths || 6,
@@ -37,6 +63,10 @@ function bewaarState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)
 // toevoegen"-formulier hem, na versturen, als geconverteerd kan markeren.
 let inBehandelingLeadId = null;
 
+// Welke cliënten hun aanpassing-geschiedenis uitgeklapt hebben staan. Puur
+// UI-state (niet bewaard) — reset bij een herlaad van de pagina.
+const uitgeklapteClienten = new Set();
+
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function maandSleutelVanDatum(dateStr) { return dateStr ? dateStr.slice(0, 7) : null; }
 function eersteVanMaand(maandSleutel) {
@@ -52,6 +82,24 @@ function maandenTussen(startStr, eindStr) {
   const eind = naarDatum(eindStr);
   const maanden = (eind.getFullYear() - start.getFullYear()) * 12 + (eind.getMonth() - start.getMonth());
   return Math.max(maanden, 0.5);
+}
+
+// Telt alleen de aanpassingen van deze cliënt die in de huidige kalendermaand
+// gelogd zijn — reset dus vanzelf elke maand, gebaseerd op de datum van de
+// aanpassing zelf (geen handmatige reset-knop nodig).
+function aanpassingenDezeMaand(client) {
+  const mk = huidigeMaandSleutel();
+  return (client.aanpassingen || []).filter((a) => datumInMaand(a.datum, mk)).length;
+}
+
+// True zodra de cliënt een paar dagen "oud" is maar app-toegang en/of ebook
+// nog niet zijn afgevinkt — een zachte prikkel zodat dit niet blijft liggen
+// zodra het cliëntenaantal groeit.
+function onboardingWaarschuwing(client) {
+  if (client.appAccessGranted && client.ebookSent) return false;
+  if (!client.start) return false;
+  const dagenSindsStart = (Date.now() - naarDatum(client.start).getTime()) / 86400000;
+  return dagenSindsStart > ONBOARDING_WAARSCHUWING_DAGEN;
 }
 
 function actiefBijStartVanMaand(maandSleutel) {
@@ -170,6 +218,44 @@ function renderMetrics() {
   ].join('');
 }
 
+// Aantal kolommen in de cliënt-tabel (zie de <thead> in business.html) —
+// gebruikt als colspan voor de uitklapbare aanpassing-geschiedenis-rij.
+const CLIENT_TABEL_KOLOMMEN = 11;
+
+function aanpassingCelHtml(c) {
+  const cap = AANPASSING_CAPS[c.tier];
+  const gebruikt = aanpassingenDezeMaand(c);
+  const heeftCap = cap !== undefined && cap !== Infinity;
+  const bovenCap = heeftCap && gebruikt >= cap;
+  const label = cap === Infinity ? `${gebruikt} (geen limiet)` : `${gebruikt} / ${cap ?? 0}`;
+  const uitgeklapt = uitgeklapteClienten.has(c.id);
+  return `
+    <div class="rij-acties">
+      <span class="tag ${bovenCap ? 'tag--boven-limiet' : ''}">${label}</span>
+      <button class="btn btn--ghost btn--small" data-actie="toggle-aanpassingen" data-id="${c.id}">${uitgeklapt ? 'Verberg' : 'Geschiedenis'}</button>
+      <button class="btn btn--ghost btn--small" data-actie="log-aanpassing" data-id="${c.id}">Log aanpassing</button>
+    </div>
+  `;
+}
+
+function onboardingCelHtml(c) {
+  const waarschuwing = onboardingWaarschuwing(c);
+  return `
+    <div class="onboarding-cel ${waarschuwing ? 'onboarding-cel--waarschuwing' : ''}">
+      <label class="checkbox-label" title="App-toegang verleend"><input type="checkbox" data-actie="toggle-app-toegang" data-id="${c.id}" ${c.appAccessGranted ? 'checked' : ''}> App</label>
+      <label class="checkbox-label" title="Ebook verstuurd"><input type="checkbox" data-actie="toggle-ebook" data-id="${c.id}" ${c.ebookSent ? 'checked' : ''}> Ebook</label>
+    </div>
+  `;
+}
+
+function aanpassingGeschiedenisRijHtml(c) {
+  const aanpassingen = (c.aanpassingen || []).slice().sort((a, b) => new Date(b.datum) - new Date(a.datum));
+  const inhoud = aanpassingen.length === 0
+    ? '<span class="hint">Nog geen aanpassingen gelogd.</span>'
+    : `<ul class="aanpassing-lijst">${aanpassingen.map((a) => `<li>${a.datum}${a.notitie ? ' — ' + escapeHtml(a.notitie) : ''}</li>`).join('')}</ul>`;
+  return `<tr class="aanpassing-geschiedenis-rij"><td colspan="${CLIENT_TABEL_KOLOMMEN}">${inhoud}</td></tr>`;
+}
+
 function renderClients() {
   const tbody = document.getElementById('client-tabel-body');
   const leeg = document.getElementById('client-leeg');
@@ -194,6 +280,8 @@ function renderClients() {
         <td>${c.start}</td>
         <td>${c.churnDatum ? `<span class="tag tag--gestopt">Gestopt ${c.churnDatum}</span>` : '<span class="tag tag--actief">Actief</span>'}</td>
         <td>${c.doorverwezenDoor ? escapeHtml(c.doorverwezenDoor) : '—'}</td>
+        <td>${aanpassingCelHtml(c)}</td>
+        <td>${onboardingCelHtml(c)}</td>
         <td class="rij-acties">
           ${c.churnDatum
             ? `<button class="btn btn--ghost btn--small" data-actie="heractiveer" data-id="${c.id}">Heractiveer</button>`
@@ -202,6 +290,9 @@ function renderClients() {
         </td>
       `;
       tbody.appendChild(tr);
+      if (uitgeklapteClienten.has(c.id)) {
+        tbody.insertAdjacentHTML('beforeend', aanpassingGeschiedenisRijHtml(c));
+      }
     });
 }
 
@@ -337,6 +428,9 @@ function wireEvents() {
       start: document.getElementById('c-start').value,
       churnDatum: null,
       doorverwezenDoor: document.getElementById('c-doorverwezen').value.trim() || null,
+      aanpassingen: [],
+      appAccessGranted: false,
+      ebookSent: false,
     });
     if (inBehandelingLeadId) {
       const lead = state.leads.find((l) => l.id === inBehandelingLeadId);
@@ -387,7 +481,33 @@ function wireEvents() {
         state.clients = state.clients.filter((c) => c.id !== id);
         bewaarState(); renderAlles();
       }
+    } else if (actie === 'log-aanpassing') {
+      const c = state.clients.find((c) => c.id === id);
+      if (!c) return;
+      // Optionele notitie via prompt() — zelfde patroon als de stopdatum
+      // hierboven bij "Markeer gestopt", geen apart modal-systeem nodig.
+      const notitie = prompt('Notitie voor deze aanpassing (optioneel)?', '');
+      if (notitie === null) return; // geannuleerd
+      if (!c.aanpassingen) c.aanpassingen = [];
+      c.aanpassingen.push({ id: uid(), datum: new Date().toISOString().slice(0, 10), notitie: notitie.trim() || null });
+      bewaarState();
+      renderAlles();
+    } else if (actie === 'toggle-aanpassingen') {
+      if (uitgeklapteClienten.has(id)) uitgeklapteClienten.delete(id); else uitgeklapteClienten.add(id);
+      renderClients();
     }
+  });
+
+  document.getElementById('client-tabel-body').addEventListener('change', (e) => {
+    const input = e.target.closest('input[type="checkbox"][data-actie]');
+    if (!input) return;
+    const c = state.clients.find((c) => c.id === input.dataset.id);
+    if (!c) return;
+    if (input.dataset.actie === 'toggle-app-toegang') c.appAccessGranted = input.checked;
+    else if (input.dataset.actie === 'toggle-ebook') c.ebookSent = input.checked;
+    else return;
+    bewaarState();
+    renderAlles();
   });
 
   document.getElementById('spend-tabel-body').addEventListener('click', (e) => {
@@ -437,7 +557,7 @@ function wireEvents() {
         const geimporteerd = JSON.parse(reader.result);
         if (confirm('Dit vervangt alle huidige data met de geïmporteerde back-up. Doorgaan?')) {
           state = {
-            clients: geimporteerd.clients || [],
+            clients: normaliseerClienten(geimporteerd.clients),
             spend: geimporteerd.spend || [],
             leads: geimporteerd.leads || [],
             assumedRetentionMonths: geimporteerd.assumedRetentionMonths || 6,
