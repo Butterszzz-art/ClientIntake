@@ -231,7 +231,7 @@ de rauwe oude labels in plaats van vertaalde labels.
 |---|---|
 | `index.html` | Publieke marketinghomepage (root) — statisch, geen database-koppeling, eindigt in een "Start intake"-link naar `intake.html` |
 | `intake.html` | Cliëntformulier — het enige wat cliënten *daadwerkelijk invullen* |
-| `client.js` | Logica voor `intake.html`: concept-autosave, versturen (Firestore-write + Web3Forms-mail + JSON-download), bedankt-scherm |
+| `client.js` | Logica voor `intake.html`: concept-autosave, versturen (Firestore-write + Web3Forms-mail + JSON-download), bedankt-scherm, betaalinstructies-e-mail naar de cliënt via EmailJS (zie "Betaalinstructies e-mail" hierboven) |
 | `coach.html` | Coach-dashboard — cliëntenlijst (live uit Firestore), intake (handmatige invoer), berekeningen, overzicht |
 | `app.js` | Logica voor `coach.html`: rendering, Firestore CRUD + live `onSnapshot`-lijst, export/import |
 | `business.html` | Business tracker (coach-only) — acquisitiekosten, churn, CLV, doorverwijs-ranglijst, prijs-tier-funnel & leads |
@@ -301,6 +301,58 @@ Een paar dingen om te weten:
   vooruitbetaling live zet (in Nederland/EU geldt normaal een
   bedenktermijn bij diensten op afstand) — controleer dit zelf of met een
   jurist voordat je dit gebruikt.
+
+### Betaalinstructies e-mail (EmailJS)
+
+Een klik op een prijs-tier hangt ook `?tier=...&billing=...&amount=...` aan
+de link naar `intake.html` (naast het loggen van de lead hierboven — zie de
+`.tier-cta`-click-handler in `index.html`). `intake.html` leest die
+parameters (`leesGekozenPakket()` in `client.js`) en toont daar een banner
+boven het formulier ("Je koos het pakket ..."). Rondt de bezoeker het
+formulier af, dan gebeurt er automatisch twee dingen extra, bovenop de
+gewone intake-afhandeling:
+
+1. Het bedankt-scherm toont meteen een **"Rond je inschrijving af"**-blok met
+   het gekozen pakket, het bedrag, je bankgegevens (`BANKGEGEVENS` in
+   `client.js`) en een betaalomschrijving (`<naam> — <tier>`) — zodat de
+   cliënt dit altijd ziet, ongeacht of de e-mail hieronder aankomt.
+2. Er gaat een **e-mail naar de cliënt** (niet naar jou — dat is nog steeds
+   Web3Forms, zie hierboven) met diezelfde gegevens plus een bevestiging dat
+   de aanmelding ontvangen is, via [EmailJS](https://www.emailjs.com/).
+   Web3Forms' gratis plan kan alleen náár jouw eigen inbox mailen, niet náár
+   een cliënt vanuit jouw adres — vandaar een tweede dienst specifiek hiervoor.
+
+**Eenmalige setup (moet je zelf doen — Claude Code kan geen account voor je
+aanmaken):**
+
+1. Maak een gratis account op [emailjs.com](https://www.emailjs.com/) en
+   koppel je zakelijke e-mailadres als **Email Service** (Gmail/Outlook/eigen
+   domein/...). Onthoud de **Service ID**.
+2. Maak een **Email Template** aan met (in elk geval) deze variabelen erin —
+   exact deze namen, want dat is wat `verstuurBetaalinstructies()` in
+   `client.js` meestuurt: `{{to_name}}`, `{{tier_naam}}`, `{{facturatie}}`,
+   `{{bedrag}}`, `{{referentie}}`, `{{rekeninghouder}}`, `{{iban}}`,
+   `{{bic}}`. Zet het template-"To"-veld op `{{to_email}}`. Onthoud de
+   **Template ID**.
+3. Kopieer je **Public Key** (Account → General).
+4. Vul deze drie waarden in bovenaan `client.js`
+   (`EMAILJS_PUBLIC_KEY`/`EMAILJS_SERVICE_ID`/`EMAILJS_TEMPLATE_ID`), en vul
+   je echte bankgegevens in bij `BANKGEGEVENS` (`rekeninghouder`, `iban`,
+   `bic`) in datzelfde bestand.
+5. Verhoog het versienummer van `client.js` (zie "Cache-busting" onderaan)
+   en deploy opnieuw.
+
+Zolang `EMAILJS_SERVICE_ID` nog op de placeholder-waarde staat, slaat
+`verstuurBetaalinstructies()` de verzending stilzwijgend over — het
+bedankt-scherm blijft de betaalgegevens gewoon tonen, dus de app blijft
+bruikbaar zonder EmailJS-setup, alleen zonder de e-mail-kant ervan.
+
+**Let op — dit is geen betaalgateway:** dit stuurt alleen instructies; er
+wordt geen betaling automatisch geverifieerd of geïnd. Jij controleert zelf
+je bankrekening en markeert de cliënt pas als actief (bv. in
+`business.html` bij "Cliënt toevoegen") zodra de overschrijving binnen is.
+Je eigen IBAN/BIC delen met iemand die jou moet betalen is normale,
+publieke informatie (net als op een factuur) — geen geheime sleutel.
 
 ## Waarom dit zo is opgezet (toekomstige integratie)
 

@@ -184,6 +184,35 @@ a { color: var(--accent); }
 .verzend-status--ok { border-left-color: var(--groen); color: var(--groen); }
 .verzend-status--fout { border-left-color: var(--oranje); color: var(--oranje); }
 
+/* ---------- Pakket-banner (intake.html, na doorklikken vanaf een prijs-tier) ---------- */
+.pakket-banner {
+  border-left: 4px solid var(--accent);
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1.5rem;
+}
+.pakket-banner p { margin: 0; }
+
+/* ---------- Betaalinstructies (bedankt-scherm, zelfde context) ---------- */
+.betaal-instructies {
+  text-align: left;
+  margin-top: 1.5rem;
+  border-left: 4px solid var(--accent);
+}
+.betaal-instructies h3 { margin-top: 0; }
+
+.betaal-gegevens {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.4rem 1rem;
+  margin: 1rem 0;
+}
+.betaal-gegevens dt { color: var(--text-dim); font-size: 0.85rem; }
+.betaal-gegevens dd {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+}
+
 /* ---------- Layout ---------- */
 main#app {
   max-width: 1100px;
