@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#060907">
 <title data-i18n="meta.title">Trainingsintake — Arman Bahali</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=17">
+<link rel="stylesheet" href="styles.css?v=20">
 <!-- EmailJS: sends the payment-instructions email to the client after submit
      (see BANKGEGEVENS / EMAILJS_* config at the top of client.js). No secret
      key involved — the public key only identifies the account, same as
@@ -58,22 +59,22 @@
         <legend data-i18n="section.persoonsgegevens">Persoonsgegevens</legend>
         <div class="form-grid">
           <label><span data-i18n="field.naam">Naam</span>
-            <input type="text" id="f-naam" required>
+            <input type="text" id="f-naam" autocomplete="name" required>
           </label>
           <label><span data-i18n="field.email">E-mailadres (optioneel, zodat ik kan reageren)</span>
-            <input type="email" id="f-email" data-i18n-placeholder="placeholder.email" placeholder="jij@voorbeeld.nl">
+            <input type="email" id="f-email" autocomplete="email" data-i18n-placeholder="placeholder.email" placeholder="jij@voorbeeld.nl">
           </label>
           <label><span data-i18n="field.adres">Adres</span>
-            <input type="text" id="f-adres">
+            <input type="text" id="f-adres" autocomplete="street-address">
           </label>
           <label><span data-i18n="field.postcode">Postcode</span>
-            <input type="text" id="f-postcode">
+            <input type="text" id="f-postcode" autocomplete="postal-code">
           </label>
           <label><span data-i18n="field.stad">Stad</span>
-            <input type="text" id="f-stad">
+            <input type="text" id="f-stad" autocomplete="address-level2">
           </label>
           <label><span data-i18n="field.land">Land</span>
-            <input type="text" id="f-land">
+            <input type="text" id="f-land" autocomplete="country-name">
           </label>
           <label><span data-i18n="field.leeftijd">Leeftijd (jaar)</span>
             <input type="number" id="f-leeftijd" min="10" max="100" required>
@@ -341,7 +342,7 @@
   <section id="view-bedankt" class="view">
     <div class="card bedankt-card">
       <h2><span data-i18n="bedankt.groet">Bedankt</span>, <span id="bedankt-naam"></span>!</h2>
-      <p id="verzend-status" class="verzend-status" data-i18n="status.bezig">Bezig met versturen naar Arman...</p>
+      <p id="verzend-status" class="verzend-status" role="status" aria-live="polite" data-i18n="status.bezig">Bezig met versturen naar Arman...</p>
       <p><span data-i18n="bedankt.kopieVoor">Er is ook een kopie gedownload als</span> <code id="bedankt-bestandsnaam"></code> <span data-i18n="bedankt.kopieNa">— bewaar die zelf als back-up.</span></p>
       <p class="hint" data-i18n="bedankt.hint">Lukt het versturen onverhoopt niet? Stuur dat bestand dan even naar mij (Arman) via WhatsApp of
         e-mail. Het bevat persoonlijke gegevens (o.a. gewicht en blessures) — stuur het daarom alleen rechtstreeks naar mij.</p>

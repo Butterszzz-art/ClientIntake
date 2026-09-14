@@ -25,6 +25,10 @@
    pincode gate to keep the header/dashboard off-screen until unlocked). */
 [hidden] { display: none !important; }
 
+html {
+  color-scheme: dark;
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -278,11 +282,26 @@ input[type="text"], input[type="number"], input[type="file"], input[type="email"
   color: var(--text);
   padding: 0.5em 0.6em;
   border-radius: var(--radius);
+  /* 16px floor (not the 0.95rem other text uses) so focusing a field never
+     triggers iOS Safari's automatic zoom-in. */
+  font-size: 16px;
 }
 
 input:focus, select:focus, textarea:focus {
+  /* Keep a visible ring instead of outline:none with only a 1px border-color
+     swap — that swap alone (var(--border) -> var(--accent)) is too subtle to
+     count as a real focus indicator. */
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* Anything that keeps native default focus styling (buttons, links, checkboxes,
+   custom tag-remove buttons, ...) still needs it to be visible against the
+   dark background/theme, so make :focus-visible consistent everywhere. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 textarea { resize: vertical; font-family: inherit; }
@@ -706,7 +725,7 @@ html { scroll-behavior: smooth; }
   background: linear-gradient(180deg, var(--bg) 0%, rgba(6, 9, 7, 0.7) 45%, var(--bg) 100%);
 }
 
-.marketing-hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 3rem; align-items: center; }
+.marketing-hero-grid { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 3rem; align-items: center; }
 
 .marketing-eyebrow {
   display: inline-block;
@@ -718,7 +737,9 @@ html { scroll-behavior: smooth; }
   margin-bottom: 1.1rem;
 }
 
-.marketing-hero h1 { font-size: clamp(2.1rem, 5vw, 3.3rem); letter-spacing: 0.005em; }
+/* Sized (together with the wider text column above) so the 8-word headline
+   wraps to 2 lines at typical desktop widths instead of 3-4. */
+.marketing-hero h1 { font-size: clamp(2rem, 4vw, 2.85rem); letter-spacing: 0.005em; }
 .marketing-hero h1 .hl { color: var(--accent); }
 
 .marketing-hero-sub { margin-top: 1.3rem; font-size: 1.05rem; color: var(--text-dim); max-width: 46ch; }
@@ -940,8 +961,13 @@ html { scroll-behavior: smooth; }
 .spec-list.reveal.in-view .spec-row:nth-child(3) .spec-bar-fill { transform: scaleX(1); transition-delay: 0.39s; }
 
 /* ---- Process ---- */
-.process-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.75rem; }
+/* Unequal widths + a staircase offset instead of three identical cards in a
+   row — same content, but the eye reads it as a sequence (step 1 leads, step
+   3 trails) rather than three interchangeable boxes. */
+.process-list { display: grid; grid-template-columns: 1.15fr 1fr 0.9fr; gap: 1.75rem; }
 .process-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.75rem 1.5rem; position: relative; overflow: hidden; }
+.process-item:nth-child(2) { margin-top: 2rem; }
+.process-item:nth-child(3) { margin-top: 4rem; }
 .process-item .num { font-family: var(--font-data); font-size: 0.8rem; color: var(--accent); margin-bottom: 0.9rem; display: block; }
 .process-item h3 { font-size: 1.15rem; margin-bottom: 0.6rem; }
 .process-item p { color: var(--text-dim); font-size: 0.9rem; margin: 0; }
@@ -1007,7 +1033,7 @@ html { scroll-behavior: smooth; }
 .price-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 0.6rem;
+  border-radius: var(--radius);
   padding: 2rem 1.6rem;
   display: flex;
   flex-direction: column;
@@ -1096,6 +1122,7 @@ html { scroll-behavior: smooth; }
   .marketing-hero-grid { grid-template-columns: 1fr; }
   .marketing-hero { padding: 3.5rem 0 3rem; }
   .process-list { grid-template-columns: 1fr; }
+  .process-item:nth-child(2), .process-item:nth-child(3) { margin-top: 0; }
   .spec-row { grid-template-columns: 1fr; gap: 0.5rem; }
 }
 @media (max-width: 720px) {
