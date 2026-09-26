@@ -302,6 +302,23 @@ Een paar dingen om te weten:
   bedenktermijn bij diensten op afstand) — controleer dit zelf of met een
   jurist voordat je dit gebruikt.
 
+### Gratis gesprek aanvragen (twijfelaars)
+
+Tussen de prijzen en de sluit-CTA staat op `index.html` een sectie
+**"Twijfel je nog? / Not sure yet?"** (`#gesprek`, ook bereikbaar via de
+nav-link "Gratis gesprek" en een link onder de sluit-CTA). Bezoekers die nog
+niet klaar zijn voor de intake kunnen daar direct een moment prikken via
+Calendly (knop "Kies een moment in mijn agenda", opent
+`https://calendly.com/armanbahali/im-interested` in een nieuw tabblad — pas
+de link aan in de `.call-book-btn` in `index.html`). Past geen enkel moment,
+dan laten ze via het formulier ernaast naam, e-mail, optioneel
+telefoon/WhatsApp, een voorkeursmoment (ochtend/middag/avond) en hun twijfel
+achter. Dit gaat via **Web3Forms** (zelfde public key als de intake-mail) als
+e-mail naar Arman, altijd in het Nederlands — met `replyto` op het adres van de
+bezoeker, zodat je direct kunt antwoorden om een moment te prikken. Er wordt
+niets naar Firestore of de business tracker geschreven. Lukt het versturen
+niet, dan toont de pagina het contactadres als alternatief.
+
 ### Betaalinstructies e-mail (EmailJS)
 
 Een klik op een prijs-tier hangt ook `?tier=...&billing=...&amount=...` aan
