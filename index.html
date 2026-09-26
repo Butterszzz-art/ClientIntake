@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=19">
 <link rel="stylesheet" href="styles.css?v=20">
 </head>
 <body class="marketing-page">
@@ -42,6 +43,7 @@
       <a class="marketing-nav-link" href="#specs" data-i18n="nav.specs">What you get</a>
       <a class="marketing-nav-link" href="#proces" data-i18n="nav.proces">Process</a>
       <a class="marketing-nav-link" href="#prijzen" data-i18n="nav.prijzen">Pricing</a>
+      <a class="marketing-nav-link" href="#gesprek" data-i18n="nav.gesprek">Free call</a>
       <a class="btn btn--accent" href="intake.html" data-i18n="nav.startIntake">Start intake</a>
     </div>
     <button class="marketing-nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
@@ -241,11 +243,63 @@
   </div>
 </section>
 
+<section id="gesprek" class="marketing-section">
+  <div class="marketing-container call-grid">
+    <div class="marketing-section-head reveal">
+      <span class="marketing-eyebrow" data-i18n="call.eyebrow">Not sure yet?</span>
+      <h2 data-i18n="call.h2">Let's talk first.</h2>
+      <p data-i18n="call.p">Not sure which plan fits, or whether coaching is right for you at all? Book a free, no-obligation call of about 15 minutes. Leave your details and I'll get back to you personally to set a time.</p>
+      <ul class="call-points">
+        <li data-i18n="call.point1">Free and without obligation</li>
+        <li data-i18n="call.point2">About 15 minutes, by phone or video</li>
+        <li data-i18n="call.point3">Book instantly, or hear back from me within 48 hours</li>
+      </ul>
+      <a class="btn btn--accent call-book-btn" href="https://calendly.com/armanbahali/im-interested" target="_blank" rel="noopener" data-i18n="call.bookDirect">Pick a time in my calendar</a>
+    </div>
+
+    <form id="call-form" class="call-form reveal" method="post" novalidate>
+      <p class="call-form__intro call-form__full" data-i18n="call.formIntro">No suitable time? Leave your details and I'll reach out to you.</p>
+      <!-- Web3Forms honeypot: echte bezoekers zien/vullen dit nooit in. -->
+      <input type="checkbox" name="botcheck" class="call-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <label>
+        <span data-i18n="call.name">Name</span>
+        <input type="text" name="naam" required autocomplete="name">
+      </label>
+      <label>
+        <span data-i18n="call.email">Email</span>
+        <input type="email" name="email" required autocomplete="email">
+      </label>
+      <label>
+        <span data-i18n="call.phone">Phone / WhatsApp (optional)</span>
+        <input type="tel" name="telefoon" autocomplete="tel">
+      </label>
+      <label>
+        <span data-i18n="call.moment">Preferred time</span>
+        <select name="moment">
+          <option value="geen_voorkeur" data-i18n="call.momentAny">No preference</option>
+          <option value="ochtend" data-i18n="call.momentMorning">Morning</option>
+          <option value="middag" data-i18n="call.momentAfternoon">Afternoon</option>
+          <option value="avond" data-i18n="call.momentEvening">Evening</option>
+        </select>
+      </label>
+      <label class="call-form__full">
+        <span data-i18n="call.message">What are you unsure about? (optional)</span>
+        <textarea name="bericht" rows="3"></textarea>
+      </label>
+      <div class="call-form__full call-form__actions">
+        <button type="submit" class="btn" data-i18n="call.submit">Request a call</button>
+        <p class="call-status" id="call-status" role="status" aria-live="polite"></p>
+      </div>
+    </form>
+  </div>
+</section>
+
 <section class="marketing-cta">
   <div class="marketing-container reveal">
     <h2 data-i18n="cta.h2">Let's define your potential.</h2>
     <p data-i18n="cta.p">The first step is a short intake covering your goals, your history, your limitations. No commitment beyond that.</p>
     <a class="btn btn--accent" href="intake.html" data-i18n="cta.btn">Start your intake</a>
+    <a class="cta-call-link" href="#gesprek" data-i18n="cta.callLink">Not sure yet? Book a free call first →</a>
   </div>
 </section>
 
@@ -377,6 +431,30 @@
       'cta.h2': "Let's define your potential.",
       'cta.p': 'The first step is a short intake covering your goals, your history, your limitations. No commitment beyond that.',
       'cta.btn': 'Start your intake',
+      'nav.gesprek': "Free call",
+      'call.eyebrow': "Not sure yet?",
+      'call.h2': "Let's talk first.",
+      'call.p': "Not sure which plan fits, or whether coaching is right for you at all? Book a free, no-obligation call of about 15 minutes — pick a time that suits you directly in my calendar.",
+      'call.bookDirect': "Pick a time in my calendar →",
+      'call.formIntro': "No suitable time? Leave your details and I'll reach out to you.",
+      'call.point1': "Free and without obligation",
+      'call.point2': "About 15 minutes, by phone or video",
+      'call.point3': "Book instantly, or hear back from me within 48 hours",
+      'call.name': "Name",
+      'call.email': "Email",
+      'call.phone': "Phone / WhatsApp (optional)",
+      'call.moment': "Preferred time",
+      'call.momentAny': "No preference",
+      'call.momentMorning': "Morning",
+      'call.momentAfternoon': "Afternoon",
+      'call.momentEvening': "Evening",
+      'call.message': "What are you unsure about? (optional)",
+      'call.submit': "Request a call",
+      'call.sending': "Sending…",
+      'call.success': "Thanks! I've received your request and will get back to you within 48 hours to set a time.",
+      'call.error': "Something went wrong while sending. Please try again, or email me directly at {email}.",
+      'call.invalid': "Please fill in your name and a valid email address.",
+      'cta.callLink': "Not sure yet? Book a free call first →",
       'footer.rights': 'Arman Bahali. All rights reserved.',
       'footer.tagline': 'Evidence-based physique coaching',
     },
@@ -470,6 +548,30 @@
       'cta.h2': 'Laten we je potentieel bepalen.',
       'cta.p': 'De eerste stap is een korte intake over je doelen, je geschiedenis, je beperkingen. Geen verplichting daarna.',
       'cta.btn': 'Start je intake',
+      'nav.gesprek': "Gratis gesprek",
+      'call.eyebrow': "Twijfel je nog?",
+      'call.h2': "Laten we eerst even praten.",
+      'call.p': "Weet je niet zeker welk pakket past, of of coaching überhaupt iets voor je is? Plan een gratis, vrijblijvend gesprek van zo'n 15 minuten — kies direct een moment dat jou uitkomt in mijn agenda.",
+      'call.bookDirect': "Kies een moment in mijn agenda →",
+      'call.formIntro': "Geen geschikt moment? Laat je gegevens achter en ik neem contact met je op.",
+      'call.point1': "Gratis en vrijblijvend",
+      'call.point2': "Zo'n 15 minuten, telefonisch of via video",
+      'call.point3': "Direct inplannen, of binnen 48 uur antwoord van mij",
+      'call.name': "Naam",
+      'call.email': "E-mail",
+      'call.phone': "Telefoon / WhatsApp (optioneel)",
+      'call.moment': "Voorkeursmoment",
+      'call.momentAny': "Geen voorkeur",
+      'call.momentMorning': "Ochtend",
+      'call.momentAfternoon': "Middag",
+      'call.momentEvening': "Avond",
+      'call.message': "Waar twijfel je over? (optioneel)",
+      'call.submit': "Vraag een gesprek aan",
+      'call.sending': "Versturen…",
+      'call.success': "Bedankt! Ik heb je aanvraag ontvangen en neem binnen 48 uur contact op om een moment te prikken.",
+      'call.error': "Er ging iets mis bij het versturen. Probeer het opnieuw, of mail me direct op {email}.",
+      'call.invalid': "Vul je naam en een geldig e-mailadres in.",
+      'cta.callLink': "Twijfel je nog? Plan eerst een gratis gesprek →",
       'footer.rights': 'Arman Bahali. Alle rechten voorbehouden.',
       'footer.tagline': 'Evidence-based fysiek coaching',
     },
@@ -563,6 +665,30 @@
       'cta.h2': 'Definamos tu potencial.',
       'cta.p': 'El primer paso es una breve admisión sobre tus objetivos, tu historial, tus limitaciones. Sin compromiso después.',
       'cta.btn': 'Comienza tu admisión',
+      'nav.gesprek': "Llamada gratis",
+      'call.eyebrow': "¿Todavía no estás seguro?",
+      'call.h2': "Hablemos primero.",
+      'call.p': "¿No sabes qué plan te conviene, o si el coaching es para ti? Reserva una llamada gratuita y sin compromiso de unos 15 minutos — elige directamente en mi calendario el momento que mejor te venga.",
+      'call.bookDirect': "Elige un momento en mi calendario →",
+      'call.formIntro': "¿Ningún horario te va bien? Deja tus datos y me pondré en contacto contigo.",
+      'call.point1': "Gratis y sin compromiso",
+      'call.point2': "Unos 15 minutos, por teléfono o videollamada",
+      'call.point3': "Reserva al instante, o te respondo en menos de 48 horas",
+      'call.name': "Nombre",
+      'call.email': "Correo electrónico",
+      'call.phone': "Teléfono / WhatsApp (opcional)",
+      'call.moment': "Momento preferido",
+      'call.momentAny': "Sin preferencia",
+      'call.momentMorning': "Mañana",
+      'call.momentAfternoon': "Tarde",
+      'call.momentEvening': "Noche",
+      'call.message': "¿Sobre qué tienes dudas? (opcional)",
+      'call.submit': "Solicitar una llamada",
+      'call.sending': "Enviando…",
+      'call.success': "¡Gracias! He recibido tu solicitud y me pondré en contacto contigo en menos de 48 horas para acordar un momento.",
+      'call.error': "Algo salió mal al enviar. Inténtalo de nuevo o escríbeme directamente a {email}.",
+      'call.invalid': "Introduce tu nombre y un correo electrónico válido.",
+      'cta.callLink': "¿Todavía dudas? Reserva primero una llamada gratis →",
       'footer.rights': 'Arman Bahali. Todos los derechos reservados.',
       'footer.tagline': 'Coaching físico basado en evidencia',
     },
@@ -656,6 +782,30 @@
       'cta.h2': 'Vamos definir o seu potencial.',
       'cta.p': 'O primeiro passo é uma breve admissão sobre seus objetivos, seu histórico, suas limitações. Sem compromisso depois disso.',
       'cta.btn': 'Comece sua admissão',
+      'nav.gesprek': "Chamada grátis",
+      'call.eyebrow': "Ainda tem dúvidas?",
+      'call.h2': "Vamos conversar primeiro.",
+      'call.p': "Não sabe qual plano combina com você, ou se coaching é para você? Agende uma chamada gratuita e sem compromisso de cerca de 15 minutos — escolha diretamente na minha agenda o horário que for melhor para você.",
+      'call.bookDirect': "Escolha um horário na minha agenda →",
+      'call.formIntro': "Nenhum horário serve? Deixe seus dados e eu entro em contato.",
+      'call.point1': "Grátis e sem compromisso",
+      'call.point2': "Cerca de 15 minutos, por telefone ou vídeo",
+      'call.point3': "Agende na hora, ou receba minha resposta em até 48 horas",
+      'call.name': "Nome",
+      'call.email': "E-mail",
+      'call.phone': "Telefone / WhatsApp (opcional)",
+      'call.moment': "Horário preferido",
+      'call.momentAny': "Sem preferência",
+      'call.momentMorning': "Manhã",
+      'call.momentAfternoon': "Tarde",
+      'call.momentEvening': "Noite",
+      'call.message': "Sobre o que você tem dúvidas? (opcional)",
+      'call.submit': "Solicitar uma chamada",
+      'call.sending': "Enviando…",
+      'call.success': "Obrigado! Recebi sua solicitação e entrarei em contato em até 48 horas para marcarmos um horário.",
+      'call.error': "Algo deu errado no envio. Tente novamente ou me envie um e-mail diretamente para {email}.",
+      'call.invalid': "Preencha seu nome e um e-mail válido.",
+      'cta.callLink': "Ainda em dúvida? Agende primeiro uma chamada grátis →",
       'footer.rights': 'Arman Bahali. Todos os direitos reservados.',
       'footer.tagline': 'Coaching físico baseado em evidências',
     },
@@ -687,6 +837,10 @@
     document.title = dict['meta.title'];
     document.querySelector('meta[name="description"]').setAttribute('content', dict['meta.description']);
     document.querySelector('.price-card.featured').setAttribute('data-featured-label', dict['pricing.featuredBadge']);
+
+    // Een eerder getoonde gespreksaanvraag-melding staat nog in de oude taal.
+    const callStatusEl = document.getElementById('call-status');
+    if (callStatusEl) { callStatusEl.textContent = ''; callStatusEl.className = 'call-status'; }
 
     document.getElementById('taal-keuze').value = taal;
     localStorage.setItem(TAAL_KEY, taal);
@@ -860,6 +1014,85 @@
       }
     });
   });
+
+  // ---- Gesprek aanvragen (#gesprek) ----
+  // Voor bezoekers die nog twijfelen: in plaats van de intake een korte
+  // belverzoek-aanvraag die via Web3Forms naar Arman gemaild wordt (zelfde
+  // public key als verstuurNaarArman() in client.js). Geen Firestore-write en
+  // geen business-tracker-lead — het is een contactverzoek, geen tier-keuze.
+  // De e-mail zelf is altijd Nederlands, ongeacht de taal van de bezoeker.
+  const WEB3FORMS_ACCESS_KEY = '4e27ae27-18e9-4a54-bdc7-bd8c4e316a48';
+  const WEB3FORMS_ENDPOINT = 'https://api.web3forms.com/submit';
+  const CONTACT_EMAIL = 'armanbahali@pocketcoachcoms.org';
+  const MOMENT_LABELS = { geen_voorkeur: 'Geen voorkeur', ochtend: 'Ochtend', middag: 'Middag', avond: 'Avond' };
+  const TAAL_LABELS = { en: 'Engels', nl: 'Nederlands', es: 'Spaans', pt: 'Portugees' };
+
+  const callForm = document.getElementById('call-form');
+  const callStatus = document.getElementById('call-status');
+  if (callForm) {
+    callForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const dict = VERTALINGEN[huidigeTaal] || VERTALINGEN.en;
+      const data = new FormData(callForm);
+      const naam = String(data.get('naam') || '').trim();
+      const email = String(data.get('email') || '').trim();
+      const emailVeld = callForm.elements.email;
+
+      if (!naam || !email || !emailVeld.checkValidity()) {
+        callStatus.textContent = dict['call.invalid'];
+        callStatus.className = 'call-status is-error';
+        return;
+      }
+
+      const submitBtn = callForm.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = dict['call.sending'];
+      callStatus.textContent = '';
+      callStatus.className = 'call-status';
+
+      const telefoon = String(data.get('telefoon') || '').trim();
+      const bericht = String(data.get('bericht') || '').trim();
+      const payload = new FormData();
+      payload.append('access_key', WEB3FORMS_ACCESS_KEY);
+      payload.append('subject', `Gesprek aangevraagd — ${naam}`);
+      payload.append('from_name', naam);
+      payload.append('email', email);
+      payload.append('replyto', email);
+      if (data.get('botcheck')) payload.append('botcheck', 'on');
+      payload.append('message', [
+        `${naam} twijfelt nog en wil eerst een (gratis) kennismakingsgesprek.`,
+        '',
+        `Naam: ${naam}`,
+        `E-mail: ${email}`,
+        `Telefoon / WhatsApp: ${telefoon || '—'}`,
+        `Voorkeursmoment: ${MOMENT_LABELS[data.get('moment')] || 'Geen voorkeur'}`,
+        `Taal op de site: ${TAAL_LABELS[huidigeTaal] || huidigeTaal}`,
+        '',
+        'Waar twijfelt de bezoeker over:',
+        bericht || '—',
+      ].join('\n'));
+
+      let gelukt = false;
+      try {
+        const response = await fetch(WEB3FORMS_ENDPOINT, { method: 'POST', body: payload });
+        const result = await response.json().catch(() => ({ success: false }));
+        gelukt = result.success === true;
+      } catch (err) {
+        console.error('Kon gespreksaanvraag niet versturen', err);
+      }
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = dict['call.submit'];
+      if (gelukt) {
+        callForm.reset();
+        callStatus.textContent = dict['call.success'];
+        callStatus.className = 'call-status is-success';
+      } else {
+        callStatus.textContent = dict['call.error'].replace('{email}', CONTACT_EMAIL);
+        callStatus.className = 'call-status is-error';
+      }
+    });
+  }
 
   // ---- 3D-interactiviteit (helemaal overgeslagen bij prefers-reduced-motion) ----
   if (!reduceMotion) {
