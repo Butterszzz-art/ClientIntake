@@ -47,13 +47,13 @@ let opslaanTimer = null;
 function vulInstellingenFormIn(client) {
   const intake = client.intake;
   const defaults = {
-    energiebalansFactor: calc.energiebalansFactorVoorDoel(intake.doel.categorie),
+    energiebalansFactor: calc.energiebalansFactorVoorDoel(intake.doel.categorie, intake.persoonsgegevens),
     eiwitFactor: 1.8,
-    percentageVetVanREE: 0.4,
+    percentageVetVanREE: calc.vetPercentageVoorClient(intake.persoonsgegevens),
     trainingsdagenPerWeek: intake.trainingsfrequentie.huidig ?? 3,
     trainingsduurMinuten: 60,
     MET: 5.7,
-    pal: calc.palVoorActiviteitsniveau(intake.lifestyle.activityLevel),
+    pal: calc.palVoorActiviteitsniveau(intake.lifestyle.activityLevel, intake.persoonsgegevens.geslacht),
     tef: calc.STANDAARD_TEF,
     aantalMaaltijden: 4,
     postTrainingBoost: calc.POST_TRAINING_BOOST_STANDAARD,
@@ -117,7 +117,9 @@ function herberekenEnRender() {
 function renderBerekeningResultaten(c) {
   document.getElementById('berekening-kerncijfers').innerHTML = [
     kerncijferHtml('Vetvrije massa', fmt(c.vetvrijeMassa, 1), 'kg', 'gewicht × (1 − vetpercentage)'),
-    kerncijferHtml('BMR (Katch-McArdle)', fmt(c.bmr), 'kcal', '370 + 21.6 × vetvrije massa'),
+    c.bmrMethode === 'tinsley'
+      ? kerncijferHtml('BMR (Tinsley)', fmt(c.bmr), 'kcal', '24.8 × gewicht + 10 (zeer slank en gevorderd)')
+      : kerncijferHtml('BMR (Katch-McArdle)', fmt(c.bmr), 'kcal', '370 + 21.6 × vetvrije massa'),
     kerncijferHtml('Energie training (EE)', fmt(c.ee), 'kcal', 'MET × 3.5 × gewicht / 200 × duur'),
     kerncijferHtml('Rustdag verbruik (REE)', fmt(c.ree), 'kcal', 'BMR × PAL × TEF'),
     kerncijferHtml('Totaal trainingsdag', fmt(c.totaalTrainingsdag), 'kcal', 'REE + (EE × TEF)'),
