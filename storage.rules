@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// Deploy with: firebase deploy --only storage
+// (or paste into Firebase Console → Storage → Rules).
+//
+// BEFORE DEPLOYING: replace REPLACE_WITH_COACH_UID with your coach account's
+// uid, the same one as in firestore.rules.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isCoach() {
+      return request.auth != null && request.auth.uid in ['REPLACE_WITH_COACH_UID'];
+    }
+
+    match /clients/{clientId}/{fileName} {
+      // Anyone may upload a new file (the intake's hand photo and program
+      // attachment): images or PDFs up to 15 MB (MAX_UPLOAD_BYTES in
+      // intake-form.js). Existing files can't be overwritten anonymously.
+      allow create: if request.resource.size < 15 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*')
+            || request.resource.contentType == 'application/pdf');
+      // Previously any signed-in user could read these.
+      allow read, update, delete: if isCoach();
+    }
+  }
+}
