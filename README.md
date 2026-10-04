@@ -497,6 +497,9 @@ entrypoint dat de app zelf aanroept; de rest zijn de bouwstenen daaronder
 |---|---|---|---|
 | `vetvrijeMassa(gewicht, vetpct)` | kg, % | kg | Vetvrije massa (VVM) |
 | `katchMcArdleBMR(vvm)` | kg | kcal | Basaalmetabolisme via Katch-McArdle |
+| `tinsleyRMR(gewicht)` | kg | kcal | Rustmetabolisme via Tinsley (zeer slanke, gespierde cliënten) |
+| `bmrMethodeVoorClient(persoonsgegevens)` | object | `'katchMcArdle'`\|`'tinsley'` | Welke BMR-formule past bij deze cliënt |
+| `vetPercentageVoorClient(persoonsgegevens)` | object | fractie | Standaard vet als deel van de REE, per geslacht |
 | `energieverbruikTrainingsdag(gewicht, duurMinuten, MET=5.7)` | kg, min, MET | kcal | Energieverbruik van de training zelf (EE) |
 | `energieverbruikRustdag(bmr, pal, tef)` | kcal, factor, factor | kcal | Totaal energieverbruik op een rustdag (REE) |
 | `totaalEnergieTrainingsdag(ree, ee, tef)` | kcal, kcal, factor | kcal | Totaal verbruik op een trainingsdag |
@@ -553,7 +556,18 @@ gekozen en overal in de UI aanpasbaar (stap 2, "Berekeningen controleren"):
     gevorderd (4+ jaar) 1–3% (2%).
   - onderhoud: `1.0` (±3%, eigen inschatting).
 - **Eiwit**: `1.8` g/kg (instelbaar 1.6–3.7 g/kg).
-- **Vet**: `40%` van de REE (instelbaar 20–40%+).
+- **Vet**: vrouw `40%`, man `30%`, anders `35%` van de REE (instelbaar
+  20–40%+). Butters University legt vrouwen bewust aan de bovenkant; voor
+  mannen noemt BU geen punt, dus het midden van het bereik.
+- **BMR**: Katch-McArdle/Cunningham (`370 + 21.6 × VVM`), behalve bij zeer
+  slanke, gevorderde cliënten (man ≤10%, vrouw ≤18% vet én 4+ jaar
+  training): dan Tinsley (`24.8 × gewicht + 10`), zoals BU aanraadt. Bij een
+  ongetrainde cliënt met een hoger vetpercentage (man ≥22%, vrouw ≥30%)
+  waarschuwt de app dat Katch-McArdle vaak te laag uitvalt; BU noemt daar geen
+  betere formule, dus corrigeer na 2+ weken weegdata. Overschrijfbaar met de
+  instelling `bmrMethode` (`katchMcArdle` / `tinsley`).
+- **Slaap**: rode vlag onder `7` uur (was 6; BU: 4–7 uur vs. 8 uur slaap
+  verhoogt de eetlust met 20–22%).
 - **Aantal maaltijden**: `4` (instelbaar 2–6).
 - **Post-training eiwitboost**: `1.5×` (instelbaar naar `2×`).
 
