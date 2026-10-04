@@ -99,6 +99,9 @@ export const VERTALINGEN = {
     'section.peds': 'PEDs',
     'field.pedsGebruikt': 'Ik gebruik PEDs',
     'field.pedsDisclaimer': 'Ik verklaar dat ik deze middelen legaal verkrijg en gebruik, en vrijwaar mijn coach van aansprakelijkheid voor het gebruik ervan.',
+    'section.toestemming': 'Toestemming',
+    'field.toestemmingGezondheid': 'Ik geef uitdrukkelijk toestemming om mijn gezondheidsgegevens uit dit formulier (zoals blessures, middelengebruik, vetpercentage en slaap) te verwerken om mijn coachingplan op te stellen. Ik kan deze toestemming altijd intrekken.',
+    'link.privacy': 'Lees hoe ik je gegevens gebruik (privacyverklaring)',
 
     'section.lifestyle': 'Lifestyle',
     'field.activityLevel': 'Activiteitsniveau (buiten training)',
@@ -281,6 +284,9 @@ export const VERTALINGEN = {
     'section.peds': 'PEDs',
     'field.pedsGebruikt': 'I use PEDs',
     'field.pedsDisclaimer': 'I declare that I obtain and use these substances legally, and release my coach from liability for their use.',
+    'section.toestemming': 'Consent',
+    'field.toestemmingGezondheid': 'I explicitly consent to the processing of the health data in this form (such as injuries, substance use, body fat and sleep) to create my coaching plan. I can withdraw this consent at any time.',
+    'link.privacy': 'Read how I use your data (privacy policy)',
 
     'section.lifestyle': 'Lifestyle',
     'field.activityLevel': 'Activity level (outside training)',
@@ -463,6 +469,9 @@ export const VERTALINGEN = {
     'section.peds': 'PEDs',
     'field.pedsGebruikt': 'Uso PEDs (esteroides/ayudas ergogénicas)',
     'field.pedsDisclaimer': 'Declaro que obtengo y uso estas sustancias de forma legal, y exonero a mi entrenador de responsabilidad por su uso.',
+    'section.toestemming': 'Consentimiento',
+    'field.toestemmingGezondheid': 'Doy mi consentimiento explícito para el tratamiento de los datos de salud de este formulario (como lesiones, uso de sustancias, grasa corporal y sueño) para elaborar mi plan de coaching. Puedo retirar este consentimiento en cualquier momento.',
+    'link.privacy': 'Lee cómo uso tus datos (política de privacidad)',
 
     'section.lifestyle': 'Estilo de vida',
     'field.activityLevel': 'Nivel de actividad (fuera del entrenamiento)',
@@ -645,6 +654,9 @@ export const VERTALINGEN = {
     'section.peds': 'PEDs',
     'field.pedsGebruikt': 'Uso PEDs (esteroides/recursos ergogênicos)',
     'field.pedsDisclaimer': 'Declaro que obtenho e uso essas substâncias legalmente, e isento meu treinador de responsabilidade pelo seu uso.',
+    'section.toestemming': 'Consentimento',
+    'field.toestemmingGezondheid': 'Dou meu consentimento explícito para o tratamento dos dados de saúde deste formulário (como lesões, uso de substâncias, gordura corporal e sono) para elaborar meu plano de coaching. Posso retirar este consentimento a qualquer momento.',
+    'link.privacy': 'Leia como uso seus dados (política de privacidade)',
 
     'section.lifestyle': 'Estilo de vida',
     'field.activityLevel': 'Nível de atividade (fora do treino)',

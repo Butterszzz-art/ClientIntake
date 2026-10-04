@@ -60,13 +60,15 @@ pincode-gate uit een eerdere versie van dit project.
 3. Cliënt klikt **Versturen**. Er gebeuren dan drie dingen tegelijk:
    - `client.js` schrijft het cliëntprofiel rechtstreeks naar de
      `clients`-collectie in Firestore — dit is de **primaire, gezaghebbende**
-     route. Firestore's security rules staan dit toe voor iedereen
-     (`allow create: if true`), zonder dat de cliënt hoeft in te loggen.
+     route. Firestore's security rules staan dit toe zonder in te loggen, mits
+     de cliënt de verplichte toestemmingscheckbox (gezondheidsgegevens, AVG
+     art. 9) heeft aangevinkt (zie `firestore.rules`).
    - De browser **downloadt** ook `<naam>-intake.json` als eigen back-up voor
      de cliënt.
    - Er gaat een **heads-up e-mail** naar Arman via Web3Forms (fire-and-forget,
-     blokkeert niks) — een leesbare samenvatting, handig om snel te scannen,
-     maar niet meer de manier waarop data in het dashboard terechtkomt.
+     blokkeert niks) — alleen naam, e-mail en "nieuwe intake binnen". De
+     intake zelf (gezondheidsgegevens) gaat bewust niet via een externe
+     mailrelay; die staat in het dashboard.
    - Het bedankt-scherm toont of de Firestore-schrijfactie gelukt is. Lukt dat
      niet (geen internet, Firestore plat), dan staat er expliciet dat de
      cliënt het gedownloade bestand naar Arman moet mailen via de altijd
@@ -104,25 +106,19 @@ dezelfde database.
 - **Collectie:** `clients`. Elk document = één cliënt-object, exact het
   schema hieronder (`id`, `naam`, `createdAt`, `intake`, `instellingen`,
   `calculations`), met het document-ID gelijk aan `client.id`.
-- **Security rules** (ingesteld via de Firebase Console → Firestore Database
-  → Rules):
-  ```
-  rules_version = '2';
-  service cloud.firestore {
-    match /databases/{database}/documents {
-      match /clients/{clientId} {
-        allow create: if true;
-        allow read, update, delete: if request.auth != null;
-      }
-    }
-  }
-  ```
+- **Security rules:** staan in `firestore.rules` (deployen met
+  `firebase deploy --only firestore:rules`, of plakken in Firebase Console →
+  Firestore Database → Rules). Vervang eerst `REPLACE_WITH_COACH_UID` door de
+  uid van je coach-account (Console → Authentication → Users).
   Vertaling: **iedereen** (ook een niet-ingelogde cliënt) mag een nieuw
-  cliëntprofiel aanmaken; **alleen een ingelogde gebruiker** mag iets lezen,
-  bewerken of verwijderen. Firestore behandelt een schrijfactie naar een
-  bestaand document-ID automatisch als `update` (niet `create`), dus een
-  cliënt kan sowieso nooit andermans bestaande record overschrijven, zelfs
-  niet als die het toevallige UUID zou raden.
+  cliëntprofiel aanmaken, maar alleen met precies het schema hierboven en met
+  `consents.healthData == true` (de verplichte toestemmingscheckbox);
+  **alleen het coach-account** mag iets lezen, bewerken of verwijderen. De
+  oude regel (`request.auth != null`) liet élke ingelogde gebruiker alles
+  lezen — en met e-mail/wachtwoord-registratie aan kan iedereen met de
+  publieke `apiKey` een account aanmaken. Een schrijfactie naar een bestaand
+  document-ID is een `update`, dus een cliënt kan nooit andermans record
+  overschrijven.
 - **Live updates:** `coach.html` gebruikt Firestore's `onSnapshot` (geen
   eenmalige `getDocs`) voor de cliëntenlijst — een nieuwe intake verschijnt
   dus zonder de pagina te hoeven verversen.
@@ -138,23 +134,11 @@ pad `clients/{clientId}/{veldId}-{tijdstempel}-{bestandsnaam}`; het
 `intake`-document bewaart alleen de resulterende `downloadUrl` en
 bestandsnaam (`genen.handFotoUrl`, `huidigProgramma.bestandUrl`).
 
-- **Security rules** (ingesteld via de Firebase Console → Storage → Rules):
-  ```
-  rules_version = '2';
-  service firebase.storage {
-    match /b/{bucket}/o {
-      match /clients/{clientId}/{fileName} {
-        allow write: if request.resource.size < 15 * 1024 * 1024;
-        allow read: if request.auth != null;
-      }
-    }
-  }
-  ```
-  Zelfde principe als de Firestore-rules hierboven: **iedereen** mag een
-  bestand uploaden (tot 15 MB, zie `MAX_UPLOAD_BYTES` in `intake-form.js`),
-  **alleen een ingelogde coach** mag het terug downloaden/bekijken. Deze
-  rules moet je zelf één keer instellen in de Firebase Console — Claude Code
-  kan dit niet namens jou doen.
+- **Security rules:** staan in `storage.rules` (deployen met
+  `firebase deploy --only storage`). Zelfde `REPLACE_WITH_COACH_UID` als
+  hierboven. **Iedereen** mag een nieuw bestand uploaden (afbeelding of PDF,
+  tot 15 MB, zie `MAX_UPLOAD_BYTES` in `intake-form.js`); **alleen het
+  coach-account** mag het terug downloaden/bekijken.
 - Geüploade bestanden verschijnen als klikbare links onder **"Bijlagen"**
   onderaan het overzichtsscherm in `coach.html`.
 

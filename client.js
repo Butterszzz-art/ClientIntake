@@ -3,7 +3,7 @@ import {
   maakLeegClient, initTagInputs, initFileInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij, renderApparatuurChecklist,
   toggleePedsDisclaimer,
 } from './intake-form.js?v=14';
-import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=15';
+import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=16';
 import { db, storage } from './firebase.js?v=14';
 import { doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
@@ -13,6 +13,9 @@ import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/fireba
 // this one draft key, so nothing here can expose another client's data.
 const DRAFT_KEY = 'pt-intake:client-draft:v1';
 const TAAL_KEY = 'pt-intake:client-taal:v1';
+// Matches the consent wording on the intake form and Pocket Coach's
+// privacy.html#prospects; bump it when either changes.
+const CONSENT_VERSION = 'intake-2026-10-04';
 
 // Public Web3Forms access key, tied to Arman's inbox — safe to expose in
 // client-side code (Web3Forms rate-limits by key, no secret is involved).
@@ -175,85 +178,6 @@ function renderPakketBanner() {
   banner.hidden = false;
 }
 
-// Plain-text summary for the email body, so Arman can read the intake
-// straight in his inbox. Kept in Dutch regardless of the client's chosen
-// UI language, since Arman is the only reader.
-function bouwSamenvatting(client) {
-  const i = client.intake;
-  const regels = [];
-  const sectie = (titel) => regels.push(`\n== ${titel} ==`);
-  const veld = (label, waarde) => regels.push(`${label}: ${waarde === '' || waarde == null ? '-' : waarde}`);
-
-  sectie('Persoonsgegevens');
-  veld('Naam', i.persoonsgegevens.naam);
-  veld('E-mail', i.persoonsgegevens.email);
-  veld('Leeftijd', i.persoonsgegevens.leeftijd);
-  veld('Lengte (cm)', i.persoonsgegevens.lengte);
-  veld('Gewicht (kg)', i.persoonsgegevens.gewicht);
-  veld('Vetpercentage (%)', i.persoonsgegevens.vetpercentage);
-  veld('Geslacht', i.persoonsgegevens.geslacht);
-  veld('Trainingservaring (jaar)', i.persoonsgegevens.trainingservaring);
-
-  sectie('Doel');
-  veld('Categorie', i.doel.categorie);
-  veld('Toelichting', i.doel.tekst);
-
-  sectie('Motivatie & mindset');
-  veld('Motivatie', i.motivatieMindset.motivatie);
-  veld('Mentale instelling', i.motivatieMindset.mentaleInstelling);
-
-  sectie('Huidige kracht');
-  if (i.huidigeKracht.length) {
-    for (const r of i.huidigeKracht) regels.push(`- ${r.oefening}: ${r.kg}kg x ${r.herhalingen} (${r.sets} sets)`);
-  } else {
-    regels.push('- Geen data');
-  }
-
-  sectie('Trainingsfrequentie & baan');
-  veld('Frequentie (dagen/week)', i.trainingsfrequentie.huidig);
-  veld('Trainingsmomenten', i.trainingsfrequentie.trainingsmomenten.join(', '));
-  veld('Baan type', i.trainingsfrequentie.baan.type);
-  veld('Uren zittend / staand', `${i.trainingsfrequentie.baan.urenZittend ?? '-'} / ${i.trainingsfrequentie.baan.urenStaand ?? '-'}`);
-
-  sectie('Blessures');
-  veld('Toelichting', i.blessures.tekst);
-  veld('Te vermijden oefeningen', i.blessures.vermijdenOefeningen.join(', '));
-
-  sectie('Dieet');
-  veld('Huidig', i.dieet.huidig);
-  veld('Voorkeuren', i.dieet.voorkeuren.join(', '));
-  veld('Afkeuren', i.dieet.afkeuren.join(', '));
-
-  sectie('PEDs');
-  veld('Gebruikt', i.peds.gebruikt ? 'Ja' : 'Nee');
-  veld('Toelichting', i.peds.toelichting);
-
-  sectie('Lifestyle');
-  veld('Activiteitsniveau', i.lifestyle.activityLevel);
-  veld('Stressniveau', i.lifestyle.stressLevel);
-  veld('Slaap', `${i.lifestyle.slaap.uren ?? '-'} uur, kwaliteit: ${i.lifestyle.slaap.kwaliteit}`);
-  veld('Cafeïne (mg/dag)', i.lifestyle.cafeine);
-
-  sectie('Meetmethode vetpercentage');
-  veld('Huidplooimeter gebruikt', i.vetpercentageMeting.huidplooimeter ? 'Ja' : 'Nee');
-
-  sectie('Materiaal & toegang');
-  veld('Laagste plaat (kg)', i.materiaal.laagstePlaat);
-  veld('Dumbbell-stapgrootte (kg)', i.materiaal.dumbbellStapgrootte);
-  veld('Apparatuur', i.materiaal.apparatuur.join(', '));
-
-  sectie('Supplementen');
-  veld('Vrije tekst', i.supplementen);
-
-  sectie('Genen');
-  veld('Polsomtrek (cm)', i.genen.polsomtrek);
-  veld('Enkelomtrek (cm)', i.genen.enkelomtrek);
-  veld('Gewicht voorheen', i.genen.gewichtVoorheen);
-  veld('Zware baby', i.genen.zwareBaby ? 'Ja' : 'Nee');
-
-  return regels.join('\n');
-}
-
 async function verstuurNaarArman(client) {
   const naam = client.naam || 'Naamloos';
   const email = client.intake.persoonsgegevens.email;
@@ -266,10 +190,11 @@ async function verstuurNaarArman(client) {
     formData.append('email', email);
     formData.append('replyto', email);
   }
-  // Note: Web3Forms rejects the whole submission on the free tier if a file
-  // is attached ("Pro feature required"), so the JSON travels only via the
-  // local download below — the email carries the readable summary only.
-  formData.append('message', bouwSamenvatting(client));
+  // Only a heads-up, no intake content: the intake holds health data
+  // (injuries, PED use, body composition), which shouldn't pass through a
+  // third-party mail relay. The full intake is in the coach dashboard.
+  formData.append('message',
+    `Nieuwe intake van ${naam}${email ? ` (${email})` : ''}. Open het coach-dashboard om de intake te bekijken.`);
 
   const response = await fetch(WEB3FORMS_ENDPOINT, { method: 'POST', body: formData });
   const result = await response.json().catch(() => ({ success: false }));
@@ -284,7 +209,11 @@ async function verstuurNaarPocketCoach(client) {
   await fetch(POCKET_COACH_API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ intake: client.intake, instellingen: client.instellingen || {} }),
+    body: JSON.stringify({
+      intake: client.intake,
+      instellingen: client.instellingen || {},
+      consents: { healthData: client.consents?.healthData === true, version: client.consents?.version },
+    }),
   });
 }
 
@@ -348,6 +277,13 @@ function zetVerzendStatus(sleutel, variant) {
 async function verstuur() {
   huidigClient.intake = leesIntakeForm();
   huidigClient.naam = huidigClient.intake.persoonsgegevens.naam;
+  // GDPR Art. 9 consent (required checkbox — the form can't be sent without
+  // it). Stored with the client as the record of what was agreed, and when.
+  huidigClient.consents = {
+    healthData: document.getElementById('f-toestemming-gezondheid').checked,
+    version: CONSENT_VERSION,
+    at: new Date().toISOString(),
+  };
   laatsteBestandsnaam = bestandsnaamVoor(huidigClient);
 
   downloadJson(laatsteBestandsnaam, { client: huidigClient });
