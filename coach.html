@@ -571,7 +571,7 @@
         <div class="form-grid">
           <label>Energiebalans-factor (rustdag)
             <input type="number" step="0.01" id="i-energiebalans-factor">
-            <small class="toelichting">Onderhoud × deze factor = beoogde inname rustdag. &lt;1 = tekort, &gt;1 = overschot.</small>
+            <small class="toelichting">Onderhoud × deze factor = beoogde inname rustdag. &lt;1 = tekort, &gt;1 = overschot. Standaard: tekort naar vetpercentage, surplus naar trainingservaring (Butters University).</small>
           </label>
           <label>Eiwit (g/kg lichaamsgewicht)
             <input type="number" step="0.05" id="i-eiwit-factor" min="1.6" max="3.7">
@@ -593,7 +593,7 @@
           </label>
           <label>PAL (activiteitsfactor)
             <input type="number" step="0.01" id="i-pal">
-            <small class="toelichting">Automatisch uit lifestyle, hier overschrijfbaar.</small>
+            <small class="toelichting">Automatisch uit lifestyle en geslacht (zonder krachttraining, die telt via EE), hier overschrijfbaar.</small>
           </label>
           <label>TEF (voedsel-thermogenese)
             <input type="number" step="0.01" id="i-tef">

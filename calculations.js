@@ -3,39 +3,60 @@
 // Reused as-is by app.js today; intended to be portable to a backend or the
 // companion fitness app later without rewriting.
 
+// Butters University (README, "Module: Energy balance") is the source for the
+// energy constants below. PAL covers activity outside training only:
+// resistance training is costed separately (energieverbruikTrainingsdag), so
+// it is not counted twice. BU gives the sex-specific values as ranges
+// (light 1.11–1.12, active 1.25–1.27, very active 1.45–1.48); the split per
+// sex follows the IOM (2005) physical-activity coefficients those ranges
+// come from. "anders" or an unknown sex uses the midpoint.
+export const STANDAARD_PAL_PER_GESLACHT = {
+  man: { sedentair: 1.0, 'licht actief': 1.11, actief: 1.25, 'erg actief': 1.48 },
+  vrouw: { sedentair: 1.0, 'licht actief': 1.12, actief: 1.27, 'erg actief': 1.45 },
+};
+
 export const STANDAARD_PAL = {
-  sedentair: 1.2,
-  'licht actief': 1.375,
-  actief: 1.55,
-  'erg actief': 1.725,
+  sedentair: 1.0,
+  'licht actief': 1.115,
+  actief: 1.26,
+  'erg actief': 1.465,
 };
 
 export const STANDAARD_TEF = 1.1;
 
-export const STANDAARD_ENERGIEBALANS_FACTOR = {
-  vetverlies: 0.8,
-  onderhoud: 1.0,
-  spieropbouw: 1.1,
-  krachttoename: 1.05,
-};
-
-// Ranges from the course material (Modules 11/13/14) — these are deliberately
+// Ranges from the course material (Modules 11/13) — these are deliberately
 // wide, since the actual number within the range should follow from a
 // conversation with the client (adherence history, preferences, how
 // aggressive they want to be), not be picked automatically.
 export const EIWIT_BEREIK_G_PER_KG = { min: 1.6, praktisch: 1.8, maxSlank: 2.4 };
 export const VET_BEREIK_PERCENTAGE_REE = { min: 0.2, max: 0.4 };
 
-// Cutting/bulking ranges as given in Module 14. "Onderhoud" and
-// "krachttoename" aren't defined numerically in that module (only vetverlies
-// and spieropbouw are) — those two are a reasonable judgment call, not a
-// cited figure; see README.
-export const ENERGIEBALANS_BEREIK = {
-  vetverlies: { type: 'factor', min: 0.70, max: 0.90 }, // Module 14: 10-30% tekort
-  onderhoud: { type: 'factor', min: 0.97, max: 1.03 },
-  spieropbouw: { type: 'surplusKcal', min: 200, max: 500 }, // Module 14: ~200-500 kcal surplus
-  krachttoename: { type: 'surplusKcal', min: 100, max: 300 },
+// Surplus by training status (BU: beginners 5–15%, intermediate 2–7%,
+// advanced 1–3%, the smallest surplus that keeps fat gain near zero). The
+// default is the middle of each range. Training status comes from years of
+// training experience (trainingsstatusUitErvaring).
+export const SURPLUS_PER_TRAININGSSTATUS = {
+  1: { min: 1.05, standaard: 1.10, max: 1.15 },
+  2: { min: 1.02, standaard: 1.045, max: 1.07 },
+  3: { min: 1.01, standaard: 1.02, max: 1.03 },
 };
+export const TRAININGSSTATUS_DREMPELS_JAREN = [1, 4]; // <1 jaar: 1, 1–4 jaar: 2, 4+ jaar: 3
+
+// Deficit by leanness (BU: 2.5–7.5% near contest leanness, up to 30–50% at
+// higher body fat). BU gives the two ends; between them the deficit scales
+// linearly with body fat. The body-fat anchors per sex are a judgement call,
+// chosen so BU's worked example (untrained woman, 30% body fat) lands on its
+// ~20% deficit. The default at high body fat is the low end of 30–50%.
+export const TEKORT_VETPERCENTAGE_ANKERS = {
+  man: { wedstrijd: 6, hoog: 32 },
+  vrouw: { wedstrijd: 14, hoog: 40 },
+  anders: { wedstrijd: 10, hoog: 36 },
+};
+export const TEKORT_BIJ_WEDSTRIJDVORM = { min: 0.025, standaard: 0.05, max: 0.075 };
+export const TEKORT_BIJ_HOOG_VETPERCENTAGE = { min: 0.30, standaard: 0.30, max: 0.50 };
+
+// Maintenance: BU gives no band; ±3% is a judgement call.
+export const ONDERHOUD_BEREIK = { min: 0.97, standaard: 1.0, max: 1.03 };
 
 export const POST_TRAINING_BOOST_STANDAARD = 1.5; // Module 11: "50% meer" normaal
 export const POST_TRAINING_BOOST_ENKELE_MAALTIJD = 2.0; // Module 11: "100% meer" bij 1 maaltijd na training
@@ -234,24 +255,52 @@ export function vetBereik(ree) {
   };
 }
 
-// Personalized calorie-target range for the given goal category. Cutting is
-// expressed as a factor of maintenance (Module 14's 10-30% tekort); the bulk
-// goals are expressed as a flat kcal surplus on top of maintenance, since
-// that's how Module 14 frames them (not a percentage).
-export function beoogdeInnameBereik(onderhoudPerDag, doelCategorie) {
-  const bereik = ENERGIEBALANS_BEREIK[doelCategorie] ?? ENERGIEBALANS_BEREIK.onderhoud;
-  if (bereik.type === 'surplusKcal') {
-    return { min: round(onderhoudPerDag + bereik.min, 0), max: round(onderhoudPerDag + bereik.max, 0) };
+export function trainingsstatusUitErvaring(jaren) {
+  const j = Number(jaren);
+  if (jaren == null || jaren === '' || !Number.isFinite(j)) return 2;
+  const i = TRAININGSSTATUS_DREMPELS_JAREN.findIndex((d) => j < d);
+  return i === -1 ? 3 : i + 1;
+}
+
+function geslachtSleutel(geslacht) {
+  return geslacht === 'man' || geslacht === 'vrouw' ? geslacht : 'anders';
+}
+
+// Deficit (fraction of maintenance) for this body fat and sex: { min, standaard, max }.
+export function tekortBereik(vetpercentage, geslacht) {
+  const { wedstrijd, hoog } = TEKORT_VETPERCENTAGE_ANKERS[geslachtSleutel(geslacht)];
+  const t = Math.max(0, Math.min(1, (Number(vetpercentage) - wedstrijd) / (hoog - wedstrijd)));
+  const tussen = (k) => round(TEKORT_BIJ_WEDSTRIJDVORM[k] + t * (TEKORT_BIJ_HOOG_VETPERCENTAGE[k] - TEKORT_BIJ_WEDSTRIJDVORM[k]), 3);
+  return { min: tussen('min'), standaard: tussen('standaard'), max: tussen('max') };
+}
+
+// Energy-balance factor range for a goal and client: { min, standaard, max }
+// as factors of maintenance. `persoon` = intake.persoonsgegevens
+// ({ vetpercentage, geslacht, trainingservaring }).
+export function energiebalansBereik(doelCategorie, persoon = {}) {
+  if (doelCategorie === 'vetverlies') {
+    const t = tekortBereik(persoon.vetpercentage, persoon.geslacht);
+    return { min: round(1 - t.max, 3), standaard: round(1 - t.standaard, 3), max: round(1 - t.min, 3) };
   }
-  return { min: round(onderhoudPerDag * bereik.min, 0), max: round(onderhoudPerDag * bereik.max, 0) };
+  if (doelCategorie === 'spieropbouw' || doelCategorie === 'krachttoename') {
+    return { ...SURPLUS_PER_TRAININGSSTATUS[trainingsstatusUitErvaring(persoon.trainingservaring)] };
+  }
+  return { ...ONDERHOUD_BEREIK };
 }
 
-export function palVoorActiviteitsniveau(activityLevel) {
-  return STANDAARD_PAL[activityLevel] ?? STANDAARD_PAL.sedentair;
+// Personalized calorie-target range for the given goal and client.
+export function beoogdeInnameBereik(onderhoudPerDag, doelCategorie, persoon = {}) {
+  const b = energiebalansBereik(doelCategorie, persoon);
+  return { min: round(onderhoudPerDag * b.min, 0), max: round(onderhoudPerDag * b.max, 0) };
 }
 
-export function energiebalansFactorVoorDoel(doelCategorie) {
-  return STANDAARD_ENERGIEBALANS_FACTOR[doelCategorie] ?? 1.0;
+export function palVoorActiviteitsniveau(activityLevel, geslacht) {
+  const tabel = STANDAARD_PAL_PER_GESLACHT[geslacht] ?? STANDAARD_PAL;
+  return tabel[activityLevel] ?? tabel.sedentair;
+}
+
+export function energiebalansFactorVoorDoel(doelCategorie, persoon = {}) {
+  return energiebalansBereik(doelCategorie, persoon).standaard;
 }
 
 // Suggests a training split based on weekly training frequency.
@@ -295,10 +344,13 @@ export function detecteerBlessureConflicten(blessures) {
 export function genereerRodeVlaggen(intake, calculations) {
   const vlaggen = [];
 
-  if (calculations.beoogdeInnameRustdag < calculations.onderhoudPerDag * 0.75) {
+  const p = intake.persoonsgegevens ?? {};
+  const maxTekort = tekortBereik(p.vetpercentage, p.geslacht).max;
+  const tekort = 1 - calculations.beoogdeInnameRustdag / calculations.onderhoudPerDag;
+  if (tekort > maxTekort) {
     vlaggen.push({
       niveau: 'rood',
-      bericht: 'Beoogde inname op rustdagen ligt meer dan 25% onder onderhoud — mogelijk te agressief tekort.',
+      bericht: `Tekort van ${Math.round(tekort * 100)}% is groter dan het maximum van ${Math.round(maxTekort * 100)}% bij dit vetpercentage — mogelijk te agressief.`,
     });
   }
 
@@ -355,9 +407,9 @@ export function berekenClient(intake, instellingen = {}) {
   const trainingsdagenPerWeek = instellingen.trainingsdagenPerWeek ?? intake.trainingsfrequentie?.huidig ?? 3;
   const trainingsduurMinuten = instellingen.trainingsduurMinuten ?? 60;
   const MET = instellingen.MET ?? 5.7;
-  const pal = instellingen.pal ?? palVoorActiviteitsniveau(intake.lifestyle?.activityLevel);
+  const pal = instellingen.pal ?? palVoorActiviteitsniveau(intake.lifestyle?.activityLevel, intake.persoonsgegevens.geslacht);
   const tef = instellingen.tef ?? STANDAARD_TEF;
-  const energiebalansFactor = instellingen.energiebalansFactor ?? energiebalansFactorVoorDoel(intake.doel?.categorie);
+  const energiebalansFactor = instellingen.energiebalansFactor ?? energiebalansFactorVoorDoel(intake.doel?.categorie, intake.persoonsgegevens);
   const eiwitFactor = instellingen.eiwitFactor ?? 1.8;
   const percentageVetVanREE = instellingen.percentageVetVanREE ?? 0.4;
   const aantalMaaltijden = instellingen.aantalMaaltijden ?? 4;
@@ -414,7 +466,8 @@ export function berekenClient(intake, instellingen = {}) {
     bereiken: {
       eiwit: eiwitBereik(gewicht),
       vet: vetBereik(ree),
-      beoogdeInname: beoogdeInnameBereik(onderhoudPerDag, intake.doel?.categorie),
+      beoogdeInname: beoogdeInnameBereik(onderhoudPerDag, intake.doel?.categorie, intake.persoonsgegevens),
+      energiebalansFactor: energiebalansBereik(intake.doel?.categorie, intake.persoonsgegevens),
     },
     maaltijdVerdeling,
     frameSize,

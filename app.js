@@ -47,13 +47,13 @@ let opslaanTimer = null;
 function vulInstellingenFormIn(client) {
   const intake = client.intake;
   const defaults = {
-    energiebalansFactor: calc.energiebalansFactorVoorDoel(intake.doel.categorie),
+    energiebalansFactor: calc.energiebalansFactorVoorDoel(intake.doel.categorie, intake.persoonsgegevens),
     eiwitFactor: 1.8,
     percentageVetVanREE: 0.4,
     trainingsdagenPerWeek: intake.trainingsfrequentie.huidig ?? 3,
     trainingsduurMinuten: 60,
     MET: 5.7,
-    pal: calc.palVoorActiviteitsniveau(intake.lifestyle.activityLevel),
+    pal: calc.palVoorActiviteitsniveau(intake.lifestyle.activityLevel, intake.persoonsgegevens.geslacht),
     tef: calc.STANDAARD_TEF,
     aantalMaaltijden: 4,
     postTrainingBoost: calc.POST_TRAINING_BOOST_STANDAARD,

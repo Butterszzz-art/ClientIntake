@@ -421,7 +421,7 @@ Firestore-collectie `clients`, en als `{ "client": {...} }` bij export):
     "instellingen": {
       "energiebalansFactor": 1.0, "eiwitFactor": 1.8, "percentageVetVanREE": 0.4,
       "trainingsdagenPerWeek": 3, "trainingsduurMinuten": 60, "MET": 5.7,
-      "pal": 1.2, "tef": 1.1, "aantalMaaltijden": 4
+      "pal": 1.0, "tef": 1.1, "aantalMaaltijden": 4
     },
     "calculations": {
       "vetvrijeMassa": 0,
@@ -513,9 +513,12 @@ entrypoint dat de app zelf aanroept; de rest zijn de bouwstenen daaronder
 | `verdeelMaaltijden(totalen, aantalMaaltijden, postTrainingMultiplier=1.5)` | `{eiwit,vet,koolhydraten}`, 2–6, factor | array van maaltijden | Verdeelt macro's over maaltijden; eiwit ×multiplier na training (1.5 standaard, 2 als er maar 1 maaltijd na training zit) |
 | `eiwitBereik(gewicht)` | kg | `{min, praktisch, maxSlank}` (g) | Persoonlijk eiwit-richtbereik: 1.6–1.8–2.4 g/kg |
 | `vetBereik(ree)` | kcal | `{min, max}` (g) | Persoonlijk vet-richtbereik: 20–40% van REE |
-| `beoogdeInnameBereik(onderhoudPerDag, doelCategorie)` | kcal, string | `{min, max}` (kcal) | Richtbereik voor de streefinname, per doel (zie hieronder) |
-| `palVoorActiviteitsniveau(activityLevel)` | string | getal | Standaard PAL-waarde per activiteitsniveau |
-| `energiebalansFactorVoorDoel(doelCategorie)` | string | getal | Standaard energiebalans-factor per doel |
+| `beoogdeInnameBereik(onderhoudPerDag, doelCategorie, persoonsgegevens)` | kcal, string, object | `{min, max}` (kcal) | Richtbereik voor de streefinname, per doel (zie hieronder) |
+| `palVoorActiviteitsniveau(activityLevel, geslacht)` | string, `man`/`vrouw`/... | getal | Standaard PAL-waarde per activiteitsniveau en geslacht (zonder krachttraining) |
+| `energiebalansFactorVoorDoel(doelCategorie, persoonsgegevens)` | string, `{vetpercentage, geslacht, trainingservaring}` | getal | Standaard energiebalans-factor: tekort naar vetpercentage, surplus naar trainingsstatus |
+| `energiebalansBereik(doelCategorie, persoonsgegevens)` | idem | `{min, standaard, max}` | Bereik van de energiebalans-factor |
+| `tekortBereik(vetpercentage, geslacht)` | %, string | `{min, standaard, max}` | Tekort (fractie van onderhoud) bij dit vetpercentage |
+| `trainingsstatusUitErvaring(jaren)` | jaren | 1-3 | <1 jaar: 1, 1–4 jaar: 2, 4+ jaar: 3 (onbekend: 2) |
 | `bepaalSplitsdagen(trainingsdagenPerWeek)` | dagen/week | `{naam, dagen}` | Voorgestelde trainingssplit |
 | `detecteerBlessureConflicten(blessures)` | `{tekst, vermijdenOefeningen}` | array | Matcht gemelde blessures/vermijdlijst tegen standaardoefeningen |
 | `genereerRodeVlaggen(intake, calculations)` | intake, calculations | array | Automatische coach-waarschuwingen |
@@ -531,12 +534,24 @@ entrypoint dat de app zelf aanroept; de rest zijn de bouwstenen daaronder
 De opdracht gaf exacte formules maar niet elke constante. Deze defaults zijn
 gekozen en overal in de UI aanpasbaar (stap 2, "Berekeningen controleren"):
 
-- **PAL** (activiteitsfactor buiten training): sedentair `1.2`, licht actief
-  `1.375`, actief `1.55`, erg actief `1.725` (Task 1 — vierde niveau
-  toegevoegd, standaard PAL-waarde net boven "actief").
+- **PAL** (activiteitsfactor buiten training, **zonder** krachttraining — die
+  telt apart via EE): man sedentair `1.00`, licht actief `1.11`, actief
+  `1.25`, erg actief `1.48`; vrouw `1.00` / `1.12` / `1.27` / `1.45`;
+  "anders" het midden daarvan. Bron: Butters University, module Energy
+  balance (de verdeling per geslacht volgt de IOM-coëfficiënten waar die
+  ranges vandaan komen).
 - **TEF** (voedsel-thermogenese): `1.1` (10%).
-- **Energiebalans-factor** per doel: vetverlies `0.8`, onderhoud `1.0`,
-  spieropbouw `1.1`, krachttoename `1.05`.
+- **Energiebalans-factor** per doel (Butters University):
+  - vetverlies: tekort naar vetpercentage, lineair van 2.5–7.5% (standaard
+    5%) bij wedstrijdvorm tot 30–50% (standaard 30%) bij een hoog
+    vetpercentage. Ankers: man 6% → 32%, vrouw 14% → 40%, anders 10% → 36%
+    vetpercentage. BU geeft alleen de twee uitersten; de ankers zijn zo
+    gekozen dat BU's voorbeeld (ongetrainde vrouw, 30% vet) op ~20% tekort
+    uitkomt.
+  - spieropbouw en krachttoename: surplus naar trainingsstatus — beginner
+    (<1 jaar) 5–15% (standaard 10%), gemiddeld (1–4 jaar) 2–7% (4.5%),
+    gevorderd (4+ jaar) 1–3% (2%).
+  - onderhoud: `1.0` (±3%, eigen inschatting).
 - **Eiwit**: `1.8` g/kg (instelbaar 1.6–3.7 g/kg).
 - **Vet**: `40%` van de REE (instelbaar 20–40%+).
 - **Aantal maaltijden**: `4` (instelbaar 2–6).
@@ -566,13 +581,11 @@ Herkomst van elk bereik:
   een spanning die al in het brondocument zelf zit — de app volgt hier
   bewust de rekentool, niet de tekst, voor consistentie met je eigen
   cursusmateriaal.
-- **Beoogde inname** (`beoogdeInnameBereik`): voor vetverlies 10–30% tekort
-  op onderhoud (Module 14, letterlijk overgenomen). Voor spieropbouw/bulken
-  een vast surplus van 200–500 kcal boven onderhoud (ook Module 14 — dit is
-  een vast aantal kcal, geen percentage). Voor "onderhoud" en
-  "krachttoename" geeft de cursus geen expliciet cijfer — de gebruikte
-  bandbreedtes (±3% resp. +100 tot +300 kcal) zijn een redelijke inschatting,
-  geen geciteerd getal.
+- **Beoogde inname** (`beoogdeInnameBereik`): onderhoud × het bereik van
+  `energiebalansBereik` (tekort naar vetpercentage, surplus naar
+  trainingsstatus; zie hierboven). De rode vlag "te agressief tekort" gaat
+  af boven het maximale tekort voor dat vetpercentage (`tekortBereik().max`),
+  niet meer bij een vaste 25%.
 - **Post-training eiwitboost**: Module 11 noemt "50% meer eiwit" als de
   normale regel voor maaltijden na training, en "100% meer" specifiek als er
   maar één maaltijd tussen training en bedtijd zit. De app paste voorheen
