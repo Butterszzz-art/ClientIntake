@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=13">
+<link rel="stylesheet" href="styles.css?v=14">
 </head>
 <body>
 
@@ -47,9 +47,10 @@
 
   <section class="card">
     <h3>Binnenkomende leads</h3>
-    <p class="hint" style="margin-top:-0.5rem;">Wordt automatisch gevuld zodra iemand op een prijs-tier klikt op de
-      homepage (vereist dat <code>index.html</code> en deze pagina vanaf dezelfde site draaien). Converteer een lead
-      pas nadat iemand daadwerkelijk via het intakeformulier is aangemeld.</p>
+    <p class="hint" style="margin-top:-0.5rem;">Wordt automatisch gevuld zodra iemand op de homepage op een intake-knop klikt
+      (vereist dat <code>index.html</code> en deze pagina vanaf dezelfde site draaien). Er staan geen prijzen meer op
+      de site, dus een lead komt binnen zonder tier — kies de tier en prijs bij het converteren, nadat je de intake
+      hebt bekeken en je voorstel is geaccepteerd.</p>
     <table class="data-tabel">
       <thead><tr><th>Tier</th><th>Facturatie</th><th>Datum</th><th>Status</th><th></th></tr></thead>
       <tbody id="leads-tabel-body"></tbody>
@@ -154,6 +155,6 @@
   </section>
 </main>
 
-<script type="module" src="business.js?v=13"></script>
+<script type="module" src="business.js?v=14"></script>
 </body>
 </html>
