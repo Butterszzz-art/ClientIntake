@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=14">
 <link rel="stylesheet" href="styles.css?v=19">
 <link rel="stylesheet" href="styles.css?v=20">
 </head>
@@ -192,29 +193,18 @@
       <p data-i18n="pricing.sub">Same evidence-based approach at every level. The difference is contact frequency, flexibility, and how much day-to-day adjustment is included.</p>
     </div>
 
-    <div class="billing-toggle" id="billingToggle">
-      <div class="toggle-highlight"></div>
-      <button type="button" class="active" data-billing="maandelijks" data-i18n="pricing.billingMonthly">Monthly</button>
-      <button type="button" data-billing="kwartaal" data-i18n="pricing.billingQuarterly">Per 3 months</button>
-    </div>
-
     <div class="pricing-grid reveal">
-      <div class="price-card tilt-card" data-tier="Basis" data-price-monthly="150" data-price-quarter="405">
+      <div class="price-card tilt-card" data-tier="Basis">
         <h3 data-i18n="tier.basic.name">Basic</h3>
-        <p class="prijs"><span class="bedrag" data-role="amount">€150</span> <span data-role="period" data-i18n="pricing.perMonth">/ month</span></p>
-        <p class="prijs-sub" data-role="sub"></p>
         <ul>
           <li data-i18n="tier.basic.li1">1 yearly program, built around your goal</li>
           <li data-i18n="tier.basic.li2">Weekly video check-in on progress</li>
           <li data-i18n="tier.basic.li3">Monthly photo analysis</li>
           <li data-i18n="tier.basic.li4">One-time macro and calorie setup</li>
         </ul>
-        <a class="btn btn--ghost tier-cta" href="intake.html" data-tier="Basis" data-i18n="tier.basic.cta">Choose Basic</a>
       </div>
-      <div class="price-card featured tilt-card" data-tier="Medium" data-featured-label="Most chosen" data-price-monthly="260" data-price-quarter="700">
+      <div class="price-card featured tilt-card" data-tier="Medium" data-featured-label="Most chosen">
         <h3 data-i18n="tier.medium.name">Medium</h3>
-        <p class="prijs"><span class="bedrag" data-role="amount">€260</span> <span data-role="period" data-i18n="pricing.perMonth">/ month</span></p>
-        <p class="prijs-sub" data-role="sub"></p>
         <ul>
           <li data-i18n="tier.medium.li1">Everything in Basic</li>
           <li data-i18n="tier.medium.li2">New program on request (different goal or injury)</li>
@@ -222,12 +212,9 @@
           <li data-i18n="tier.medium.li4">Multiple photo checks per week</li>
           <li data-i18n="tier.medium.li5">Ongoing diet adjustments based on your progress</li>
         </ul>
-        <a class="btn btn--accent tier-cta" href="intake.html" data-tier="Medium" data-i18n="tier.medium.cta">Choose Medium</a>
       </div>
-      <div class="price-card tilt-card" data-tier="Premium" data-price-monthly="385" data-price-quarter="1040">
+      <div class="price-card tilt-card" data-tier="Premium">
         <h3 data-i18n="tier.premium.name">Premium</h3>
-        <p class="prijs"><span class="bedrag" data-role="amount">€385</span> <span data-role="period" data-i18n="pricing.perMonth">/ month</span></p>
-        <p class="prijs-sub" data-role="sub"></p>
         <ul>
           <li data-i18n="tier.premium.li1">Everything in Medium</li>
           <li data-i18n="tier.premium.li2">Flexible access to multiple programs at once</li>
@@ -235,8 +222,12 @@
           <li data-i18n="tier.premium.li4">Daily photo and nutrition check-ups</li>
           <li data-i18n="tier.premium.li5">Knowledge transfer so you can eventually go it alone</li>
         </ul>
-        <a class="btn btn--ghost tier-cta" href="intake.html" data-tier="Premium" data-i18n="tier.premium.cta">Choose Premium</a>
       </div>
+    </div>
+    <div class="pricing-footer">
+      <p class="pricing-anchor"><span data-i18n="pricing.from">From</span> <span class="bedrag">€150</span> <span data-i18n="pricing.perMonth">/ month</span></p>
+      <p class="pricing-how" data-i18n="pricing.how">Fill in the intake, I review your goals and situation, and within 48 hours you get a personal plan with a quote that fits what you actually need.</p>
+      <a class="btn btn--accent" href="intake.html" data-i18n="pricing.cta">Start your free intake</a>
     </div>
     <p class="pricing-inclusion" data-i18n-html="pricing.inclusion">Every plan, including Basic, includes access to <strong>PocketCoach</strong> and the <strong>Nutrition &amp; Training eBooks</strong>. This isn't a tier upgrade, it's simply included.</p>
     <p class="pricing-note" data-i18n="pricing.note">↳ These prices are a starting point. Adjust them to your own market. Every button above logs the choice for the business tracker and then goes straight to the intake. Check your right-of-withdrawal obligations before offering a 3-month prepay.</p>
@@ -400,6 +391,9 @@
       'pricing.sub': 'Same evidence-based approach at every level. The difference is contact frequency, flexibility, and how much day-to-day adjustment is included.',
       'pricing.featuredBadge': 'Most chosen',
       'pricing.perMonth': '/ month',
+      'pricing.from': 'From',
+      'pricing.how': 'Fill in the intake, I review your goals and situation, and within 48 hours you get a personal plan with a quote that fits what you actually need.',
+      'pricing.cta': 'Start your free intake',
       'pricing.billingMonthly': 'Monthly',
       'pricing.billingQuarterly': 'Per 3 months',
       'pricing.perQuarter': '/ 3 months',
@@ -412,21 +406,18 @@
       'tier.basic.li2': 'Weekly video check-in on progress',
       'tier.basic.li3': 'Monthly photo analysis',
       'tier.basic.li4': 'One-time macro and calorie setup',
-      'tier.basic.cta': 'Choose Basic',
       'tier.medium.name': 'Medium',
       'tier.medium.li1': 'Everything in Basic',
       'tier.medium.li2': 'New program on request (different goal or injury)',
       'tier.medium.li3': '2x per week video check-in',
       'tier.medium.li4': 'Multiple photo checks per week',
       'tier.medium.li5': 'Ongoing diet adjustments based on your progress',
-      'tier.medium.cta': 'Choose Medium',
       'tier.premium.name': 'Premium',
       'tier.premium.li1': 'Everything in Medium',
       'tier.premium.li2': 'Flexible access to multiple programs at once',
       'tier.premium.li3': 'Peak-week and competition coaching',
       'tier.premium.li4': 'Daily photo and nutrition check-ups',
       'tier.premium.li5': 'Knowledge transfer so you can eventually go it alone',
-      'tier.premium.cta': 'Choose Premium',
       'cta.eyebrow': 'Get started',
       'cta.h2': "Let's define your potential.",
       'cta.p': 'The first step is a short intake covering your goals, your history, your limitations. No commitment beyond that.',
@@ -517,6 +508,9 @@
       'pricing.sub': 'Dezelfde evidence-based aanpak op elk niveau. Het verschil zit in contactfrequentie, flexibiliteit, en hoeveel dagelijkse bijsturing erbij zit.',
       'pricing.featuredBadge': 'Meest gekozen',
       'pricing.perMonth': '/ maand',
+      'pricing.from': 'Vanaf',
+      'pricing.how': 'Vul de intake in, ik bekijk je doelen en situatie, en binnen 48 uur krijg je een persoonlijk plan met een voorstel dat past bij wat jij écht nodig hebt.',
+      'pricing.cta': 'Start je gratis intake',
       'pricing.billingMonthly': 'Maandelijks',
       'pricing.billingQuarterly': 'Per 3 maanden',
       'pricing.perQuarter': '/ 3 maanden',
@@ -529,21 +523,18 @@
       'tier.basic.li2': 'Wekelijkse video check-in voor voortgang',
       'tier.basic.li3': 'Maandelijkse foto-analyse',
       'tier.basic.li4': 'Eenmalige macro- en calorie-instelling',
-      'tier.basic.cta': 'Kies Basis',
       'tier.medium.name': 'Medium',
       'tier.medium.li1': 'Alles uit Basis',
       'tier.medium.li2': 'Nieuw programma op aanvraag (ander doel of blessure)',
       'tier.medium.li3': '2x per week video check-in',
       'tier.medium.li4': 'Meerdere foto-checks per week',
       'tier.medium.li5': 'Doorlopende dieetaanpassingen op basis van je voortgang',
-      'tier.medium.cta': 'Kies Medium',
       'tier.premium.name': 'Premium',
       'tier.premium.li1': 'Alles uit Medium',
       'tier.premium.li2': "Flexibele toegang tot meerdere programma's tegelijk",
       'tier.premium.li3': 'Piekweek- en wedstrijdbegeleiding',
       'tier.premium.li4': 'Dagelijkse foto- en voedingscheck-ups',
       'tier.premium.li5': 'Kennisoverdracht om uiteindelijk zelfstandig door te gaan',
-      'tier.premium.cta': 'Kies Premium',
       'cta.eyebrow': 'Aan de slag',
       'cta.h2': 'Laten we je potentieel bepalen.',
       'cta.p': 'De eerste stap is een korte intake over je doelen, je geschiedenis, je beperkingen. Geen verplichting daarna.',
@@ -634,6 +625,9 @@
       'pricing.sub': 'El mismo enfoque basado en evidencia en cada nivel. La diferencia está en la frecuencia de contacto, la flexibilidad, y cuánto ajuste diario está incluido.',
       'pricing.featuredBadge': 'Más elegido',
       'pricing.perMonth': '/ mes',
+      'pricing.from': 'Desde',
+      'pricing.how': 'Completa la admisión, reviso tus objetivos y tu situación, y en 48 horas recibes un plan personal con una propuesta ajustada a lo que realmente necesitas.',
+      'pricing.cta': 'Empieza tu admisión gratuita',
       'pricing.billingMonthly': 'Mensual',
       'pricing.billingQuarterly': 'Cada 3 meses',
       'pricing.perQuarter': '/ 3 meses',
@@ -646,21 +640,18 @@
       'tier.basic.li2': 'Videollamada semanal de seguimiento',
       'tier.basic.li3': 'Análisis de fotos mensual',
       'tier.basic.li4': 'Configuración única de macros y calorías',
-      'tier.basic.cta': 'Elegir Básico',
       'tier.medium.name': 'Medium',
       'tier.medium.li1': 'Todo lo del plan Básico',
       'tier.medium.li2': 'Programa nuevo bajo petición (otro objetivo o lesión)',
       'tier.medium.li3': 'Videollamada 2 veces por semana',
       'tier.medium.li4': 'Varios controles de fotos por semana',
       'tier.medium.li5': 'Ajustes de dieta continuos según tu progreso',
-      'tier.medium.cta': 'Elegir Medium',
       'tier.premium.name': 'Premium',
       'tier.premium.li1': 'Todo lo del plan Medium',
       'tier.premium.li2': 'Acceso flexible a varios programas a la vez',
       'tier.premium.li3': 'Guía para semana pico y competiciones',
       'tier.premium.li4': 'Controles diarios de foto y nutrición',
       'tier.premium.li5': 'Transferencia de conocimiento para que puedas ser autónomo',
-      'tier.premium.cta': 'Elegir Premium',
       'cta.eyebrow': 'Empieza ya',
       'cta.h2': 'Definamos tu potencial.',
       'cta.p': 'El primer paso es una breve admisión sobre tus objetivos, tu historial, tus limitaciones. Sin compromiso después.',
@@ -751,6 +742,9 @@
       'pricing.sub': 'A mesma abordagem baseada em evidências em cada nível. A diferença está na frequência de contato, flexibilidade, e quanto ajuste do dia a dia está incluído.',
       'pricing.featuredBadge': 'Mais escolhido',
       'pricing.perMonth': '/ mês',
+      'pricing.from': 'A partir de',
+      'pricing.how': 'Preencha a admissão, eu analiso seus objetivos e sua situação, e em 48 horas você recebe um plano pessoal com uma proposta ajustada ao que você realmente precisa.',
+      'pricing.cta': 'Comece sua admissão gratuita',
       'pricing.billingMonthly': 'Mensal',
       'pricing.billingQuarterly': 'A cada 3 meses',
       'pricing.perQuarter': '/ 3 meses',
@@ -763,21 +757,18 @@
       'tier.basic.li2': 'Videochamada semanal de acompanhamento',
       'tier.basic.li3': 'Análise de fotos mensal',
       'tier.basic.li4': 'Configuração única de macros e calorias',
-      'tier.basic.cta': 'Escolher Básico',
       'tier.medium.name': 'Medium',
       'tier.medium.li1': 'Tudo do plano Básico',
       'tier.medium.li2': 'Novo programa sob pedido (outro objetivo ou lesão)',
       'tier.medium.li3': 'Videochamada 2 vezes por semana',
       'tier.medium.li4': 'Vários checks de fotos por semana',
       'tier.medium.li5': 'Ajustes de dieta contínuos com base no seu progresso',
-      'tier.medium.cta': 'Escolher Medium',
       'tier.premium.name': 'Premium',
       'tier.premium.li1': 'Tudo do plano Medium',
       'tier.premium.li2': 'Acesso flexível a vários programas ao mesmo tempo',
       'tier.premium.li3': 'Orientação para semana de pico e competições',
       'tier.premium.li4': 'Checks diários de foto e nutrição',
       'tier.premium.li5': 'Transferência de conhecimento para você seguir sozinho no futuro',
-      'tier.premium.cta': 'Escolher Premium',
       'cta.eyebrow': 'Comece agora',
       'cta.h2': 'Vamos definir o seu potencial.',
       'cta.p': 'O primeiro passo é uma breve admissão sobre seus objetivos, seu histórico, suas limitações. Sem compromisso depois disso.',
@@ -953,14 +944,15 @@
     growBars();
   }
 
-  // ---- Tier-lead capture ----
+  // ---- Lead capture ----
   // Schrijft naar dezelfde localStorage-sleutel/vorm als business.js, zodat
-  // een klik op een prijs-tier meteen als lead in de business tracker
-  // verschijnt. Werkt alleen als index.html en business.html vanaf dezelfde
-  // origin bediend worden (bv. dezelfde GitHub Pages-site) — bij lokaal
-  // openen via file:// is er geen gedeelde storage tussen de twee bestanden.
-  // De tier zelf (Basis/Medium/Premium, via data-tier) blijft altijd Nederlands
-  // — dat is een interne sleutel voor business.js, niet zichtbare tekst.
+  // een klik op een intake-knop op deze pagina meteen als lead in de business
+  // tracker verschijnt. Werkt alleen als index.html en business.html vanaf
+  // dezelfde origin bediend worden (bv. dezelfde GitHub Pages-site) — bij
+  // lokaal openen via file:// is er geen gedeelde storage tussen de twee.
+  // Er staan geen prijzen meer op de site: de tier en facturatie worden pas
+  // na de intake bepaald, dus een lead start zonder tier en de coach kiest
+  // die bij het converteren in business.js.
   const TRACKER_STORAGE_KEY = 'ptBusinessTracker_v1';
 
   function laadTrackerState() {
@@ -980,13 +972,13 @@
     }
   }
 
-  function logTierLead(tier, billing) {
+  function logLead() {
     try {
       const state = laadTrackerState();
       state.leads.push({
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
-        tier: tier,
-        billing: billing || 'maandelijks',
+        tier: null,
+        billing: null,
         datum: new Date().toISOString().slice(0, 10),
         status: 'in_behandeling',
       });
@@ -996,6 +988,10 @@
     }
   }
 
+  document.querySelectorAll('a[href="intake.html"]').forEach((btn) => {
+    // Gewone <a href="intake.html">-link: alleen de lead loggen, de browser
+    // handelt de navigatie zelf af (werkt dus ook als deze JS ooit faalt).
+    btn.addEventListener('click', logLead);
   document.querySelectorAll('.tier-cta').forEach((btn) => {
     // Gewone <a href="intake.html">-link: de browser handelt de navigatie
     // zelf af (werkt dus ook als deze JS ooit faalt) — we loggen de lead en

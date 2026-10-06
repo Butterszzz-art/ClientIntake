@@ -8,9 +8,10 @@ import { initCoachGate, lockNow } from './coach-auth.js?v=14';
 
 const STORAGE_KEY = 'ptBusinessTracker_v1';
 
-// Zelfde drie namen als de prijzentabel op index.html (data-tier op de
-// .tier-cta-knoppen) — moet letterlijk overeenkomen, anders matcht een lead
-// niet meer met een tier hier.
+// Zelfde drie namen als de pakketkaarten op index.html (data-tier). Nieuwe
+// leads van de homepage komen binnen zónder tier (er staan geen prijzen meer
+// op de site — tier en prijs worden na de intake bepaald); de tier wordt pas
+// aan de lead gekoppeld als de coach hem converteert naar een cliënt.
 const TIERS = ['Basis', 'Medium', 'Premium'];
 
 // Aantal ad-hoc dieet-/programma-aanpassingen dat per kalendermaand is
@@ -150,28 +151,41 @@ function doorverwijsRanglijst() {
 }
 
 function tierTagClass(tier) {
-  return `tag--tier-${(tier || 'basis').toLowerCase()}`;
+  return tier ? `tag--tier-${tier.toLowerCase()}` : '';
 }
 
 function facturatieLabel(billing) {
+  if (!billing) return '—';
   return billing === 'kwartaal' ? 'Per 3 maanden' : 'Maandelijks';
 }
 
+function funnelRij(label, tier, leads, clienten) {
+  const geconverteerd = leads.filter((l) => l.status === 'geconverteerd');
+  return {
+    label,
+    tier,
+    aantalLeads: leads.length,
+    aantalGeconverteerd: geconverteerd.length,
+    conversieRatio: leads.length ? geconverteerd.length / leads.length : null,
+    aantalActief: clienten ? clienten.length : null,
+    mrr: clienten ? clienten.reduce((s, c) => s + Number(c.waarde || 0), 0) : null,
+  };
+}
+
+// Per tier + een rij voor leads die nog niet zijn ingedeeld (open of
+// afgewezen, nooit een tier gekregen) + een totaalrij. Omdat leads nu pas
+// bij conversie een tier krijgen, is de conversieratio in de totaalrij het
+// echte "intake → cliënt"-cijfer.
 function funnelPerTier() {
-  return TIERS.map((tier) => {
-    const leads = state.leads.filter((l) => l.tier === tier);
-    const geconverteerd = leads.filter((l) => l.status === 'geconverteerd');
-    const tierClienten = actieveClienten().filter((c) => c.tier === tier);
-    const tierMrr = tierClienten.reduce((s, c) => s + Number(c.waarde || 0), 0);
-    return {
-      tier,
-      aantalLeads: leads.length,
-      aantalGeconverteerd: geconverteerd.length,
-      conversieRatio: leads.length ? geconverteerd.length / leads.length : null,
-      aantalActief: tierClienten.length,
-      mrr: tierMrr,
-    };
-  });
+  const rijen = TIERS.map((tier) => funnelRij(
+    tier,
+    tier,
+    state.leads.filter((l) => l.tier === tier),
+    actieveClienten().filter((c) => c.tier === tier),
+  ));
+  rijen.push(funnelRij('Nog niet ingedeeld', null, state.leads.filter((l) => !l.tier), null));
+  rijen.push(funnelRij('Totaal', null, state.leads, actieveClienten()));
+  return rijen;
 }
 
 function fmtEuro(n) {
@@ -335,11 +349,11 @@ function renderFunnel() {
   const tbody = document.getElementById('funnel-tabel-body');
   tbody.innerHTML = funnelPerTier().map((r) => `
     <tr>
-      <td><span class="tag ${tierTagClass(r.tier)}">${r.tier}</span></td>
+      <td>${r.tier ? `<span class="tag ${tierTagClass(r.tier)}">${r.label}</span>` : `<strong>${r.label}</strong>`}</td>
       <td>${r.aantalLeads}</td>
       <td>${r.aantalGeconverteerd}</td>
       <td>${r.conversieRatio === null ? '—' : fmtPct(r.conversieRatio)}</td>
-      <td>${r.aantalActief}</td>
+      <td>${r.aantalActief === null ? '—' : r.aantalActief}</td>
       <td>${fmtEuro(r.mrr)}</td>
     </tr>
   `).join('');
@@ -362,7 +376,9 @@ function renderLeads() {
           ? '<span class="tag tag--lead-afgewezen">Afgewezen</span>'
           : '<span class="tag tag--lead-in-behandeling">In behandeling</span>';
       tr.innerHTML = `
-        <td><span class="tag ${tierTagClass(lead.tier)}">${escapeHtml(lead.tier)}</span></td>
+        <td>${lead.tier
+          ? `<span class="tag ${tierTagClass(lead.tier)}">${escapeHtml(lead.tier)}</span>`
+          : '<span class="tag">Nog in te delen</span>'}</td>
         <td>${facturatieLabel(lead.billing)}</td>
         <td>${lead.datum}</td>
         <td>${statusTag}</td>
@@ -434,7 +450,13 @@ function wireEvents() {
     });
     if (inBehandelingLeadId) {
       const lead = state.leads.find((l) => l.id === inBehandelingLeadId);
-      if (lead) lead.status = 'geconverteerd';
+      if (lead) {
+        // Pas hier krijgt een lead zijn tier/facturatie: die worden na de
+        // intake samen met de cliënt bepaald, niet meer op de homepage gekozen.
+        lead.status = 'geconverteerd';
+        lead.tier = document.getElementById('c-tier').value;
+        lead.billing = facturatie;
+      }
       inBehandelingLeadId = null;
     }
     bewaarState();
@@ -527,11 +549,12 @@ function wireEvents() {
     if (actie === 'converteer-lead') {
       const lead = state.leads.find((l) => l.id === id);
       if (!lead) return;
-      // Zet het "Cliënt toevoegen"-formulier klaar met de juiste tier alvast
-      // ingevuld; de lead wordt pas als "geconverteerd" gemarkeerd zodra de
-      // coach het formulier daadwerkelijk verstuurt (zie client-form hierboven).
+      // Zet het "Cliënt toevoegen"-formulier klaar; oude leads (van vóór de
+      // prijswijziging) hebben al een tier/facturatie, nieuwe niet — dan kiest
+      // de coach die zelf. De lead wordt pas als "geconverteerd" gemarkeerd
+      // zodra het formulier daadwerkelijk verstuurd wordt (zie client-form).
       inBehandelingLeadId = id;
-      document.getElementById('c-tier').value = lead.tier;
+      if (lead.tier) document.getElementById('c-tier').value = lead.tier;
       document.getElementById('c-facturatie').value = lead.billing === 'kwartaal' ? 'kwartaal' : 'maandelijks';
       updateWaardeVeldVoorFacturatie();
       document.getElementById('c-naam').focus();

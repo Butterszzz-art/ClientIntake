@@ -867,7 +867,6 @@ html { scroll-behavior: smooth; }
     transition: none !important;
   }
   .tilt-card, .marketing-hero::before { transition: none !important; }
-  .billing-toggle .toggle-highlight { transition: none !important; }
   .tilt-card::after { display: none !important; }
   .intro-overlay { display: none !important; }
   .intro-reveal, .intro-reveal-clip, .hero-cta-pulse {
@@ -988,46 +987,6 @@ html { scroll-behavior: smooth; }
 
 /* ---- Pricing ---- */
 
-/* Billing toggle (monthly / quarterly): a pill switch with a sliding
-   highlight, matching the .btn--accent fill color. */
-.billing-toggle {
-  display: inline-flex;
-  position: relative;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.25rem;
-  margin-bottom: 2rem;
-}
-.billing-toggle .toggle-highlight {
-  position: absolute;
-  top: 0.25rem;
-  bottom: 0.25rem;
-  left: 0.25rem;
-  width: calc(50% - 0.25rem);
-  background: var(--accent);
-  border-radius: 999px;
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 0;
-}
-.billing-toggle.is-kwartaal .toggle-highlight { transform: translateX(100%); }
-.billing-toggle button {
-  position: relative;
-  z-index: 1;
-  background: none;
-  border: none;
-  font-family: var(--font-data);
-  font-size: 0.78rem;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  padding: 0.6em 1.2em;
-  color: var(--text-dim);
-  cursor: pointer;
-  transition: color 0.2s ease;
-  white-space: nowrap;
-}
-.billing-toggle button.active { color: var(--bg); font-weight: 600; }
-
 .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; align-items: stretch; }
 
 .price-card {
@@ -1061,6 +1020,7 @@ html { scroll-behavior: smooth; }
 
 .price-card h3 { font-size: 1.35rem; margin-bottom: 0.4rem; }
 
+.price-card ul { list-style: none; margin: 0.75rem 0 0; padding: 0; flex: 1; }
 .price-card .prijs { font-family: var(--font-data); color: var(--accent); font-size: 0.95rem; margin: 0; line-height: 1.5; }
 .price-card .prijs .bedrag { font-size: 1.6rem; font-weight: 600; }
 .price-card .prijs-sub { font-family: var(--font-data); font-size: 0.72rem; color: var(--text-dim); margin: 0.35rem 0 1.25rem; min-height: 1em; }
@@ -1078,6 +1038,12 @@ html { scroll-behavior: smooth; }
 .price-card li:last-child { border-bottom: none; }
 .price-card li::before { content: '+'; color: var(--accent); font-family: var(--font-data); flex-shrink: 0; }
 
+/* Single "from" price + how-it-works + one CTA under the package cards.
+   The exact price is quoted after the intake, not shown per package. */
+.pricing-footer { margin: 2.5rem auto 0; max-width: 36rem; text-align: center; }
+.pricing-anchor { font-family: var(--font-data); color: var(--accent); font-size: 0.95rem; margin: 0 0 0.75rem; }
+.pricing-anchor .bedrag { font-size: 1.6rem; font-weight: 600; }
+.pricing-how { font-size: 0.92rem; color: var(--text-dim); margin: 0 0 1.5rem; }
 .price-card .btn { width: 100%; justify-content: center; text-align: center; }
 
 /* Universal inclusion (app + ebook, every tier) — stated once here rather

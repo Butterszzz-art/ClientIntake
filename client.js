@@ -3,6 +3,7 @@ import {
   maakLeegClient, initTagInputs, initFileInputs, vulIntakeFormIn, leesIntakeForm, maakKrachtRij, renderApparatuurChecklist,
   toggleePedsDisclaimer,
 } from './intake-form.js?v=14';
+import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=14';
 import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=16';
 import { db, storage } from './firebase.js?v=14';
 import { doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
