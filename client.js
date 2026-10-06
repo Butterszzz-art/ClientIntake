@@ -4,6 +4,7 @@ import {
   toggleePedsDisclaimer,
 } from './intake-form.js?v=14';
 import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=14';
+import { TALEN, vertaal, apparatuurLabel } from './i18n.js?v=16';
 import { db, storage } from './firebase.js?v=14';
 import { doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
@@ -13,6 +14,9 @@ import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/fireba
 // this one draft key, so nothing here can expose another client's data.
 const DRAFT_KEY = 'pt-intake:client-draft:v1';
 const TAAL_KEY = 'pt-intake:client-taal:v1';
+// Matches the consent wording on the intake form and Pocket Coach's
+// privacy.html#prospects; bump it when either changes.
+const CONSENT_VERSION = 'intake-2026-10-04';
 
 // Public Web3Forms access key, tied to Arman's inbox — safe to expose in
 // client-side code (Web3Forms rate-limits by key, no secret is involved).
@@ -33,11 +37,61 @@ const WEB3FORMS_ENDPOINT = 'https://api.web3forms.com/submit';
 // That's correct, not a typo.
 const POCKET_COACH_API = 'https://us-central1-pocketcoach-280c4.cloudfunctions.net/api/api/intake';
 
+// ---------- Betaalinstructies: pakket-e-mail via EmailJS ----------
+// Klikt een bezoeker op de homepage op een prijs-tier, dan linkt die knop
+// hierheen met ?tier=...&billing=...&amount=... in de URL (zie index.html).
+// Na het versturen van dit formulier (verstuurBetaalinstructies() hieronder)
+// gaat er dan een e-mail naar de cliënt met bevestiging + jouw bankgegevens,
+// en tonen we dezelfde gegevens ook direct op het bedankt-scherm (zodat het
+// niet volledig van e-mailbezorging afhangt, zelfde principe als de
+// mailto-fallback verderop in dit bestand).
+//
+// EmailJS (in tegenstelling tot Web3Forms hierboven) kan een e-mail sturen
+// NAAR een willekeurig adres (de cliënt) VANUIT jouw eigen inbox — dat kan
+// Web3Forms' gratis plan niet. Vereist een eenmalige, gratis setup op
+// https://www.emailjs.com/ — zie README.md, sectie "Betaalinstructies e-mail
+// (EmailJS)" voor de stappen. Vul hieronder je eigen IDs/sleutel in; zonder
+// geldige waarden slaat verstuurBetaalinstructies() de verzending gewoon over
+// (de betaalgegevens blijven dan alsnog zichtbaar op het bedankt-scherm).
+const EMAILJS_PUBLIC_KEY = 'W1jJV_fEgRyTSV_K4';
+const EMAILJS_SERVICE_ID = 'service_dm9j8sm';
+const EMAILJS_TEMPLATE_ID = 'template_romgynv';
+
+// Jouw bankgegevens — komen letterlijk op het bedankt-scherm en in de e-mail
+// naar de cliënt te staan. Dit is normale, publieke informatie om te delen
+// met iemand die jou moet betalen (net als het rekeningnummer op een
+// factuur) — geen wachtwoord of iets geheims.
+const BANKGEGEVENS = {
+  rekeninghouder: 'Vul hier je naam in',
+  iban: 'Vul hier je IBAN in',
+  bic: 'Vul hier je BIC in',
+};
+
 let huidigClient = null;
 let huidigeTaal = 'nl';
 let huidigeStatusSleutel = 'status.bezig';
 let laatsteBestandsnaam = '';
 let conceptTimer = null;
+
+// Leest ?tier=...&billing=...&amount=... uit de URL (gezet door de
+// tier-knoppen op index.html). Geeft null terug als er niets (geldigs)
+// meegegeven is — bv. iemand die rechtstreeks naar intake.html linkt.
+function leesGekozenPakket() {
+  const params = new URLSearchParams(window.location.search);
+  const tier = params.get('tier');
+  const bedrag = Number(params.get('amount'));
+  if (!tier || !Number.isFinite(bedrag) || bedrag <= 0) return null;
+  return {
+    tier,
+    billing: params.get('billing') === 'kwartaal' ? 'kwartaal' : 'maandelijks',
+    bedrag,
+  };
+}
+const gekozenPakket = leesGekozenPakket();
+
+function fmtEuro(n) {
+  return '€' + Math.round(n).toLocaleString('nl-NL');
+}
 
 function toonView(naam) {
   document.querySelectorAll('.view').forEach((el) => el.classList.remove('active'));
@@ -108,85 +162,21 @@ function pasVertalingToe(taal) {
 
   document.getElementById('taal-keuze').value = taal;
   localStorage.setItem(TAAL_KEY, taal);
+
+  renderPakketBanner();
 }
 
-// Plain-text summary for the email body, so Arman can read the intake
-// straight in his inbox. Kept in Dutch regardless of the client's chosen
-// UI language, since Arman is the only reader.
-function bouwSamenvatting(client) {
-  const i = client.intake;
-  const regels = [];
-  const sectie = (titel) => regels.push(`\n== ${titel} ==`);
-  const veld = (label, waarde) => regels.push(`${label}: ${waarde === '' || waarde == null ? '-' : waarde}`);
-
-  sectie('Persoonsgegevens');
-  veld('Naam', i.persoonsgegevens.naam);
-  veld('E-mail', i.persoonsgegevens.email);
-  veld('Leeftijd', i.persoonsgegevens.leeftijd);
-  veld('Lengte (cm)', i.persoonsgegevens.lengte);
-  veld('Gewicht (kg)', i.persoonsgegevens.gewicht);
-  veld('Vetpercentage (%)', i.persoonsgegevens.vetpercentage);
-  veld('Geslacht', i.persoonsgegevens.geslacht);
-  veld('Trainingservaring (jaar)', i.persoonsgegevens.trainingservaring);
-
-  sectie('Doel');
-  veld('Categorie', i.doel.categorie);
-  veld('Toelichting', i.doel.tekst);
-
-  sectie('Motivatie & mindset');
-  veld('Motivatie', i.motivatieMindset.motivatie);
-  veld('Mentale instelling', i.motivatieMindset.mentaleInstelling);
-
-  sectie('Huidige kracht');
-  if (i.huidigeKracht.length) {
-    for (const r of i.huidigeKracht) regels.push(`- ${r.oefening}: ${r.kg}kg x ${r.herhalingen} (${r.sets} sets)`);
-  } else {
-    regels.push('- Geen data');
-  }
-
-  sectie('Trainingsfrequentie & baan');
-  veld('Frequentie (dagen/week)', i.trainingsfrequentie.huidig);
-  veld('Trainingsmomenten', i.trainingsfrequentie.trainingsmomenten.join(', '));
-  veld('Baan type', i.trainingsfrequentie.baan.type);
-  veld('Uren zittend / staand', `${i.trainingsfrequentie.baan.urenZittend ?? '-'} / ${i.trainingsfrequentie.baan.urenStaand ?? '-'}`);
-
-  sectie('Blessures');
-  veld('Toelichting', i.blessures.tekst);
-  veld('Te vermijden oefeningen', i.blessures.vermijdenOefeningen.join(', '));
-
-  sectie('Dieet');
-  veld('Huidig', i.dieet.huidig);
-  veld('Voorkeuren', i.dieet.voorkeuren.join(', '));
-  veld('Afkeuren', i.dieet.afkeuren.join(', '));
-
-  sectie('PEDs');
-  veld('Gebruikt', i.peds.gebruikt ? 'Ja' : 'Nee');
-  veld('Toelichting', i.peds.toelichting);
-
-  sectie('Lifestyle');
-  veld('Activiteitsniveau', i.lifestyle.activityLevel);
-  veld('Stressniveau', i.lifestyle.stressLevel);
-  veld('Slaap', `${i.lifestyle.slaap.uren ?? '-'} uur, kwaliteit: ${i.lifestyle.slaap.kwaliteit}`);
-  veld('Cafeïne (mg/dag)', i.lifestyle.cafeine);
-
-  sectie('Meetmethode vetpercentage');
-  veld('Huidplooimeter gebruikt', i.vetpercentageMeting.huidplooimeter ? 'Ja' : 'Nee');
-
-  sectie('Materiaal & toegang');
-  veld('Laagste plaat (kg)', i.materiaal.laagstePlaat);
-  veld('Dumbbell-stapgrootte (kg)', i.materiaal.dumbbellStapgrootte);
-  veld('Apparatuur', i.materiaal.apparatuur.join(', '));
-
-  sectie('Supplementen');
-  veld('Vrije tekst', i.supplementen);
-
-  sectie('Genen');
-  veld('Polsomtrek (cm)', i.genen.polsomtrek);
-  veld('Enkelomtrek (cm)', i.genen.enkelomtrek);
-  veld('Gewicht voorheen', i.genen.gewichtVoorheen);
-  veld('Zware baby', i.genen.zwareBaby ? 'Ja' : 'Nee');
-
-  return regels.join('\n');
+// Toont de "je koos pakket X"-banner boven het formulier — alleen als er via
+// een prijs-tier op de homepage is doorgeklikt (zie leesGekozenPakket()).
+function renderPakketBanner() {
+  const banner = document.getElementById('pakket-banner');
+  if (!gekozenPakket) { banner.hidden = true; return; }
+  const periodeSleutel = gekozenPakket.billing === 'kwartaal' ? 'pakket.periode.kwartaal' : 'pakket.periode.maandelijks';
+  document.getElementById('pakket-banner-tekst').textContent = vertaal(huidigeTaal, 'pakket.banner')
+    .replace('{tier}', gekozenPakket.tier)
+    .replace('{bedrag}', fmtEuro(gekozenPakket.bedrag))
+    .replace('{periode}', vertaal(huidigeTaal, periodeSleutel));
+  banner.hidden = false;
 }
 
 async function verstuurNaarArman(client) {
@@ -201,10 +191,11 @@ async function verstuurNaarArman(client) {
     formData.append('email', email);
     formData.append('replyto', email);
   }
-  // Note: Web3Forms rejects the whole submission on the free tier if a file
-  // is attached ("Pro feature required"), so the JSON travels only via the
-  // local download below — the email carries the readable summary only.
-  formData.append('message', bouwSamenvatting(client));
+  // Only a heads-up, no intake content: the intake holds health data
+  // (injuries, PED use, body composition), which shouldn't pass through a
+  // third-party mail relay. The full intake is in the coach dashboard.
+  formData.append('message',
+    `Nieuwe intake van ${naam}${email ? ` (${email})` : ''}. Open het coach-dashboard om de intake te bekijken.`);
 
   const response = await fetch(WEB3FORMS_ENDPOINT, { method: 'POST', body: formData });
   const result = await response.json().catch(() => ({ success: false }));
@@ -219,8 +210,51 @@ async function verstuurNaarPocketCoach(client) {
   await fetch(POCKET_COACH_API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ intake: client.intake, instellingen: client.instellingen || {} }),
+    body: JSON.stringify({
+      intake: client.intake,
+      instellingen: client.instellingen || {},
+      consents: { healthData: client.consents?.healthData === true, version: client.consents?.version },
+    }),
   });
+}
+
+// Toont de betaalgegevens direct op het bedankt-scherm — onafhankelijk van of
+// de EmailJS-mail hieronder daadwerkelijk aankomt (zelfde reden als de
+// mailto-fallback: e-mailbezorging is niet 100% gebleken).
+function toonBetaalInstructies(client, pakket) {
+  const referentie = `${client.naam || 'Naamloos'} — ${pakket.tier}`;
+  document.getElementById('betaal-pakket').textContent = `${pakket.tier} (${vertaal(huidigeTaal, pakket.billing === 'kwartaal' ? 'pakket.periode.kwartaal' : 'pakket.periode.maandelijks')})`;
+  document.getElementById('betaal-bedrag').textContent = fmtEuro(pakket.bedrag);
+  document.getElementById('betaal-rekeninghouder').textContent = BANKGEGEVENS.rekeninghouder;
+  document.getElementById('betaal-iban').textContent = BANKGEGEVENS.iban;
+  document.getElementById('betaal-bic').textContent = BANKGEGEVENS.bic;
+  document.getElementById('betaal-referentie').textContent = referentie;
+  document.getElementById('betaal-instructies').hidden = false;
+  return referentie;
+}
+
+// Fire-and-forget e-mail naar de cliënt met bevestiging + betaalinstructies,
+// via EmailJS (zie config + uitleg bovenaan dit bestand). Stuurt niets als er
+// geen geldige EmailJS-config is ingevuld, of als de cliënt geen e-mailadres
+// heeft opgegeven — de betaalgegevens blijven in dat geval nog steeds
+// zichtbaar op het bedankt-scherm via toonBetaalInstructies() hierboven.
+async function verstuurBetaalinstructies(client, pakket, referentie) {
+  const email = client.intake.persoonsgegevens.email;
+  if (!email) return;
+  if (!EMAILJS_SERVICE_ID || EMAILJS_SERVICE_ID.startsWith('VUL_')) return;
+  if (typeof emailjs === 'undefined') return;
+
+  await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+    to_email: email,
+    to_name: client.naam || '',
+    tier_naam: pakket.tier,
+    facturatie: pakket.billing === 'kwartaal' ? 'per 3 maanden (eenmalig)' : 'maandelijks',
+    bedrag: fmtEuro(pakket.bedrag),
+    referentie,
+    rekeninghouder: BANKGEGEVENS.rekeninghouder,
+    iban: BANKGEGEVENS.iban,
+    bic: BANKGEGEVENS.bic,
+  }, { publicKey: EMAILJS_PUBLIC_KEY });
 }
 
 // Independent of Web3Forms entirely — a real client submission once showed
@@ -244,6 +278,13 @@ function zetVerzendStatus(sleutel, variant) {
 async function verstuur() {
   huidigClient.intake = leesIntakeForm();
   huidigClient.naam = huidigClient.intake.persoonsgegevens.naam;
+  // GDPR Art. 9 consent (required checkbox — the form can't be sent without
+  // it). Stored with the client as the record of what was agreed, and when.
+  huidigClient.consents = {
+    healthData: document.getElementById('f-toestemming-gezondheid').checked,
+    version: CONSENT_VERSION,
+    at: new Date().toISOString(),
+  };
   laatsteBestandsnaam = bestandsnaamVoor(huidigClient);
 
   downloadJson(laatsteBestandsnaam, { client: huidigClient });
@@ -263,6 +304,14 @@ async function verstuur() {
   // POCKET_COACH_API above) — likewise independent of this app's own
   // Firestore write below.
   verstuurNaarPocketCoach(huidigClient).catch(() => {});
+
+  // Alleen als er via een prijs-tier is doorgeklikt: toon de betaalgegevens
+  // meteen op dit scherm, en probeer ze ook (fire-and-forget) per e-mail te
+  // versturen — zie leesGekozenPakket()/BANKGEGEVENS/EMAILJS_* hierboven.
+  if (gekozenPakket) {
+    const referentie = toonBetaalInstructies(huidigClient, gekozenPakket);
+    verstuurBetaalinstructies(huidigClient, gekozenPakket, referentie).catch(() => {});
+  }
 
   try {
     await setDoc(doc(db, 'clients', huidigClient.id), huidigClient);

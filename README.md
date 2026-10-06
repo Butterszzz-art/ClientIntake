@@ -60,13 +60,15 @@ pincode-gate uit een eerdere versie van dit project.
 3. Cliënt klikt **Versturen**. Er gebeuren dan drie dingen tegelijk:
    - `client.js` schrijft het cliëntprofiel rechtstreeks naar de
      `clients`-collectie in Firestore — dit is de **primaire, gezaghebbende**
-     route. Firestore's security rules staan dit toe voor iedereen
-     (`allow create: if true`), zonder dat de cliënt hoeft in te loggen.
+     route. Firestore's security rules staan dit toe zonder in te loggen, mits
+     de cliënt de verplichte toestemmingscheckbox (gezondheidsgegevens, AVG
+     art. 9) heeft aangevinkt (zie `firestore.rules`).
    - De browser **downloadt** ook `<naam>-intake.json` als eigen back-up voor
      de cliënt.
    - Er gaat een **heads-up e-mail** naar Arman via Web3Forms (fire-and-forget,
-     blokkeert niks) — een leesbare samenvatting, handig om snel te scannen,
-     maar niet meer de manier waarop data in het dashboard terechtkomt.
+     blokkeert niks) — alleen naam, e-mail en "nieuwe intake binnen". De
+     intake zelf (gezondheidsgegevens) gaat bewust niet via een externe
+     mailrelay; die staat in het dashboard.
    - Het bedankt-scherm toont of de Firestore-schrijfactie gelukt is. Lukt dat
      niet (geen internet, Firestore plat), dan staat er expliciet dat de
      cliënt het gedownloade bestand naar Arman moet mailen via de altijd
@@ -104,25 +106,19 @@ dezelfde database.
 - **Collectie:** `clients`. Elk document = één cliënt-object, exact het
   schema hieronder (`id`, `naam`, `createdAt`, `intake`, `instellingen`,
   `calculations`), met het document-ID gelijk aan `client.id`.
-- **Security rules** (ingesteld via de Firebase Console → Firestore Database
-  → Rules):
-  ```
-  rules_version = '2';
-  service cloud.firestore {
-    match /databases/{database}/documents {
-      match /clients/{clientId} {
-        allow create: if true;
-        allow read, update, delete: if request.auth != null;
-      }
-    }
-  }
-  ```
+- **Security rules:** staan in `firestore.rules` (deployen met
+  `firebase deploy --only firestore:rules`, of plakken in Firebase Console →
+  Firestore Database → Rules). Vervang eerst `REPLACE_WITH_COACH_UID` door de
+  uid van je coach-account (Console → Authentication → Users).
   Vertaling: **iedereen** (ook een niet-ingelogde cliënt) mag een nieuw
-  cliëntprofiel aanmaken; **alleen een ingelogde gebruiker** mag iets lezen,
-  bewerken of verwijderen. Firestore behandelt een schrijfactie naar een
-  bestaand document-ID automatisch als `update` (niet `create`), dus een
-  cliënt kan sowieso nooit andermans bestaande record overschrijven, zelfs
-  niet als die het toevallige UUID zou raden.
+  cliëntprofiel aanmaken, maar alleen met precies het schema hierboven en met
+  `consents.healthData == true` (de verplichte toestemmingscheckbox);
+  **alleen het coach-account** mag iets lezen, bewerken of verwijderen. De
+  oude regel (`request.auth != null`) liet élke ingelogde gebruiker alles
+  lezen — en met e-mail/wachtwoord-registratie aan kan iedereen met de
+  publieke `apiKey` een account aanmaken. Een schrijfactie naar een bestaand
+  document-ID is een `update`, dus een cliënt kan nooit andermans record
+  overschrijven.
 - **Live updates:** `coach.html` gebruikt Firestore's `onSnapshot` (geen
   eenmalige `getDocs`) voor de cliëntenlijst — een nieuwe intake verschijnt
   dus zonder de pagina te hoeven verversen.
@@ -138,23 +134,11 @@ pad `clients/{clientId}/{veldId}-{tijdstempel}-{bestandsnaam}`; het
 `intake`-document bewaart alleen de resulterende `downloadUrl` en
 bestandsnaam (`genen.handFotoUrl`, `huidigProgramma.bestandUrl`).
 
-- **Security rules** (ingesteld via de Firebase Console → Storage → Rules):
-  ```
-  rules_version = '2';
-  service firebase.storage {
-    match /b/{bucket}/o {
-      match /clients/{clientId}/{fileName} {
-        allow write: if request.resource.size < 15 * 1024 * 1024;
-        allow read: if request.auth != null;
-      }
-    }
-  }
-  ```
-  Zelfde principe als de Firestore-rules hierboven: **iedereen** mag een
-  bestand uploaden (tot 15 MB, zie `MAX_UPLOAD_BYTES` in `intake-form.js`),
-  **alleen een ingelogde coach** mag het terug downloaden/bekijken. Deze
-  rules moet je zelf één keer instellen in de Firebase Console — Claude Code
-  kan dit niet namens jou doen.
+- **Security rules:** staan in `storage.rules` (deployen met
+  `firebase deploy --only storage`). Zelfde `REPLACE_WITH_COACH_UID` als
+  hierboven. **Iedereen** mag een nieuw bestand uploaden (afbeelding of PDF,
+  tot 15 MB, zie `MAX_UPLOAD_BYTES` in `intake-form.js`); **alleen het
+  coach-account** mag het terug downloaden/bekijken.
 - Geüploade bestanden verschijnen als klikbare links onder **"Bijlagen"**
   onderaan het overzichtsscherm in `coach.html`.
 
@@ -231,7 +215,7 @@ de rauwe oude labels in plaats van vertaalde labels.
 |---|---|
 | `index.html` | Publieke marketinghomepage (root) — statisch, geen database-koppeling, eindigt in een "Start intake"-link naar `intake.html` |
 | `intake.html` | Cliëntformulier — het enige wat cliënten *daadwerkelijk invullen* |
-| `client.js` | Logica voor `intake.html`: concept-autosave, versturen (Firestore-write + Web3Forms-mail + JSON-download), bedankt-scherm |
+| `client.js` | Logica voor `intake.html`: concept-autosave, versturen (Firestore-write + Web3Forms-mail + JSON-download), bedankt-scherm, betaalinstructies-e-mail naar de cliënt via EmailJS (zie "Betaalinstructies e-mail" hierboven) |
 | `coach.html` | Coach-dashboard — cliëntenlijst (live uit Firestore), intake (handmatige invoer), berekeningen, overzicht |
 | `app.js` | Logica voor `coach.html`: rendering, Firestore CRUD + live `onSnapshot`-lijst, export/import |
 | `business.html` | Business tracker (coach-only) — acquisitiekosten, churn, CLV, doorverwijs-ranglijst, prijs-tier-funnel & leads |
@@ -302,6 +286,75 @@ Een paar dingen om te weten:
   bedenktermijn bij diensten op afstand) — controleer dit zelf of met een
   jurist voordat je dit gebruikt.
 
+### Gratis gesprek aanvragen (twijfelaars)
+
+Tussen de prijzen en de sluit-CTA staat op `index.html` een sectie
+**"Twijfel je nog? / Not sure yet?"** (`#gesprek`, ook bereikbaar via de
+nav-link "Gratis gesprek" en een link onder de sluit-CTA). Bezoekers die nog
+niet klaar zijn voor de intake kunnen daar direct een moment prikken via
+Calendly (knop "Kies een moment in mijn agenda", opent
+`https://calendly.com/armanbahali/im-interested` in een nieuw tabblad — pas
+de link aan in de `.call-book-btn` in `index.html`). Past geen enkel moment,
+dan laten ze via het formulier ernaast naam, e-mail, optioneel
+telefoon/WhatsApp, een voorkeursmoment (ochtend/middag/avond) en hun twijfel
+achter. Dit gaat via **Web3Forms** (zelfde public key als de intake-mail) als
+e-mail naar Arman, altijd in het Nederlands — met `replyto` op het adres van de
+bezoeker, zodat je direct kunt antwoorden om een moment te prikken. Er wordt
+niets naar Firestore of de business tracker geschreven. Lukt het versturen
+niet, dan toont de pagina het contactadres als alternatief.
+
+### Betaalinstructies e-mail (EmailJS)
+
+Een klik op een prijs-tier hangt ook `?tier=...&billing=...&amount=...` aan
+de link naar `intake.html` (naast het loggen van de lead hierboven — zie de
+`.tier-cta`-click-handler in `index.html`). `intake.html` leest die
+parameters (`leesGekozenPakket()` in `client.js`) en toont daar een banner
+boven het formulier ("Je koos het pakket ..."). Rondt de bezoeker het
+formulier af, dan gebeurt er automatisch twee dingen extra, bovenop de
+gewone intake-afhandeling:
+
+1. Het bedankt-scherm toont meteen een **"Rond je inschrijving af"**-blok met
+   het gekozen pakket, het bedrag, je bankgegevens (`BANKGEGEVENS` in
+   `client.js`) en een betaalomschrijving (`<naam> — <tier>`) — zodat de
+   cliënt dit altijd ziet, ongeacht of de e-mail hieronder aankomt.
+2. Er gaat een **e-mail naar de cliënt** (niet naar jou — dat is nog steeds
+   Web3Forms, zie hierboven) met diezelfde gegevens plus een bevestiging dat
+   de aanmelding ontvangen is, via [EmailJS](https://www.emailjs.com/).
+   Web3Forms' gratis plan kan alleen náár jouw eigen inbox mailen, niet náár
+   een cliënt vanuit jouw adres — vandaar een tweede dienst specifiek hiervoor.
+
+**Eenmalige setup (moet je zelf doen — Claude Code kan geen account voor je
+aanmaken):**
+
+1. Maak een gratis account op [emailjs.com](https://www.emailjs.com/) en
+   koppel je zakelijke e-mailadres als **Email Service** (Gmail/Outlook/eigen
+   domein/...). Onthoud de **Service ID**.
+2. Maak een **Email Template** aan met (in elk geval) deze variabelen erin —
+   exact deze namen, want dat is wat `verstuurBetaalinstructies()` in
+   `client.js` meestuurt: `{{to_name}}`, `{{tier_naam}}`, `{{facturatie}}`,
+   `{{bedrag}}`, `{{referentie}}`, `{{rekeninghouder}}`, `{{iban}}`,
+   `{{bic}}`. Zet het template-"To"-veld op `{{to_email}}`. Onthoud de
+   **Template ID**.
+3. Kopieer je **Public Key** (Account → General).
+4. Vul deze drie waarden in bovenaan `client.js`
+   (`EMAILJS_PUBLIC_KEY`/`EMAILJS_SERVICE_ID`/`EMAILJS_TEMPLATE_ID`), en vul
+   je echte bankgegevens in bij `BANKGEGEVENS` (`rekeninghouder`, `iban`,
+   `bic`) in datzelfde bestand.
+5. Verhoog het versienummer van `client.js` (zie "Cache-busting" onderaan)
+   en deploy opnieuw.
+
+Zolang `EMAILJS_SERVICE_ID` nog op de placeholder-waarde staat, slaat
+`verstuurBetaalinstructies()` de verzending stilzwijgend over — het
+bedankt-scherm blijft de betaalgegevens gewoon tonen, dus de app blijft
+bruikbaar zonder EmailJS-setup, alleen zonder de e-mail-kant ervan.
+
+**Let op — dit is geen betaalgateway:** dit stuurt alleen instructies; er
+wordt geen betaling automatisch geverifieerd of geïnd. Jij controleert zelf
+je bankrekening en markeert de cliënt pas als actief (bv. in
+`business.html` bij "Cliënt toevoegen") zodra de overschrijving binnen is.
+Je eigen IBAN/BIC delen met iemand die jou moet betalen is normale,
+publieke informatie (net als op een factuur) — geen geheime sleutel.
+
 ## Waarom dit zo is opgezet (toekomstige integratie)
 
 Dit project is bewust zo gebouwd dat het later 1-op-1 gekoppeld kan worden aan
@@ -368,7 +421,7 @@ Firestore-collectie `clients`, en als `{ "client": {...} }` bij export):
     "instellingen": {
       "energiebalansFactor": 1.0, "eiwitFactor": 1.8, "percentageVetVanREE": 0.4,
       "trainingsdagenPerWeek": 3, "trainingsduurMinuten": 60, "MET": 5.7,
-      "pal": 1.2, "tef": 1.1, "aantalMaaltijden": 4
+      "pal": 1.0, "tef": 1.1, "aantalMaaltijden": 4
     },
     "calculations": {
       "vetvrijeMassa": 0,
@@ -444,6 +497,9 @@ entrypoint dat de app zelf aanroept; de rest zijn de bouwstenen daaronder
 |---|---|---|---|
 | `vetvrijeMassa(gewicht, vetpct)` | kg, % | kg | Vetvrije massa (VVM) |
 | `katchMcArdleBMR(vvm)` | kg | kcal | Basaalmetabolisme via Katch-McArdle |
+| `tinsleyRMR(gewicht)` | kg | kcal | Rustmetabolisme via Tinsley (zeer slanke, gespierde cliënten) |
+| `bmrMethodeVoorClient(persoonsgegevens)` | object | `'katchMcArdle'`\|`'tinsley'` | Welke BMR-formule past bij deze cliënt |
+| `vetPercentageVoorClient(persoonsgegevens)` | object | fractie | Standaard vet als deel van de REE, per geslacht |
 | `energieverbruikTrainingsdag(gewicht, duurMinuten, MET=5.7)` | kg, min, MET | kcal | Energieverbruik van de training zelf (EE) |
 | `energieverbruikRustdag(bmr, pal, tef)` | kcal, factor, factor | kcal | Totaal energieverbruik op een rustdag (REE) |
 | `totaalEnergieTrainingsdag(ree, ee, tef)` | kcal, kcal, factor | kcal | Totaal verbruik op een trainingsdag |
@@ -460,9 +516,12 @@ entrypoint dat de app zelf aanroept; de rest zijn de bouwstenen daaronder
 | `verdeelMaaltijden(totalen, aantalMaaltijden, postTrainingMultiplier=1.5)` | `{eiwit,vet,koolhydraten}`, 2–6, factor | array van maaltijden | Verdeelt macro's over maaltijden; eiwit ×multiplier na training (1.5 standaard, 2 als er maar 1 maaltijd na training zit) |
 | `eiwitBereik(gewicht)` | kg | `{min, praktisch, maxSlank}` (g) | Persoonlijk eiwit-richtbereik: 1.6–1.8–2.4 g/kg |
 | `vetBereik(ree)` | kcal | `{min, max}` (g) | Persoonlijk vet-richtbereik: 20–40% van REE |
-| `beoogdeInnameBereik(onderhoudPerDag, doelCategorie)` | kcal, string | `{min, max}` (kcal) | Richtbereik voor de streefinname, per doel (zie hieronder) |
-| `palVoorActiviteitsniveau(activityLevel)` | string | getal | Standaard PAL-waarde per activiteitsniveau |
-| `energiebalansFactorVoorDoel(doelCategorie)` | string | getal | Standaard energiebalans-factor per doel |
+| `beoogdeInnameBereik(onderhoudPerDag, doelCategorie, persoonsgegevens)` | kcal, string, object | `{min, max}` (kcal) | Richtbereik voor de streefinname, per doel (zie hieronder) |
+| `palVoorActiviteitsniveau(activityLevel, geslacht)` | string, `man`/`vrouw`/... | getal | Standaard PAL-waarde per activiteitsniveau en geslacht (zonder krachttraining) |
+| `energiebalansFactorVoorDoel(doelCategorie, persoonsgegevens)` | string, `{vetpercentage, geslacht, trainingservaring}` | getal | Standaard energiebalans-factor: tekort naar vetpercentage, surplus naar trainingsstatus |
+| `energiebalansBereik(doelCategorie, persoonsgegevens)` | idem | `{min, standaard, max}` | Bereik van de energiebalans-factor |
+| `tekortBereik(vetpercentage, geslacht)` | %, string | `{min, standaard, max}` | Tekort (fractie van onderhoud) bij dit vetpercentage |
+| `trainingsstatusUitErvaring(jaren)` | jaren | 1-3 | <1 jaar: 1, 1–4 jaar: 2, 4+ jaar: 3 (onbekend: 2) |
 | `bepaalSplitsdagen(trainingsdagenPerWeek)` | dagen/week | `{naam, dagen}` | Voorgestelde trainingssplit |
 | `detecteerBlessureConflicten(blessures)` | `{tekst, vermijdenOefeningen}` | array | Matcht gemelde blessures/vermijdlijst tegen standaardoefeningen |
 | `genereerRodeVlaggen(intake, calculations)` | intake, calculations | array | Automatische coach-waarschuwingen |
@@ -478,14 +537,37 @@ entrypoint dat de app zelf aanroept; de rest zijn de bouwstenen daaronder
 De opdracht gaf exacte formules maar niet elke constante. Deze defaults zijn
 gekozen en overal in de UI aanpasbaar (stap 2, "Berekeningen controleren"):
 
-- **PAL** (activiteitsfactor buiten training): sedentair `1.2`, licht actief
-  `1.375`, actief `1.55`, erg actief `1.725` (Task 1 — vierde niveau
-  toegevoegd, standaard PAL-waarde net boven "actief").
+- **PAL** (activiteitsfactor buiten training, **zonder** krachttraining — die
+  telt apart via EE): man sedentair `1.00`, licht actief `1.11`, actief
+  `1.25`, erg actief `1.48`; vrouw `1.00` / `1.12` / `1.27` / `1.45`;
+  "anders" het midden daarvan. Bron: Butters University, module Energy
+  balance (de verdeling per geslacht volgt de IOM-coëfficiënten waar die
+  ranges vandaan komen).
 - **TEF** (voedsel-thermogenese): `1.1` (10%).
-- **Energiebalans-factor** per doel: vetverlies `0.8`, onderhoud `1.0`,
-  spieropbouw `1.1`, krachttoename `1.05`.
+- **Energiebalans-factor** per doel (Butters University):
+  - vetverlies: tekort naar vetpercentage, lineair van 2.5–7.5% (standaard
+    5%) bij wedstrijdvorm tot 30–50% (standaard 30%) bij een hoog
+    vetpercentage. Ankers: man 6% → 32%, vrouw 14% → 40%, anders 10% → 36%
+    vetpercentage. BU geeft alleen de twee uitersten; de ankers zijn zo
+    gekozen dat BU's voorbeeld (ongetrainde vrouw, 30% vet) op ~20% tekort
+    uitkomt.
+  - spieropbouw en krachttoename: surplus naar trainingsstatus — beginner
+    (<1 jaar) 5–15% (standaard 10%), gemiddeld (1–4 jaar) 2–7% (4.5%),
+    gevorderd (4+ jaar) 1–3% (2%).
+  - onderhoud: `1.0` (±3%, eigen inschatting).
 - **Eiwit**: `1.8` g/kg (instelbaar 1.6–3.7 g/kg).
-- **Vet**: `40%` van de REE (instelbaar 20–40%+).
+- **Vet**: vrouw `40%`, man `30%`, anders `35%` van de REE (instelbaar
+  20–40%+). Butters University legt vrouwen bewust aan de bovenkant; voor
+  mannen noemt BU geen punt, dus het midden van het bereik.
+- **BMR**: Katch-McArdle/Cunningham (`370 + 21.6 × VVM`), behalve bij zeer
+  slanke, gevorderde cliënten (man ≤10%, vrouw ≤18% vet én 4+ jaar
+  training): dan Tinsley (`24.8 × gewicht + 10`), zoals BU aanraadt. Bij een
+  ongetrainde cliënt met een hoger vetpercentage (man ≥22%, vrouw ≥30%)
+  waarschuwt de app dat Katch-McArdle vaak te laag uitvalt; BU noemt daar geen
+  betere formule, dus corrigeer na 2+ weken weegdata. Overschrijfbaar met de
+  instelling `bmrMethode` (`katchMcArdle` / `tinsley`).
+- **Slaap**: rode vlag onder `7` uur (was 6; BU: 4–7 uur vs. 8 uur slaap
+  verhoogt de eetlust met 20–22%).
 - **Aantal maaltijden**: `4` (instelbaar 2–6).
 - **Post-training eiwitboost**: `1.5×` (instelbaar naar `2×`).
 
@@ -513,13 +595,11 @@ Herkomst van elk bereik:
   een spanning die al in het brondocument zelf zit — de app volgt hier
   bewust de rekentool, niet de tekst, voor consistentie met je eigen
   cursusmateriaal.
-- **Beoogde inname** (`beoogdeInnameBereik`): voor vetverlies 10–30% tekort
-  op onderhoud (Module 14, letterlijk overgenomen). Voor spieropbouw/bulken
-  een vast surplus van 200–500 kcal boven onderhoud (ook Module 14 — dit is
-  een vast aantal kcal, geen percentage). Voor "onderhoud" en
-  "krachttoename" geeft de cursus geen expliciet cijfer — de gebruikte
-  bandbreedtes (±3% resp. +100 tot +300 kcal) zijn een redelijke inschatting,
-  geen geciteerd getal.
+- **Beoogde inname** (`beoogdeInnameBereik`): onderhoud × het bereik van
+  `energiebalansBereik` (tekort naar vetpercentage, surplus naar
+  trainingsstatus; zie hierboven). De rode vlag "te agressief tekort" gaat
+  af boven het maximale tekort voor dat vetpercentage (`tekortBereik().max`),
+  niet meer bij een vaste 25%.
 - **Post-training eiwitboost**: Module 11 noemt "50% meer eiwit" als de
   normale regel voor maaltijden na training, en "100% meer" specifiek als er
   maar één maaltijd tussen training en bedtijd zit. De app paste voorheen

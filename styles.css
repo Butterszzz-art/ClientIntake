@@ -25,6 +25,10 @@
    pincode gate to keep the header/dashboard off-screen until unlocked). */
 [hidden] { display: none !important; }
 
+html {
+  color-scheme: dark;
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -184,6 +188,35 @@ a { color: var(--accent); }
 .verzend-status--ok { border-left-color: var(--groen); color: var(--groen); }
 .verzend-status--fout { border-left-color: var(--oranje); color: var(--oranje); }
 
+/* ---------- Pakket-banner (intake.html, na doorklikken vanaf een prijs-tier) ---------- */
+.pakket-banner {
+  border-left: 4px solid var(--accent);
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1.5rem;
+}
+.pakket-banner p { margin: 0; }
+
+/* ---------- Betaalinstructies (bedankt-scherm, zelfde context) ---------- */
+.betaal-instructies {
+  text-align: left;
+  margin-top: 1.5rem;
+  border-left: 4px solid var(--accent);
+}
+.betaal-instructies h3 { margin-top: 0; }
+
+.betaal-gegevens {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.4rem 1rem;
+  margin: 1rem 0;
+}
+.betaal-gegevens dt { color: var(--text-dim); font-size: 0.85rem; }
+.betaal-gegevens dd {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+}
+
 /* ---------- Layout ---------- */
 main#app {
   max-width: 1100px;
@@ -249,11 +282,26 @@ input[type="text"], input[type="number"], input[type="file"], input[type="email"
   color: var(--text);
   padding: 0.5em 0.6em;
   border-radius: var(--radius);
+  /* 16px floor (not the 0.95rem other text uses) so focusing a field never
+     triggers iOS Safari's automatic zoom-in. */
+  font-size: 16px;
 }
 
 input:focus, select:focus, textarea:focus {
+  /* Keep a visible ring instead of outline:none with only a 1px border-color
+     swap — that swap alone (var(--border) -> var(--accent)) is too subtle to
+     count as a real focus indicator. */
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* Anything that keeps native default focus styling (buttons, links, checkboxes,
+   custom tag-remove buttons, ...) still needs it to be visible against the
+   dark background/theme, so make :focus-visible consistent everywhere. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 textarea { resize: vertical; font-family: inherit; }
@@ -577,6 +625,75 @@ html { scroll-behavior: smooth; }
 }
 .marketing-page .btn:hover { box-shadow: 0 0.5rem 1.5rem -0.375rem var(--accent-glow); }
 
+/* ---- Intro splash ----
+   Full-screen brand reveal that plays once on load, then gets out of the
+   way (opacity+visibility via `forwards`, no JS required for it to clear
+   itself). JS only adds [hidden] afterwards so it stops painting/blocking
+   at all — see the `animationend` listener below. */
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  pointer-events: none;
+  animation: introOut 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.intro-mark {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: clamp(3rem, 13vw, 6.5rem);
+  line-height: 0.9;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  animation: introMark 2.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.intro-line {
+  width: min(280px, 55vw);
+  height: 3px;
+  background: var(--accent);
+  transform-origin: left;
+  animation: introSweep 2.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.intro-tag {
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  animation: introLift 2.2s ease both;
+}
+@keyframes introOut {
+  0%, 58% { opacity: 1; visibility: visible; }
+  86% { opacity: 0; }
+  100% { opacity: 0; visibility: hidden; }
+}
+@keyframes introMark { 0% { opacity: 0; transform: scale(0.86); } 20% { opacity: 1; transform: scale(1); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes introSweep { 0% { transform: scaleX(0); } 55% { transform: scaleX(1); } 100% { transform: scaleX(1); } }
+@keyframes introLift { 0%, 24% { opacity: 0; transform: translateY(10px); } 48%, 100% { opacity: 1; transform: none; } }
+
+/* ---- Staggered hero entrance (times its delays to clear the intro above) ---- */
+.intro-reveal { animation: heroRiseSoft 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.intro-reveal-clip { animation: heroClipUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.intro-reveal--1 { animation-delay: 1.45s; }
+.intro-reveal--2 { animation-delay: 1.6s; }
+.intro-reveal--3 { animation-delay: 1.9s; }
+.intro-reveal--4 { animation-delay: 2.05s; }
+@keyframes heroRiseSoft { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes heroClipUp { from { opacity: 0; clip-path: inset(100% 0 0 0); transform: translateY(16px); } to { opacity: 1; clip-path: inset(-20% 0 -20% 0); transform: none; } }
+
+.hero-cta-pulse { animation: pulseRing 2.4s ease 2.6s 2; }
+@keyframes pulseRing {
+  0% { box-shadow: 0 0 0 0 var(--accent-glow); }
+  70% { box-shadow: 0 0 0 14px rgba(74, 222, 128, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+}
+
 /* ---- Hero ---- */
 .marketing-hero { position: relative; overflow: hidden; padding: 5rem 0 4.5rem; border-bottom: 1px solid var(--border); }
 
@@ -608,7 +725,7 @@ html { scroll-behavior: smooth; }
   background: linear-gradient(180deg, var(--bg) 0%, rgba(6, 9, 7, 0.7) 45%, var(--bg) 100%);
 }
 
-.marketing-hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 3rem; align-items: center; }
+.marketing-hero-grid { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 3rem; align-items: center; }
 
 .marketing-eyebrow {
   display: inline-block;
@@ -620,7 +737,9 @@ html { scroll-behavior: smooth; }
   margin-bottom: 1.1rem;
 }
 
-.marketing-hero h1 { font-size: clamp(2.1rem, 5vw, 3.3rem); letter-spacing: 0.005em; }
+/* Sized (together with the wider text column above) so the 8-word headline
+   wraps to 2 lines at typical desktop widths instead of 3-4. */
+.marketing-hero h1 { font-size: clamp(2rem, 4vw, 2.85rem); letter-spacing: 0.005em; }
 .marketing-hero h1 .hl { color: var(--accent); }
 
 .marketing-hero-sub { margin-top: 1.3rem; font-size: 1.05rem; color: var(--text-dim); max-width: 46ch; }
@@ -637,6 +756,23 @@ html { scroll-behavior: smooth; }
 }
 
 .marketing-hero-actions .secondary:hover { color: var(--text); border-color: var(--text-dim); }
+
+/* ---- Ticker: infinite-scroll strip of keywords under the hero ---- */
+.marketing-ticker { overflow: hidden; border-bottom: 1px solid var(--border); background: var(--bg-raised); }
+.marketing-ticker-track {
+  display: flex;
+  width: max-content;
+  gap: 2.75rem;
+  padding: 0.85rem 1.4rem;
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  animation: ticker 32s linear infinite;
+}
+.marketing-ticker-dot { color: var(--accent); }
+@keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
 /* 3D tilt: rotates toward the cursor with a glare highlight that tracks it.
    Applied via class="tilt-card" — JS sets --tiltX/--tiltY/--glareX/--glareY
@@ -732,6 +868,16 @@ html { scroll-behavior: smooth; }
   }
   .tilt-card, .marketing-hero::before { transition: none !important; }
   .tilt-card::after { display: none !important; }
+  .intro-overlay { display: none !important; }
+  .intro-reveal, .intro-reveal-clip, .hero-cta-pulse {
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+    animation: none !important;
+    box-shadow: none !important;
+  }
+  .marketing-ticker-track { animation: none !important; }
+  .process-item-accent, .spec-bar-fill, .section-head-bar { transition: none !important; transform: none !important; }
 }
 
 /* ---- Reveal on scroll ---- */
@@ -771,6 +917,20 @@ html { scroll-behavior: smooth; }
 .marketing-section-head h2 { font-size: clamp(1.6rem, 3.2vw, 2.3rem); }
 .marketing-section-head p { margin-top: 0.9rem; color: var(--text-dim); font-size: 1rem; }
 
+/* Underline accent under a section heading — only used on the approach
+   section, growing in from the left once the heading scrolls into view. */
+.section-head-bar {
+  display: block;
+  width: 3rem;
+  height: 3px;
+  background: var(--accent);
+  margin-top: 1.1rem;
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
+}
+.marketing-section-head.reveal.in-view .section-head-bar { transform: scaleX(1); }
+
 /* ---- Approach ---- */
 .approach-body { max-width: 66ch; font-size: 1.05rem; color: var(--text); }
 .approach-body p + p { margin-top: 1rem; }
@@ -779,7 +939,7 @@ html { scroll-behavior: smooth; }
 .spec-list { border-top: 1px solid var(--border); }
 .spec-row {
   display: grid;
-  grid-template-columns: 10rem 1fr 1.4fr;
+  grid-template-columns: 10rem 1fr 1.4fr 8rem;
   gap: 1.75rem;
   padding: 2rem 0;
   border-bottom: 1px solid var(--border);
@@ -789,12 +949,41 @@ html { scroll-behavior: smooth; }
 .spec-row h3 { font-size: 1.35rem; }
 .spec-row .spec-desc { color: var(--text-dim); font-size: 0.95rem; padding-top: 0.15em; margin: 0; }
 
+/* Per-row progress bar + label ("SCALES 1:1" etc.) — fills in with the same
+   stagger as the row itself once .spec-list gets .in-view. */
+.spec-bar { padding-top: 0.4em; }
+.spec-bar-track { height: 2px; background: var(--border); }
+.spec-bar-fill { height: 2px; background: var(--accent); transform-origin: left; transform: scaleX(0); transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
+.spec-bar-label { display: block; margin-top: 0.5rem; font-family: var(--font-data); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
+.spec-list.reveal.in-view .spec-row:nth-child(1) .spec-bar-fill { transform: scaleX(1); transition-delay: 0.15s; }
+.spec-list.reveal.in-view .spec-row:nth-child(2) .spec-bar-fill { transform: scaleX(1); transition-delay: 0.27s; }
+.spec-list.reveal.in-view .spec-row:nth-child(3) .spec-bar-fill { transform: scaleX(1); transition-delay: 0.39s; }
+
 /* ---- Process ---- */
-.process-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.75rem; }
-.process-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.75rem 1.5rem; }
+/* Unequal widths + a staircase offset instead of three identical cards in a
+   row — same content, but the eye reads it as a sequence (step 1 leads, step
+   3 trails) rather than three interchangeable boxes. */
+.process-list { display: grid; grid-template-columns: 1.15fr 1fr 0.9fr; gap: 1.75rem; }
+.process-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.75rem 1.5rem; position: relative; overflow: hidden; }
+.process-item:nth-child(2) { margin-top: 2rem; }
+.process-item:nth-child(3) { margin-top: 4rem; }
 .process-item .num { font-family: var(--font-data); font-size: 0.8rem; color: var(--accent); margin-bottom: 0.9rem; display: block; }
 .process-item h3 { font-size: 1.15rem; margin-bottom: 0.6rem; }
 .process-item p { color: var(--text-dim); font-size: 0.9rem; margin: 0; }
+
+/* Top accent line that wipes in left-to-right once the card is revealed. */
+.process-item-accent {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.process-list.reveal.in-view .process-item:nth-child(1) .process-item-accent { transform: scaleX(1); transition-delay: 0.05s; }
+.process-list.reveal.in-view .process-item:nth-child(2) .process-item-accent { transform: scaleX(1); transition-delay: 0.17s; }
+.process-list.reveal.in-view .process-item:nth-child(3) .process-item-accent { transform: scaleX(1); transition-delay: 0.29s; }
 
 /* ---- Pricing ---- */
 
@@ -803,7 +992,7 @@ html { scroll-behavior: smooth; }
 .price-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 0.6rem;
+  border-radius: var(--radius);
   padding: 2rem 1.6rem;
   display: flex;
   flex-direction: column;
@@ -832,6 +1021,11 @@ html { scroll-behavior: smooth; }
 .price-card h3 { font-size: 1.35rem; margin-bottom: 0.4rem; }
 
 .price-card ul { list-style: none; margin: 0.75rem 0 0; padding: 0; flex: 1; }
+.price-card .prijs { font-family: var(--font-data); color: var(--accent); font-size: 0.95rem; margin: 0; line-height: 1.5; }
+.price-card .prijs .bedrag { font-size: 1.6rem; font-weight: 600; }
+.price-card .prijs-sub { font-family: var(--font-data); font-size: 0.72rem; color: var(--text-dim); margin: 0.35rem 0 1.25rem; min-height: 1em; }
+
+.price-card ul { list-style: none; margin: 0 0 1.75rem; padding: 0; flex: 1; }
 
 .price-card li {
   font-size: 0.88rem;
@@ -850,9 +1044,73 @@ html { scroll-behavior: smooth; }
 .pricing-anchor { font-family: var(--font-data); color: var(--accent); font-size: 0.95rem; margin: 0 0 0.75rem; }
 .pricing-anchor .bedrag { font-size: 1.6rem; font-weight: 600; }
 .pricing-how { font-size: 0.92rem; color: var(--text-dim); margin: 0 0 1.5rem; }
+.price-card .btn { width: 100%; justify-content: center; text-align: center; }
+
+/* Universal inclusion (app + ebook, every tier) — stated once here rather
+   than repeated as a bullet inside each .price-card, so it reads as a given
+   rather than a tier perk. Sits between the grid and the .pricing-note fine
+   print: more visible than the note, but not competing with the cards. */
+.pricing-inclusion {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+.pricing-inclusion strong { color: var(--text); font-weight: 600; }
+
+.pricing-note { margin-top: 1.5rem; font-family: var(--font-data); font-size: 0.72rem; color: var(--text-dim); }
 
 @media (max-width: 860px) {
   .pricing-grid { grid-template-columns: 1fr; }
+}
+
+/* ---- Gesprek aanvragen (#gesprek) — for visitors who aren't ready for the intake ---- */
+.call-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 3rem;
+  align-items: start;
+}
+.call-grid .marketing-section-head { margin-bottom: 0; }
+.call-points { list-style: none; margin-top: 1.5rem; display: grid; gap: 0.6rem; padding: 0; }
+.call-points li { position: relative; padding-left: 1.5rem; color: var(--text); font-size: 0.95rem; }
+.call-points li::before { content: '✓'; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+
+.call-book-btn { margin-top: 1.75rem; }
+.call-form__intro { margin: 0; color: var(--text); font-size: 0.95rem; }
+
+.call-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+.call-form input, .call-form select, .call-form textarea { width: 100%; }
+.call-form input[type="tel"] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.5em 0.6em;
+  border-radius: var(--radius);
+}
+.call-form__full { grid-column: 1 / -1; }
+.call-form__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+.call-form .btn:disabled { opacity: 0.6; cursor: wait; }
+.call-status { font-size: 0.9rem; color: var(--text-dim); flex: 1 1 16rem; }
+.call-status.is-success { color: var(--accent); }
+.call-status.is-error { color: var(--rood); }
+.call-honeypot { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+
+@media (max-width: 860px) {
+  .call-grid { grid-template-columns: 1fr; gap: 2rem; }
+}
+@media (max-width: 520px) {
+  .call-form { grid-template-columns: 1fr; padding: 1.1rem; }
 }
 
 /* ---- CTA ---- */
@@ -860,6 +1118,8 @@ html { scroll-behavior: smooth; }
 .marketing-cta h2 { font-size: clamp(1.75rem, 4vw, 2.75rem); max-width: 18ch; margin: 0 auto; }
 .marketing-cta p { margin-top: 1.1rem; color: var(--text-dim); font-size: 1rem; }
 .marketing-cta .btn { margin-top: 1.75rem; }
+.cta-call-link { display: block; margin-top: 1.1rem; font-size: 0.9rem; color: var(--text-dim); }
+.cta-call-link:hover { color: var(--accent); }
 
 .marketing-footer { border-top: 1px solid var(--border); padding: 1.75rem 0; }
 .marketing-footer-inner {
@@ -877,6 +1137,7 @@ html { scroll-behavior: smooth; }
   .marketing-hero-grid { grid-template-columns: 1fr; }
   .marketing-hero { padding: 3.5rem 0 3rem; }
   .process-list { grid-template-columns: 1fr; }
+  .process-item:nth-child(2), .process-item:nth-child(3) { margin-top: 0; }
   .spec-row { grid-template-columns: 1fr; gap: 0.5rem; }
 }
 @media (max-width: 720px) {
@@ -916,7 +1177,20 @@ html { scroll-behavior: smooth; }
 
 tr.rij-gestopt { opacity: 0.5; }
 
-.rij-acties { display: flex; gap: 0.4rem; }
+.rij-acties { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+
+/* Adjustment-usage tracking (Task A) — same danger treatment as
+   .tag--gestopt, reused here for "at/over the included cap this month". */
+.tag--boven-limiet { background: rgba(239, 68, 68, 0.15); color: var(--rood); border-color: transparent; }
+
+tr.aanpassing-geschiedenis-rij td { background: var(--bg-raised); }
+.aanpassing-lijst { margin: 0.3rem 0; padding-left: 1.2rem; font-size: 0.8rem; color: var(--text-dim); }
+.aanpassing-lijst li { margin-bottom: 0.2rem; }
+
+/* Onboarding checklist (Task B) — app access + ebook delivery per client.
+   Purely operational, not fed into any funnel/MRR/CLV metric. */
+.onboarding-cel { display: flex; align-items: center; gap: 0.6rem; }
+.onboarding-cel--waarschuwing { background: rgba(239, 68, 68, 0.15); border-radius: var(--radius); padding: 0.2rem 0.4rem; }
 
 .ranglijst-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
 .ranglijst-item:last-child { border-bottom: none; }
