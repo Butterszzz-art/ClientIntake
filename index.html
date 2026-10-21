@@ -9,9 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=14">
-<link rel="stylesheet" href="styles.css?v=19">
-<link rel="stylesheet" href="styles.css?v=20">
+<link rel="stylesheet" href="styles.css?v=22">
 </head>
 <body class="marketing-page">
 
@@ -53,13 +51,9 @@
 
 <header class="marketing-hero">
   <div class="marketing-hero-bg" aria-hidden="true">
-    <!-- Add your own physique photos here once you have them, e.g.:
-         <img src="foto1.jpg" alt="">
-         <img src="foto2.jpg" alt="">
-         Each <img> fills an equal share of the hero width (object-fit: cover),
-         and the dark overlay (styles.css, .marketing-hero-bg::after) keeps the
-         text above it readable. Left empty, this does nothing — you just see
-         the current plain background. -->
+    <!-- Main stage photo (IFBB Pro League). Blur + dark overlay live in
+         styles.css (.marketing-hero-bg) so the headline stays readable. -->
+    <img src="images/stage-main.jpg" alt="" fetchpriority="high">
   </div>
   <div class="marketing-container marketing-hero-grid">
     <div>
@@ -129,7 +123,10 @@
   </div>
 </section>
 
-<section id="specs" class="marketing-section alt">
+<section id="specs" class="marketing-section alt has-photo-bg">
+  <div class="section-photo-bg" aria-hidden="true">
+    <img src="images/stage-side.jpg" alt="" loading="lazy">
+  </div>
   <div class="marketing-container">
     <div class="marketing-section-head reveal">
       <h2 data-i18n="specs.h2">Three things that don't change.</h2>
@@ -286,6 +283,13 @@
 </section>
 
 <section class="marketing-cta">
+  <div class="marketing-cta-bg" aria-hidden="true">
+    <img src="images/stage-kneel.jpg" alt="" loading="lazy">
+    <img src="images/stage-front.jpg" alt="" loading="lazy">
+    <img src="images/stage-npc.jpg" alt="" loading="lazy">
+    <img src="images/stage-back.jpg" alt="" loading="lazy">
+    <img src="images/stage-side.jpg" alt="" loading="lazy">
+  </div>
   <div class="marketing-container reveal">
     <h2 data-i18n="cta.h2">Let's define your potential.</h2>
     <p data-i18n="cta.p">The first step is a short intake covering your goals, your history, your limitations. No commitment beyond that.</p>
@@ -835,72 +839,6 @@
 
     document.getElementById('taal-keuze').value = taal;
     localStorage.setItem(TAAL_KEY, taal);
-
-    // Prijzen zijn geen [data-i18n]-tekst (het bedrag/de sub-regel worden
-    // berekend), maar de sub-regel bevat wel vertaalde tekst — dus opnieuw
-    // renderen bij elke taalwissel.
-    renderPrices(currentBilling);
-  }
-
-  // ---- Prijzen: maandelijks vs. per kwartaal (3 maanden vooruitbetaald) ----
-  function fmtEuro(n) {
-    return '€' + Math.round(n).toLocaleString('nl-NL');
-  }
-
-  // Counts the displayed amount up/down to the new value instead of just
-  // swapping the text, so toggling billing reads as a change rather than a
-  // page-flash. Skipped entirely under prefers-reduced-motion.
-  function animateAmount(el, target) {
-    if (!el) return;
-    if (reduceMotion) { el.textContent = fmtEuro(target); return; }
-    const from = Number(String(el.textContent).replace(/[^0-9]/g, ''));
-    if (!Number.isFinite(from)) { el.textContent = fmtEuro(target); return; }
-    const dur = 500;
-    const t0 = performance.now();
-    if (el._raf) cancelAnimationFrame(el._raf);
-    const tick = (now) => {
-      const p = Math.min(1, (now - t0) / dur);
-      const eased = 1 - Math.pow(1 - p, 3);
-      el.textContent = fmtEuro(from + (target - from) * eased);
-      if (p < 1) el._raf = requestAnimationFrame(tick);
-    };
-    el._raf = requestAnimationFrame(tick);
-  }
-
-  let currentBilling = 'maandelijks';
-
-  function renderPrices(billing) {
-    const dict = VERTALINGEN[huidigeTaal] || VERTALINGEN.en;
-    document.querySelectorAll('.price-card').forEach((card) => {
-      const maandelijks = Number(card.dataset.priceMonthly);
-      const kwartaal = Number(card.dataset.priceQuarter);
-      const amountEl = card.querySelector('[data-role="amount"]');
-      const periodEl = card.querySelector('[data-role="period"]');
-      const subEl = card.querySelector('[data-role="sub"]');
-      if (!maandelijks || !kwartaal) return;
-      const besparingPct = Math.round((1 - kwartaal / (maandelijks * 3)) * 100);
-      if (billing === 'kwartaal') {
-        animateAmount(amountEl, kwartaal);
-        periodEl.textContent = dict['pricing.perQuarter'];
-        subEl.textContent = dict['pricing.quarterlySub'].replace('{amount}', fmtEuro(kwartaal / 3));
-      } else {
-        animateAmount(amountEl, maandelijks);
-        periodEl.textContent = dict['pricing.perMonth'];
-        subEl.textContent = dict['pricing.monthlySub'].replace('{pct}', besparingPct);
-      }
-    });
-  }
-
-  const billingToggle = document.getElementById('billingToggle');
-  if (billingToggle) {
-    billingToggle.querySelectorAll('button').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        currentBilling = btn.dataset.billing;
-        billingToggle.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b === btn));
-        billingToggle.classList.toggle('is-kwartaal', currentBilling === 'kwartaal');
-        renderPrices(currentBilling);
-      });
-    });
   }
 
   document.getElementById('taal-keuze').addEventListener('change', (e) => pasVertalingToe(e.target.value));
@@ -992,23 +930,6 @@
     // Gewone <a href="intake.html">-link: alleen de lead loggen, de browser
     // handelt de navigatie zelf af (werkt dus ook als deze JS ooit faalt).
     btn.addEventListener('click', logLead);
-  document.querySelectorAll('.tier-cta').forEach((btn) => {
-    // Gewone <a href="intake.html">-link: de browser handelt de navigatie
-    // zelf af (werkt dus ook als deze JS ooit faalt) — we loggen de lead en
-    // hangen vóór die navigatie nog ?tier=...&billing=...&amount=... aan de
-    // href, zodat intake.html weet welk pakket gekozen is (zie
-    // leesGekozenPakket() in client.js, voor de betaalinstructies-e-mail).
-    btn.addEventListener('click', () => {
-      logTierLead(btn.dataset.tier, currentBilling);
-      const card = btn.closest('.price-card');
-      const bedrag = card
-        ? (currentBilling === 'kwartaal' ? card.dataset.priceQuarter : card.dataset.priceMonthly)
-        : null;
-      if (bedrag) {
-        const params = new URLSearchParams({ tier: btn.dataset.tier, billing: currentBilling, amount: bedrag });
-        btn.href = `intake.html?${params.toString()}`;
-      }
-    });
   });
 
   // ---- Gesprek aanvragen (#gesprek) ----
