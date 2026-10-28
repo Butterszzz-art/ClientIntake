@@ -1,19 +1,22 @@
 :root {
-  --bg: #060907;
-  --bg-raised: #0b120d;
-  --bg-card: #0f1712;
-  --border: #1e2e24;
-  --text: #e6f2ea;
-  --text-dim: #8ba396;
-  --accent: #4ade80;
-  --accent-dim: #16a34a;
-  --accent-soft: rgba(74, 222, 128, 0.12);
-  --accent-glow: rgba(74, 222, 128, 0.4);
+  --bg: #02040a;
+  --bg-raised: #060c18;
+  --bg-card: #0a1424;
+  --border: #16263d;
+  --text: #eef3f9;
+  --text-dim: #9ba8b8;
+  --accent: #6fa8e8;
+  --accent-dim: #3f7cc4;
+  --accent-soft: rgba(111, 168, 232, 0.13);
+  --steel: #89a5bf;
+  --steel-soft: rgba(31, 53, 76, 0.55);
+  --accent-glow: rgba(111, 168, 232, 0.4);
   --rood: #ef4444;
   --oranje: #f59e0b;
   --groen: #22c55e;
-  --font-heading: 'Oswald', sans-serif;
-  --font-data: 'JetBrains Mono', monospace;
+  --font-heading: 'Anton', 'Barlow Condensed', Impact, sans-serif;
+  --font-body: 'Archivo', system-ui, sans-serif;
+  --font-data: 'Barlow Condensed', 'Archivo', sans-serif;
   --radius: 4px;
 }
 
@@ -34,15 +37,29 @@ html, body {
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-data);
+  font-family: var(--font-body);
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.55;
+  /* Anton only ships one weight — never let the browser fake a bold. */
+  font-synthesis: none;
+}
+
+/* Same look as the stage photos: blue-black base, a deep navy "stage light"
+   glow at the top and a faint blue haze lower down, fixed so the whole
+   page reads as one continuous backdrop while scrolling. */
+body {
+  background:
+    radial-gradient(1200px 700px at 70% -10%, var(--steel-soft), transparent 60%),
+    radial-gradient(900px 600px at 0% 110%, var(--accent-soft), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
 }
 
 h1, h2, h3, h4, legend {
   font-family: var(--font-heading);
+  font-weight: 400;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   color: var(--text);
   margin: 0 0 0.5em;
 }
@@ -581,7 +598,7 @@ html { scroll-behavior: smooth; }
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(6, 9, 7, 0.9);
+  background: rgba(2, 4, 10, 0.9);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
 }
@@ -595,11 +612,14 @@ html { scroll-behavior: smooth; }
 
 .marketing-brand { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
 
-.marketing-nav-links { display: flex; align-items: center; gap: 1.75rem; }
+.marketing-nav-links { display: flex; align-items: center; gap: 1.4rem; }
+.marketing-nav-links > * { white-space: nowrap; }
+.marketing-brand > span > span { white-space: nowrap; }
 
 .marketing-nav-links a.marketing-nav-link {
   font-family: var(--font-data);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
   color: var(--text-dim);
   text-decoration: none;
 }
@@ -690,12 +710,20 @@ html { scroll-behavior: smooth; }
 .hero-cta-pulse { animation: pulseRing 2.4s ease 2.6s 2; }
 @keyframes pulseRing {
   0% { box-shadow: 0 0 0 0 var(--accent-glow); }
-  70% { box-shadow: 0 0 0 14px rgba(74, 222, 128, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+  70% { box-shadow: 0 0 0 14px rgba(111, 168, 232, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(111, 168, 232, 0); }
 }
 
 /* ---- Hero ---- */
-.marketing-hero { position: relative; overflow: hidden; padding: 5rem 0 4.5rem; border-bottom: 1px solid var(--border); }
+/* The hero opens on the full stage photo. The photo is pinned (sticky) for the
+   whole hero, and the headline block sits *below* it in the flow, so scrolling
+   slides the text up over the photo. JS sets --hp (0 → 1) from scroll
+   position; the photo blurs/darkens with it and the text pops in.
+   overflow: clip (not hidden) so position: sticky keeps working inside. */
+.marketing-hero { position: relative; overflow: clip; padding: 0 0 5rem; border-bottom: 1px solid var(--border); --hp: 0; }
+/* Pull the hero up under the sticky (see-through) nav so the photo fills the
+   whole first screen. --nav-h is measured by JS; 72px is the fallback. */
+.marketing-hero { margin-top: calc(-1 * var(--nav-h, 72px)); }
 
 /* Cursor-tracking spotlight — --mx/--my are set by JS on mousemove. */
 .marketing-hero::before {
@@ -710,29 +738,63 @@ html { scroll-behavior: smooth; }
 
 .marketing-hero > .marketing-container { position: relative; z-index: 1; }
 
-/* Stage photo behind the hero: slightly blurred and dimmed so it reads as a
-   backdrop. The overlay is darkest on the left (behind the headline) and at
-   the bottom edge, so the text stays readable and the photo fades into the
-   page. scale() hides the soft edges the blur creates. */
-.marketing-hero-bg { position: absolute; inset: 0; z-index: 0; display: flex; overflow: hidden; }
+.hero-stage {
+  position: sticky; top: 0; z-index: 0;
+  height: 100vh; height: 100svh;
+}
+.marketing-hero-bg { position: absolute; inset: 0; display: flex; overflow: hidden; }
+/* At the top the photo is sharp and bright; as --hp grows it blurs, darkens
+   and zooms in slightly so the text on top stays readable. */
 .marketing-hero-bg img {
   flex: 1; width: 100%; height: 100%; min-width: 0;
-  object-fit: cover; object-position: 46% 22%;
-  filter: blur(2.5px) brightness(0.75) saturate(0.95);
-  transform: scale(1.06);
+  object-fit: cover; object-position: 46% 30%;
+  filter: blur(calc(var(--hp) * 5px)) brightness(calc(0.95 - var(--hp) * 0.4)) saturate(0.95);
+  transform: scale(calc(1.02 + var(--hp) * 0.06));
+  will-change: filter, transform;
 }
-.marketing-hero-bg:has(img)::after {
+/* Always-on soft fade at the top (under the nav) and bottom (into the page). */
+.hero-stage::before {
   content: '';
-  position: absolute;
-  inset: 0;
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(180deg, rgba(2, 4, 10, 0.55) 0%, transparent 18%, transparent 72%, var(--bg) 100%);
+  pointer-events: none;
+}
+/* Scroll-driven darkening behind the text. */
+.marketing-hero-bg::after {
+  content: '';
+  position: absolute; inset: 0;
+  opacity: var(--hp);
   background:
-    linear-gradient(90deg, rgba(6, 9, 7, 0.85) 0%, rgba(6, 9, 7, 0.45) 45%, rgba(6, 9, 7, 0.3) 100%),
-    linear-gradient(180deg, rgba(6, 9, 7, 0.4) 0%, transparent 30%, transparent 70%, var(--bg) 100%);
+    linear-gradient(90deg, rgba(2, 4, 10, 0.85) 0%, rgba(2, 4, 10, 0.5) 50%, rgba(2, 4, 10, 0.35) 100%);
 }
 @media (max-width: 760px) {
-  .marketing-hero-bg::after {
-    background: linear-gradient(180deg, rgba(6, 9, 7, 0.7) 0%, rgba(6, 9, 7, 0.8) 60%, var(--bg) 100%) !important;
-  }
+  .marketing-hero-bg::after { background: rgba(2, 4, 10, 0.72); }
+}
+
+/* "Scroll" hint at the bottom of the first screen; fades out once you scroll. */
+.hero-scroll-cue {
+  position: absolute; left: 50%; bottom: 2.25rem; z-index: 2;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
+  font-family: var(--font-data); font-size: 0.72rem; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--text);
+  opacity: calc(1 - var(--hp) * 4);
+  pointer-events: none;
+}
+.hero-scroll-cue i { display: block; width: 1px; height: 2.75rem; background: linear-gradient(var(--accent), transparent); transform-origin: top; animation: cueDrop 1.8s ease-in-out infinite; }
+@keyframes cueDrop { 0% { transform: scaleY(0); opacity: 1; } 60% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(1); opacity: 0; } }
+
+/* Hero text: sits after the 100vh stage and pops in when it scrolls into view. */
+.marketing-hero > .marketing-container { padding-top: 1rem; }
+.hero-pop { opacity: 0; transform: translateY(2.5rem) scale(0.97); transition: opacity 0.7s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
+.hero-pop-group.in-view .hero-pop { opacity: 1; transform: none; }
+.hero-pop-group.in-view .hero-pop--2 { transition-delay: 0.12s; }
+.hero-pop-group.in-view .hero-pop--3 { transition-delay: 0.26s; }
+.hero-pop-group.in-view .hero-pop--4 { transition-delay: 0.4s; }
+.hero-pop-group.in-view .hero-pop--5 { transition-delay: 0.55s; }
+@media (prefers-reduced-motion: reduce) {
+  .hero-pop { opacity: 1; transform: none; transition: none; }
+  .hero-scroll-cue i { animation: none; }
 }
 
 .marketing-hero-grid { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 3rem; align-items: center; }
@@ -922,7 +984,7 @@ html { scroll-behavior: smooth; }
 
 /* ---- Section shared ---- */
 .marketing-section { padding: 5.5rem 0; }
-.marketing-section.alt, .marketing-cta.alt { background: var(--bg-raised); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.marketing-section.alt, .marketing-cta.alt { background: rgba(6, 12, 24, 0.55); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 /* Section with a stage photo behind it: photo sits on the right and fades out
    to the left, so the text column stays on a clean background. */
 .marketing-section.has-photo-bg { position: relative; overflow: hidden; }
@@ -1165,7 +1227,7 @@ html { scroll-behavior: smooth; }
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 60% 70% at 50% 50%, rgba(6, 9, 7, 0.82), rgba(6, 9, 7, 0.45) 100%),
+    radial-gradient(ellipse 60% 70% at 50% 50%, rgba(2, 4, 10, 0.82), rgba(2, 4, 10, 0.45) 100%),
     linear-gradient(180deg, var(--bg) 0%, transparent 18%, transparent 82%, var(--bg) 100%);
 }
 @media (max-width: 760px) {
@@ -1191,12 +1253,12 @@ html { scroll-behavior: smooth; }
 
 @media (max-width: 860px) {
   .marketing-hero-grid { grid-template-columns: 1fr; }
-  .marketing-hero { padding: 3.5rem 0 3rem; }
+  .marketing-hero { padding: 0 0 3rem; }
   .process-list { grid-template-columns: 1fr; }
   .process-item:nth-child(2), .process-item:nth-child(3) { margin-top: 0; }
   .spec-row { grid-template-columns: 1fr; gap: 0.5rem; }
 }
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   .marketing-nav-links { display: none; }
   .marketing-nav-toggle { display: inline-flex; }
   .marketing-nav-links.open {
@@ -1223,13 +1285,13 @@ html { scroll-behavior: smooth; }
 .tag--actief { background: rgba(34, 197, 94, 0.15); color: var(--groen); border-color: transparent; }
 .tag--gestopt { background: rgba(239, 68, 68, 0.15); color: var(--rood); border-color: transparent; }
 
-.tag--tier-basis { background: rgba(139, 163, 150, 0.15); color: var(--text-dim); border-color: transparent; }
+.tag--tier-basis { background: rgba(155, 168, 184, 0.15); color: var(--text-dim); border-color: transparent; }
 .tag--tier-medium { background: rgba(245, 158, 11, 0.15); color: var(--oranje); border-color: transparent; }
-.tag--tier-premium { background: rgba(74, 222, 128, 0.18); color: var(--accent); border-color: transparent; }
+.tag--tier-premium { background: rgba(111, 168, 232, 0.18); color: var(--accent); border-color: transparent; }
 
-.tag--lead-in-behandeling { background: rgba(74, 222, 128, 0.15); color: var(--accent); border-color: transparent; }
+.tag--lead-in-behandeling { background: rgba(111, 168, 232, 0.15); color: var(--accent); border-color: transparent; }
 .tag--lead-geconverteerd { background: rgba(34, 197, 94, 0.15); color: var(--groen); border-color: transparent; }
-.tag--lead-afgewezen { background: rgba(139, 163, 150, 0.15); color: var(--text-dim); border-color: transparent; }
+.tag--lead-afgewezen { background: rgba(155, 168, 184, 0.15); color: var(--text-dim); border-color: transparent; }
 
 tr.rij-gestopt { opacity: 0.5; }
 

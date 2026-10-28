@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#060907">
+<meta name="theme-color" content="#02040a">
 <title data-i18n="meta.title">Arman Bahali: Evidence-Based Physique Coaching</title>
 <meta name="description" data-i18n="meta.description" content="Evidence-based physique transformations for all levels and goals. Programming built around what you want and can do, structured to keep working year-round.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=22">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=28">
 </head>
 <body class="marketing-page">
 
@@ -50,17 +50,20 @@
 </nav>
 
 <header class="marketing-hero">
-  <div class="marketing-hero-bg" aria-hidden="true">
-    <!-- Main stage photo (IFBB Pro League). Blur + dark overlay live in
-         styles.css (.marketing-hero-bg) so the headline stays readable. -->
-    <img src="images/stage-main.jpg" alt="" fetchpriority="high">
+  <!-- Full-screen stage photo (IFBB Pro League), pinned while the hero text
+       scrolls up over it. Blur/darkening is driven by --hp (see styles.css). -->
+  <div class="hero-stage" aria-hidden="true">
+    <div class="marketing-hero-bg">
+      <img src="images/stage-main.jpg" alt="" fetchpriority="high">
+    </div>
+    <div class="hero-scroll-cue"><span data-i18n="hero.scroll">Scroll</span><i></i></div>
   </div>
-  <div class="marketing-container marketing-hero-grid">
+  <div class="marketing-container marketing-hero-grid hero-pop-group">
     <div>
-      <span class="marketing-eyebrow intro-reveal intro-reveal--1" data-i18n="hero.eyebrow">Evidence-based physique coaching</span>
-      <h1 class="intro-reveal-clip intro-reveal--2" data-i18n-html="hero.h1">Potential is only defined once the <span class="hl">result is achieved</span></h1>
-      <p class="marketing-hero-sub intro-reveal intro-reveal--3" data-i18n="hero.sub">Evidence-based physique transformations for all levels and goals, built on programming that's actually structured to get you there, not just through the next four weeks.</p>
-      <div class="marketing-hero-actions intro-reveal intro-reveal--4">
+      <span class="marketing-eyebrow hero-pop hero-pop--1" data-i18n="hero.eyebrow">Evidence-based physique coaching</span>
+      <h1 class="hero-pop hero-pop--2" data-i18n-html="hero.h1">Potential is only defined once the <span class="hl">result is achieved</span></h1>
+      <p class="marketing-hero-sub hero-pop hero-pop--3" data-i18n="hero.sub">Evidence-based physique transformations for all levels and goals, built on programming that's actually structured to get you there, not just through the next four weeks.</p>
+      <div class="marketing-hero-actions hero-pop hero-pop--4">
         <a class="btn btn--accent hero-cta-pulse" href="intake.html" data-i18n="hero.actionPrimary">Start your intake</a>
         <a class="secondary" href="#proces" data-i18n="hero.actionSecondary">See how it works →</a>
       </div>
@@ -347,6 +350,7 @@
       'nav.startIntake': 'Start intake',
       'taal.label': 'Language',
       'hero.eyebrow': 'Evidence-based physique coaching',
+      'hero.scroll': 'Scroll',
       'hero.h1': 'Potential is only defined once the <span class="hl">result is achieved</span>',
       'hero.sub': "Evidence-based physique transformations for all levels and goals, built on programming that's actually structured to get you there, not just through the next four weeks.",
       'hero.actionPrimary': 'Start your intake',
@@ -464,6 +468,7 @@
       'nav.startIntake': 'Start intake',
       'taal.label': 'Taal',
       'hero.eyebrow': 'Evidence-based fysiek coaching',
+      'hero.scroll': 'Scroll',
       'hero.h1': 'Potentieel telt pas zodra het <span class="hl">resultaat er is</span>',
       'hero.sub': 'Evidence-based fysiektransformaties voor elk niveau en elk doel, gebouwd op programmering die je écht ergens brengt, niet alleen door de komende vier weken.',
       'hero.actionPrimary': 'Start je intake',
@@ -581,6 +586,7 @@
       'nav.startIntake': 'Iniciar admisión',
       'taal.label': 'Idioma',
       'hero.eyebrow': 'Coaching físico basado en evidencia',
+      'hero.scroll': 'Desliza',
       'hero.h1': 'El potencial solo cuenta cuando <span class="hl">se logra el resultado</span>',
       'hero.sub': 'Transformaciones físicas basadas en evidencia para todos los niveles y objetivos, construidas sobre una programación realmente estructurada para llevarte allí, no solo para las próximas cuatro semanas.',
       'hero.actionPrimary': 'Comienza tu admisión',
@@ -698,6 +704,7 @@
       'nav.startIntake': 'Iniciar admissão',
       'taal.label': 'Idioma',
       'hero.eyebrow': 'Coaching físico baseado em evidências',
+      'hero.scroll': 'Role',
       'hero.h1': 'O potencial só conta quando <span class="hl">o resultado é alcançado</span>',
       'hero.sub': 'Transformações físicas baseadas em evidências para todos os níveis e objetivos, construídas sobre uma programação realmente estruturada para te levar lá, não apenas pelas próximas quatro semanas.',
       'hero.actionPrimary': 'Comece sua admissão',
@@ -861,8 +868,31 @@
     });
   }
 
-  // Scroll reveal
-  const revealEls = document.querySelectorAll('.reveal');
+  // Hero: --hp goes 0 → 1 over the first ~70% of a screen of scrolling.
+  // CSS uses it to blur/darken the pinned stage photo and fade the scroll cue.
+  const heroSection = document.querySelector('.marketing-hero');
+  const navBar = document.querySelector('.marketing-nav');
+  const setNavHeight = () => {
+    if (navBar) document.documentElement.style.setProperty('--nav-h', navBar.offsetHeight + 'px');
+  };
+  setNavHeight();
+  window.addEventListener('resize', setNavHeight);
+  if (heroSection) {
+    let heroTicking = false;
+    const updateHero = () => {
+      heroTicking = false;
+      const p = Math.min(1, Math.max(0, window.scrollY / (window.innerHeight * 0.7)));
+      heroSection.style.setProperty('--hp', p.toFixed(3));
+    };
+    window.addEventListener('scroll', () => {
+      if (!heroTicking) { heroTicking = true; requestAnimationFrame(updateHero); }
+    }, { passive: true });
+    window.addEventListener('resize', updateHero);
+    updateHero();
+  }
+
+  // Scroll reveal (.hero-pop-group = the hero text that pops in over the photo)
+  const revealEls = document.querySelectorAll('.reveal, .hero-pop-group');
   if (reduceMotion) {
     revealEls.forEach(el => el.classList.add('in-view'));
     growBars();
