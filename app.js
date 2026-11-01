@@ -124,9 +124,10 @@ function renderBerekeningResultaten(c) {
     kerncijferHtml('Rustdag verbruik (REE)', fmt(c.ree), 'kcal', 'BMR × PAL × TEF'),
     kerncijferHtml('Totaal trainingsdag', fmt(c.totaalTrainingsdag), 'kcal', 'REE + (EE × TEF)'),
     kerncijferHtml('Onderhoud/dag', fmt(c.onderhoudPerDag), 'kcal', 'gewogen gemiddelde over de week'),
-    kerncijferHtml('Beoogd — rustdag', fmt(c.beoogdeInnameRustdag), 'kcal',
-      `richtbereik ${fmt(c.bereiken.beoogdeInname.min)}–${fmt(c.bereiken.beoogdeInname.max)} kcal — kies in overleg met cliënt`),
-    kerncijferHtml('Beoogd — trainingsdag', fmt(c.beoogdeInnameTrainingsdag), 'kcal', 'beoogd rustdag + EE'),
+    kerncijferHtml('Beoogd — weekgemiddelde', fmt(c.beoogdeInnameGemiddeld), 'kcal',
+      `onderhoud/dag × factor · richtbereik ${fmt(c.bereiken.beoogdeInname.min)}–${fmt(c.bereiken.beoogdeInname.max)} kcal — kies in overleg met cliënt`),
+    kerncijferHtml('Beoogd — rustdag', fmt(c.beoogdeInnameRustdag), 'kcal', 'REE × factor'),
+    kerncijferHtml('Beoogd — trainingsdag', fmt(c.beoogdeInnameTrainingsdag), 'kcal', 'totaal trainingsdag × factor'),
   ].join('');
 
   document.getElementById('berekening-macros').innerHTML = [
@@ -196,8 +197,9 @@ function renderOverzicht(client) {
   document.getElementById('ov-kerncijfers').innerHTML = [
     kerncijferHtml('BMR', fmt(c.bmr), 'kcal'),
     kerncijferHtml('Onderhoud/dag', fmt(c.onderhoudPerDag), 'kcal'),
-    kerncijferHtml('Beoogd — rustdag', fmt(c.beoogdeInnameRustdag), 'kcal',
+    kerncijferHtml('Beoogd — weekgemiddelde', fmt(c.beoogdeInnameGemiddeld), 'kcal',
       `richtbereik ${fmt(c.bereiken.beoogdeInname.min)}–${fmt(c.bereiken.beoogdeInname.max)} kcal`),
+    kerncijferHtml('Beoogd — rustdag', fmt(c.beoogdeInnameRustdag), 'kcal'),
     kerncijferHtml('Beoogd — trainingsdag', fmt(c.beoogdeInnameTrainingsdag), 'kcal'),
     kerncijferHtml('Eiwit', fmt(c.macros.eiwit, 1), 'g',
       `richtbereik ${fmt(c.bereiken.eiwit.min, 0)}–${fmt(c.bereiken.eiwit.maxSlank, 0)} g`),
@@ -305,8 +307,8 @@ function berekenVoedingRekentool() {
   const ree = calc.energieverbruikRustdag(bmr, pal, tef);
   const totaalTrainingsdag = calc.totaalEnergieTrainingsdag(ree, ee, tef);
   const onderhoudDag = calc.onderhoudsinnamePerDag(totaalTrainingsdag, ree, dagen);
-  const beoogdRustdag = calc.beoogdeInnameRustdag(onderhoudDag, ebf);
-  const beoogdTrainingsdag = calc.beoogdeInnameTrainingsdag(beoogdRustdag, ee);
+  const beoogdRustdag = calc.beoogdeInnameRustdag(ree, ebf);
+  const beoogdTrainingsdag = calc.beoogdeInnameTrainingsdag(totaalTrainingsdag, ebf);
 
   const eiwit = calc.eiwitGrammen(gewicht, eiwitFactor);
   const vet = calc.vetGrammen(ree, vetPctRee);
@@ -327,6 +329,7 @@ function berekenVoedingRekentool() {
       ${kerncijferHtml('REE (rustdag)', fmt(ree), 'kcal')}
       ${kerncijferHtml('Totaal trainingsdag', fmt(totaalTrainingsdag), 'kcal')}
       ${kerncijferHtml('Onderhoud/dag', fmt(onderhoudDag), 'kcal')}
+      ${kerncijferHtml('Beoogd — weekgemiddelde', fmt(calc.beoogdeInnameGemiddeld(beoogdRustdag, beoogdTrainingsdag, dagen)), 'kcal')}
       ${kerncijferHtml('Beoogd — rustdag', fmt(beoogdRustdag), 'kcal')}
       ${kerncijferHtml('Beoogd — trainingsdag', fmt(beoogdTrainingsdag), 'kcal')}
       ${kerncijferHtml('Eiwit', fmt(eiwit, 1), 'g')}
