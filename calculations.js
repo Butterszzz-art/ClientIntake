@@ -170,18 +170,57 @@ export function werkcapaciteit(oudeSet, nieuweSet) {
   return ((nieuweSet - oudeSet) / oudeSet) * 100;
 }
 
-// ---------- Training Volume Calculator (Menno Henselmans model) ----------
-// trainingsstatus: 1 (beginner) - 3 (gevorderd/elite). vrouw: 0/1.
-// herstelfactor: 0.5-1.2. energiebalansfactor: vermenigvuldiger (bv. lager
-// tijdens een dieetfase). trainingsfrequentie: keer/week dat de spiergroep
-// wordt getraind — boven de 3x/week telt effectief nog maar 2.5x mee.
-export function trainingsvolumeAdvies(trainingsstatus, vrouw, herstelfactor, energiebalansfactor, trainingsfrequentie) {
+// ---------- Training Volume Calculator ----------------------------------
+// Butters University (BU) is de bron voor trainingsvolume; het Menno
+// Henselmans-model rekent alleen het persoonlijke getal BINNEN de BU-band uit.
+//
+// BU-band = directe sets/week/spiergroep (indirecte sets tellen ~0.5 mee):
+// - beginner (1): 8–12 — coach-standaard; BU geeft geen beginnersgetal, alleen
+//   dat matig volume bij ongetrainden beter werkte dan hoog (Ugurlu 2024).
+// - gemiddeld (2): 10–15 — BU "Anchor around 10–15 direct sets/week/muscle if
+//   intermediate, and move up cautiously".
+// - gevorderd (3): 10–20 — BU "Push past ~20 direct sets only if recovery
+//   markers and continued strength progress support it" (coach kan verhogen).
+// - 60+ jaar: maximaal 12 — BU "closer to 10 sets/week/muscle rather than
+//   pushing toward 20+" voor oudere cliënten.
+export const VOLUME_BAND_PER_STATUS = {
+  1: { min: 8, max: 12, bron: 'coach-standaard (BU: matig volume voor ongetrainden)' },
+  2: { min: 10, max: 15, bron: 'BU: Training intensity, volume & frequency' },
+  3: { min: 10, max: 20, bron: 'BU: Training intensity, volume & frequency' },
+};
+export const VOLUME_OUDEREN_VANAF_LEEFTIJD = 60;
+export const VOLUME_OUDEREN_MAX = 12;
+
+export function trainingsvolumeBand(trainingsstatus, leeftijd) {
+  const status = Math.max(1, Math.min(3, Math.round(Number(trainingsstatus) || 2)));
+  const band = { ...VOLUME_BAND_PER_STATUS[status] };
+  if (Number(leeftijd) >= VOLUME_OUDEREN_VANAF_LEEFTIJD) {
+    band.max = Math.min(band.max, VOLUME_OUDEREN_MAX);
+    band.min = Math.min(band.min, band.max);
+    band.bron += `; ${VOLUME_OUDEREN_VANAF_LEEFTIJD}+ max ${VOLUME_OUDEREN_MAX} (BU)`;
+  }
+  return band;
+}
+
+// Menno Henselmans-model, ongeklemd. trainingsstatus: 1 (beginner) - 3
+// (gevorderd/elite). vrouw: 0/1. herstelfactor: 0.5-1.2. energiebalansfactor:
+// vermenigvuldiger (bv. lager tijdens een dieetfase). trainingsfrequentie:
+// keer/week dat de spiergroep wordt getraind — boven de 3x/week telt
+// effectief nog maar 2.5x mee.
+export function trainingsvolumeMenno(trainingsstatus, vrouw, herstelfactor, energiebalansfactor, trainingsfrequentie) {
   const statusGeklemd = Math.max(1, Math.min(3, trainingsstatus));
   const herstelGeklemd = Math.max(0.5, Math.min(1.2, herstelfactor));
   const effectieveFrequentie = trainingsfrequentie < 3 ? trainingsfrequentie : 2.5;
   const optimaalVolume = (effectieveFrequentie * 5) * herstelGeklemd * energiebalansfactor
     * Math.sqrt(statusGeklemd) + (vrouw ? 3 : 0);
   return round(optimaalVolume, 1);
+}
+
+// Advies = Menno-getal, geklemd binnen de BU-band. leeftijd is optioneel.
+export function trainingsvolumeAdvies(trainingsstatus, vrouw, herstelfactor, energiebalansfactor, trainingsfrequentie, leeftijd) {
+  const menno = trainingsvolumeMenno(trainingsstatus, vrouw, herstelfactor, energiebalansfactor, trainingsfrequentie);
+  const band = trainingsvolumeBand(trainingsstatus, leeftijd);
+  return round(Math.max(band.min, Math.min(band.max, menno)), 1);
 }
 
 // ---------- 1RM Calculator — three subcalculators (Menno Henselmans) ------

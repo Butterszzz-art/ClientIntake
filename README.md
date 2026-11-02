@@ -526,7 +526,9 @@ entrypoint dat de app zelf aanroept; de rest zijn de bouwstenen daaronder
 | `detecteerBlessureConflicten(blessures)` | `{tekst, vermijdenOefeningen}` | array | Matcht gemelde blessures/vermijdlijst tegen standaardoefeningen |
 | `genereerRodeVlaggen(intake, calculations)` | intake, calculations | array | Automatische coach-waarschuwingen |
 | `berekenClient(intake, instellingen)` | intake, instellingen (optioneel) | volledig `calculations`-object | Orchestreert alle bovenstaande functies |
-| `trainingsvolumeAdvies(trainingsstatus, vrouw, herstelfactor, energiebalansfactor, trainingsfrequentie)` | 1-3, 0/1, 0.5-1.2, factor, keer/week | getal (sets/week/spiergroep) | Menno Henselmans-model voor optimaal trainingsvolume (Task 2) — clamt status en herstelfactor binnen hun toegestane bereik |
+| `trainingsvolumeAdvies(trainingsstatus, vrouw, herstelfactor, energiebalansfactor, trainingsfrequentie, leeftijd?)` | 1-3, 0/1, 0.5-1.2, factor, keer/week, jaren | getal (directe sets/week/spiergroep) | Menno-getal geklemd binnen de Butters University-band (zie hieronder) |
+| `trainingsvolumeMenno(trainingsstatus, vrouw, herstelfactor, energiebalansfactor, trainingsfrequentie)` | idem zonder leeftijd | getal | Menno Henselmans-model voor trainingsvolume (Task 2), ongeklemd — clamt alleen status en herstelfactor |
+| `trainingsvolumeBand(trainingsstatus, leeftijd?)` | 1-3, jaren | `{min, max, bron}` | Butters University-band: beginner 8–12 (coach-standaard), gemiddeld 10–15, gevorderd 10–20, 60+ max 12 |
 | `rm1VrijGewicht(gewicht, herhalingen)` | kg, reps | `{epley1RM, tabel}` | 1RM-subcalculator A: vrije gewichten & machine-oefeningen — `tabel` is de volledige belastingstabel (90-30% van 1RM) |
 | `rm1Bodyweight(lichaamsgewicht, externGewicht, herhalingen)` | kg, kg, reps | `{epley1RM, tabel}` | 1RM-subcalculator B: bodyweight-oefeningen (chin-up, dip, ...) — 93.48% van het lichaamsgewicht wordt belast; `tabel` geeft het benodigde extern gewicht per percentage |
 | `rm1PushUp(lichaamsgewicht, externGewicht, herhalingen)` | kg, kg, reps | `{epley1RM, tabel}` | 1RM-subcalculator C: push-ups — zelfde opzet als B maar met 75% (voeten geven steun) |
@@ -609,6 +611,14 @@ Herkomst van elk bereik:
 - **Trainingsduur**: `60` minuten, **MET**: `5.7`.
 
 ### Training Volume Calculator & 1RM-subcalculators (Task 2/3)
+
+**Butters University is de bron voor trainingsvolume.** Het Menno-model uit
+de xlsx rekent het persoonlijke getal uit (herstel, energiebalans,
+frequentie), maar het advies wordt altijd geklemd binnen de BU-band in
+directe sets (indirecte sets tellen ~0.5): beginner 8–12, gemiddeld 10–15,
+gevorderd 10–20, 60+ maximaal 12. Zonder die klem kwam het model voor bv. een
+gemiddelde vrouw op een 3-daags full body-schema uit op ~21 sets, ruim boven
+BU's 10–15.
 
 De formules voor deze twee rekentool-blokken kwamen exact gespecificeerd uit
 de opdracht (`Training_volume_calculator_MennoHenselmans.xlsx` en

@@ -405,11 +405,17 @@ function berekenVolumeRekentool() {
   const herstel = num(document.getElementById('r-vol-herstel').value);
   const ebf = num(document.getElementById('r-vol-ebf').value);
   const frequentie = num(document.getElementById('r-vol-frequentie').value);
-  const volume = calc.trainingsvolumeAdvies(status, vrouw, herstel, ebf, frequentie);
+  const leeftijdVeld = document.getElementById('r-vol-leeftijd').value;
+  const leeftijd = leeftijdVeld === '' ? null : num(leeftijdVeld);
+  const menno = calc.trainingsvolumeMenno(status, vrouw, herstel, ebf, frequentie);
+  const band = calc.trainingsvolumeBand(status, leeftijd);
+  const volume = calc.trainingsvolumeAdvies(status, vrouw, herstel, ebf, frequentie, leeftijd);
 
   document.getElementById('rekentool-volume-resultaat').innerHTML = `
     <div class="kerncijfers">
-      ${kerncijferHtml('Geschat optimaal trainingsvolume (sets/week/spiergroep)', fmt(volume, 1))}
+      ${kerncijferHtml('Advies (directe sets/week/spiergroep)', fmt(volume, 1))}
+      ${kerncijferHtml('Butters University-band', `${band.min}–${band.max}`)}
+      ${kerncijferHtml('Menno-model (ongeklemd)', fmt(menno, 1))}
     </div>
   `;
 }

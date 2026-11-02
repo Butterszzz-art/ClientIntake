@@ -197,7 +197,7 @@
     </fieldset>
 
     <fieldset class="card">
-      <legend>5. Training Volume Calculator (Menno Henselmans model)</legend>
+      <legend>5. Training Volume Calculator (Butters University-band, Menno-model)</legend>
       <div class="form-grid">
         <label>Trainingsstatus (1 = beginner, 3 = gevorderd/elite)
           <input type="number" id="r-vol-status" value="2" step="1" min="1" max="3">
@@ -217,10 +217,14 @@
         <label>Trainingsfrequentie (keer/week voor deze spiergroep)
           <input type="number" id="r-vol-frequentie" value="2" step="1" min="1" max="7">
         </label>
+        <label>Leeftijd (optioneel — 60+ max 12 sets)
+          <input type="number" id="r-vol-leeftijd" step="1" min="10" max="100">
+        </label>
       </div>
       <button type="button" class="btn btn--accent" id="btn-bereken-volume">Bereken optimaal volume</button>
       <p class="hint">effectieveFrequentie = frequentie &lt; 3 ? frequentie : 2.5 &nbsp;|&nbsp;
-        optimaalVolume = (effectieveFrequentie × 5) × herstelfactor × energiebalansfactor × &radic;trainingsstatus + vrouw × 3</p>
+        menno = (effectieveFrequentie × 5) × herstelfactor × energiebalansfactor × &radic;trainingsstatus + vrouw × 3<br>
+        advies = menno geklemd binnen de Butters University-band (directe sets): beginner 8–12, gemiddeld 10–15, gevorderd 10–20, 60+ max 12</p>
       <div id="rekentool-volume-resultaat"></div>
     </fieldset>
   </section>
